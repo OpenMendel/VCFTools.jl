@@ -90,7 +90,11 @@ Calculate genotype statistics for each marker in a VCF file with GT field data.
 Output is written to ta file specified by `out`.
 """
 function gtstats(vcffile::AbstractString, out::AbstractString)
-    ofile = open(out, "w")
+    if out[(end - 2):end] == ".gz"
+        ofile = GZip.open(out, "w")
+    else
+        ofile = open(out, "w")
+    end
     records, samples, lines = gtstats(vcffile, ofile)
     close(ofile)
     return records, samples, lines
