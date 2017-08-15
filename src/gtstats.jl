@@ -1,7 +1,3 @@
-using Distributions, GeneticVariation, GZip
-
-export gtstats
-
 """
     gtstats(vcffile, [out])
 
@@ -29,12 +25,18 @@ One line with 15 tab-delimited fiels is written per marker:
 function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     # open VCF file
     if vcffile[(end - 3):end] == ".vcf"
-        reader = VCF.Reader(open(vcffile, "r"))
+        fh = open(vcffile, "r")
     elseif vcffile[(end - 6):end] == ".vcf.gz"
-        reader = VCF.Reader(GZip.open(vcffile, "r"))
+        fh = GZip.open(vcffile, "r")
     else
         throw(ArgumentError("VCF filename should end with vcf or vcf.gz"))
     end
+    vcflines = countlines(fh)
+    seekstart(fh)
+    # VCF reader
+    reader = VCF.Reader(fh)
+    # set up progress bar
+    out == STDOUT || (pbar = Progress(vcflines - length(VCF.header(reader)) - 1, 1))
     # loop over records
     samples = length(VCF.header(reader).sampleID)
     records = lines = 0
@@ -64,6 +66,7 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         minoralleles = altfreq < 0.5? altalleles : refalleles
         maf          = altfreq < 0.5? altfreq : reffreq
         # Hardy-Weinburg equilibrium test
+        # TODO Fisher exact test when min(refhomzygs, althomzygs, heterozygs) < 5
         if minoralleles == 0
             hwepval = 1.0
         else
@@ -79,6 +82,8 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         write(out, record.data[1:record.format[1][1]-2], '\t')
         print(out, missings, '\t', missfreq, '\t', altalleles, '\t',
         altfreq, '\t', minoralleles, '\t', maf, '\t', hwepval, '\n')
+        # update progress bar
+        out == STDOUT || update!(pbar, records)
     end
     return records, samples, lines
 end
@@ -87,7 +92,7 @@ end
     gtstats(vcffile, out)
 
 Calculate genotype statistics for each marker in a VCF file with GT field data.
-Output is written to ta file specified by `out`.
+Output is written to the file specified by `out`.
 """
 function gtstats(vcffile::AbstractString, out::AbstractString)
     if out[(end - 2):end] == ".gz"
