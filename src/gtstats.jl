@@ -22,7 +22,9 @@ One line with 15 tab-delimited fiels is written per marker:
     -  15)  HWE P-value                    (REF allele vs Non-REF alleles)
 
 # Output
-- `lines`: number of lines written to `out`
+- `records`: number of records in the input VCF file
+- `samples`: number of individuals in the input VCF file
+- `lines`  : number of lines written to `out`
 """
 function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     # open VCF file
@@ -35,8 +37,9 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     end
     # loop over records
     samples = length(VCF.header(reader).sampleID)
-    lines = 0
+    records = lines = 0
     for record in reader
+        records += 1
         # if no "GT" field, skip this record
         VCF.findgenokey(record, "GT") == 0 && continue
         # calcuate summary statistics
@@ -77,7 +80,7 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         print(out, missings, '\t', missfreq, '\t', altalleles, '\t',
         altfreq, '\t', minoralleles, '\t', maf, '\t', hwepval, '\n')
     end
-    return lines
+    return records, samples, lines
 end
 
 """
@@ -88,6 +91,7 @@ Output is written to ta file specified by `out`.
 """
 function gtstats(vcffile::AbstractString, out::AbstractString)
     ofile = open(out, "w")
-    gtstats(vcffile, ofile)
+    records, samples, lines = gtstats(vcffile, ofile)
     close(ofile)
+    return records, samples, lines
 end
