@@ -1,9 +1,8 @@
 module VCFTools
 
-using Distributions, GeneticVariation, GZip, ProgressMeter
+using Distributions, GeneticVariation, CodecZlib, ProgressMeter
 
-export gtstats, conformgt
-
+export gtstats, hwe
 
 # package code goes here
 include("gtstats.jl")

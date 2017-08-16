@@ -25,16 +25,14 @@ One line with 15 tab-delimited fiels is written per marker:
 function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     # open VCF file
     if endswith(vcffile, ".vcf")
-        fh = open(vcffile, "r")
+        reader = VCF.Reader(open(vcffile, "r"))
+        vcflines = countlines(vcfile)
     elseif endswith(vcffile, ".vcf.gz")
-        fh = GZip.open(vcffile, "r")
+        reader = VCF.Reader(GzipDecompressionStream(open(vcffile, "r")))
+        vcflines = countgzlines(vcffile)
     else
         throw(ArgumentError("VCF file name should end with vcf or vcf.gz"))
     end
-    vcflines = countlines(fh)
-    seekstart(fh)
-    # VCF reader
-    reader = VCF.Reader(fh)
     # set up progress bar
     records = vcflines - length(VCF.header(reader)) - 1
     out == STDOUT || (pbar = ProgressMeter.Progress(records, 1))
@@ -60,7 +58,6 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         # update progress bar
         out == STDOUT || ProgressMeter.update!(pbar, records)
     end
-    close(fh)
     return records, samples, lines
 end
 
@@ -72,7 +69,7 @@ Output is written to the file specified by `out`.
 """
 function gtstats(vcffile::AbstractString, out::AbstractString)
     if endswith(out, ".gz")
-        ofile = GZip.open(out, "w")
+        ofile = GzipCompressionStream(open(out, "w"))
     else
         ofile = open(out, "w")
     end
@@ -153,4 +150,9 @@ function hwe(n00::Integer, n01::Integer, n11::Integer)
     pval = ccdf(Chi(1), ts)
     # TODO Fisher exact test
     return pval
+end
+
+function countgzlines(gzfile::AbstractString)
+    endswith(gzfile, "gz") || throw(ArgumentError("File name should end with .gz"))
+    countlines(GzipDecompressionStream(open(gzfile, "r")))
 end
