@@ -24,19 +24,20 @@ One line with 15 tab-delimited fiels is written per marker:
 """
 function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     # open VCF file
-    if vcffile[(end - 3):end] == ".vcf"
+    if endswith(vcffile, ".vcf")
         fh = open(vcffile, "r")
-    elseif vcffile[(end - 6):end] == ".vcf.gz"
+    elseif endswith(vcffile, ".vcf.gz")
         fh = GZip.open(vcffile, "r")
     else
-        throw(ArgumentError("VCF filename should end with vcf or vcf.gz"))
+        throw(ArgumentError("VCF file name should end with vcf or vcf.gz"))
     end
     vcflines = countlines(fh)
     seekstart(fh)
     # VCF reader
     reader = VCF.Reader(fh)
     # set up progress bar
-    out == STDOUT || (pbar = Progress(vcflines - length(VCF.header(reader)) - 1, 1))
+    records = vcflines - length(VCF.header(reader)) - 1
+    out == STDOUT || (pbar = ProgressMeter.Progress(records, 1))
     # loop over records
     samples = length(VCF.header(reader).sampleID)
     records = lines = 0
@@ -46,45 +47,20 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         VCF.findgenokey(record, "GT") == 0 && continue
         # calcuate summary statistics
         lines += 1
-        missings = refhomzygs = althomzygs = 0
-        for i in 1:samples
-            gt = VCF.genotype(record, i, "GT")
-            if gt == "."
-                missings += 1
-            elseif gt == "0/0" || gt == "0|0"
-                althomzygs += 1
-            elseif gt == "1/1" || gt == "1|1"
-                refhomzygs += 1
-            end
-        end
-        heterozygs   = samples - missings - refhomzygs - althomzygs
-        missfreq     = missings / samples
-        altalleles   = heterozygs + 2althomzygs
-        refalleles   = heterozygs + 2refhomzygs
-        altfreq      = altalleles / (refalleles + altalleles)
-        reffreq      = 1 - altfreq
-        minoralleles = altfreq < 0.5? altalleles : refalleles
-        maf          = altfreq < 0.5? altfreq : reffreq
-        # Hardy-Weinburg equilibrium test
-        # TODO Fisher exact test when min(refhomzygs, althomzygs, heterozygs) < 5
-        if minoralleles == 0
-            hwepval = 1.0
-        else
-            refhomzygs_e = (samples - missings) * reffreq * reffreq
-            althomzygs_e = (samples - missings) * altfreq * altfreq
-            heterozygs_e = samples - missings - refhomzygs_e - althomzygs_e
-            hwestat = (refhomzygs - refhomzygs_e)^2 / refhomzygs_e +
-                      (althomzygs - althomzygs_e)^2 / althomzygs_e +
-                      (heterozygs - heterozygs_e)^2 / heterozygs_e
-            hwepval = ccdf(Chi(1), hwestat)
-        end
+        n00, n01, n11, n0, n1, altfreq, reffreq, missings,
+        minorallele, maf, hwepval = gtstats(record)
+        missfreq = missings / (n0 + n1)
+        altfreq  = n0 / (n0 + n1)
+        minoralleles = minorallele == 0? n0 : n1
         # output
-        write(out, record.data[1:record.format[1][1]-2], '\t')
-        print(out, missings, '\t', missfreq, '\t', altalleles, '\t',
+        nbytes = record.format[1][1] - 2
+        unsafe_write(out, pointer(record.data), nbytes)
+        print(out, '\t', missings, '\t', missfreq, '\t', n0, '\t',
         altfreq, '\t', minoralleles, '\t', maf, '\t', hwepval, '\n')
         # update progress bar
-        out == STDOUT || update!(pbar, records)
+        out == STDOUT || ProgressMeter.update!(pbar, records)
     end
+    close(fh)
     return records, samples, lines
 end
 
@@ -95,7 +71,7 @@ Calculate genotype statistics for each marker in a VCF file with GT field data.
 Output is written to the file specified by `out`.
 """
 function gtstats(vcffile::AbstractString, out::AbstractString)
-    if out[(end - 2):end] == ".gz"
+    if endswith(out, ".gz")
         ofile = GZip.open(out, "w")
     else
         ofile = open(out, "w")
@@ -103,4 +79,78 @@ function gtstats(vcffile::AbstractString, out::AbstractString)
     records, samples, lines = gtstats(vcffile, ofile)
     close(ofile)
     return records, samples, lines
+end
+
+"""
+    gtstats(record)
+
+Calculate genotype statistics for a VCF record with GT field.
+
+# Input
+- `record`: a VCF record
+
+# Output
+- `n00`: number of homozygote ALT/ALT or ALT|ALT
+- `n01`: number of heterozygote REF/ALT or REF|ALT
+- `n11`: number of homozygote REF/REF or REF|REF
+- `n0`: number of ALT alleles
+- `n1`: number of REF alleles
+- `altfreq`: proportion of ALT alleles
+- `reffreq`: proportion of REF alleles
+- `missings`: number of missing genotypes
+- `minorallele`: minor allele, 0 (ALT allele) or 1 (REF allele)
+- `maf`: minor allele frequency
+- `hwepval`: Hardy-Weinberg p-value
+"""
+function gtstats(record::VCF.Record)
+    # n11: number of homozygote REF/REF or REF|REF
+    # n00: number of homozygote ALT/ALT or ALT|ALT
+    # n01: number of heterozygote REF/ALT or REF|ALT
+    missings = n00 = n10 = n11 = 0
+    samples = length(record.genotype)
+    gtkey = VCF.findgenokey(record, "GT")
+    for i in 1:samples
+        geno = record.genotype[i]
+        if gtkey > endof(geno)
+            missings += 1
+        else
+            # "0" => 0x30, "1" => 0x31
+            if record.data[geno[gtkey][1]] == 0x30
+                n00 += record.data[geno[gtkey][3]] == 0x30? 1 : 0
+            elseif record.data[geno[gtkey][1]] == 0x31
+                n11 += record.data[geno[gtkey][3]] == 0x31? 1 : 0
+            end
+        end
+    end
+    n01         = length(record.genotype) - missings - n00 - n11
+    n0          = n01 + 2n00
+    n1          = n01 + 2n11
+    altfreq     = n0 / (n0 + n1)
+    reffreq     = n1 / (n0 + n1)
+    minorallele = n0 < n1? 0 : 1
+    maf         = n0 < n1? altfreq : reffreq
+    hwepval     = hwe(n00, n01, n11)
+    return n00, n01, n11, n0, n1, altfreq, reffreq, missings,
+    minorallele, maf, hwepval
+end
+
+"""
+    hwe(n00, n01, n11)
+
+Hardy-Weinberg equilibrium test.
+"""
+function hwe(n00::Integer, n01::Integer, n11::Integer)
+    n = n00 + n01 + n11
+    n == 0 && return 1.0
+    p0 = (n01 + 2n00) / 2n
+    (p0 ≤ 0.0 || p0 ≥ 1.0) && return 1.0
+    p1 = 1 - p0
+    # Pearson's Chi-squared test
+    e00 = n * p0 * p0
+    e01 = 2n * p0 * p1
+    e11 = n * p1 * p1
+    ts = (n00 - e00)^2 / e00 + (n01 - e01)^2 / e01 + (n11 - e11)^2 / e11
+    pval = ccdf(Chi(1), ts)
+    # TODO Fisher exact test
+    return pval
 end
