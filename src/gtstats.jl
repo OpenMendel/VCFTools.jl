@@ -24,20 +24,23 @@ One line with 15 tab-delimited fiels is written per marker:
 """
 function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     # open VCF file
-    if endswith(vcffile, ".vcf")
-        reader = VCF.Reader(open(vcffile, "r"))
-        vcflines = countlines(vcfile)
-    elseif endswith(vcffile, ".vcf.gz")
-        reader = VCF.Reader(GzipDecompressionStream(open(vcffile, "r")))
-        vcflines = countgzlines(vcffile)
-    else
-        throw(ArgumentError("VCF file name should end with vcf or vcf.gz"))
-    end
+    vcflines = countgzlines(vcffile)
+    reader = endswith(vcffile, ".gz") ?
+        VCF.Reader(GzipDecompressionStream(open(vcffile, "r"))) :
+        VCF.Reader(open(vcffile, "r"))
     # set up progress bar
     records = vcflines - length(VCF.header(reader)) - 1
     out == STDOUT || (pbar = ProgressMeter.Progress(records, 1))
-    # loop over records
+    # allocate ouput arrays
     samples = length(VCF.header(reader).sampleID)
+    missings_by_sample = zeros(Int, samples)
+    missings_by_record = Int[]
+    maf_by_record = Float64[]
+    minorallele_by_record = Int[]
+    sizehint!(maf_by_record, records)
+    sizehint!(missings_by_record, records)
+    sizehint!(minorallele_by_record, records)
+    # loop over records
     records = lines = 0
     for record in reader
         records += 1
@@ -46,10 +49,13 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         # calcuate summary statistics
         lines += 1
         n00, n01, n11, n0, n1, altfreq, reffreq, missings,
-        minorallele, maf, hwepval = gtstats(record)
+            minorallele, maf, hwepval = gtstats!(record, missings_by_sample)
         missfreq = missings / (n0 + n1)
         altfreq  = n0 / (n0 + n1)
-        minoralleles = minorallele == 0? n0 : n1
+        minoralleles = minorallele == 0 ? n0 : n1
+        push!(missings_by_record, missings)
+        push!(maf_by_record, maf)
+        push!(minorallele_by_record, minorallele)
         # output
         nbytes = record.format[1][1] - 2
         unsafe_write(out, pointer(record.data), nbytes)
@@ -58,7 +64,9 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         # update progress bar
         out == STDOUT || ProgressMeter.update!(pbar, records)
     end
-    return records, samples, lines
+    close(out)
+    return records, samples, lines, missings_by_sample, missings_by_record,
+        maf_by_record, minorallele_by_record
 end
 
 """
@@ -68,23 +76,21 @@ Calculate genotype statistics for each marker in a VCF file with GT field data.
 Output is written to the file specified by `out`.
 """
 function gtstats(vcffile::AbstractString, out::AbstractString)
-    if endswith(out, ".gz")
-        ofile = GzipCompressionStream(open(out, "w"))
-    else
-        ofile = open(out, "w")
-    end
-    records, samples, lines = gtstats(vcffile, ofile)
-    close(ofile)
-    return records, samples, lines
+    ofile = endswith(out, ".gz") ?
+        GzipCompressionStream(open(out, "w")) :
+        open(out, "w")
+    gtstats(vcffile, ofile)
 end
 
 """
-    gtstats(record)
+    gtstats!(record, missings_by_sample)
 
 Calculate genotype statistics for a VCF record with GT field.
 
 # Input
 - `record`: a VCF record
+- `missings_by_sample`: accumulator of misisngs by sample, `missings_by_sample[i]`
+is incremented by 1 if `i`-th individual has missing genotype in this record
 
 # Output
 - `n00`: number of homozygote ALT/ALT or ALT|ALT
@@ -99,7 +105,10 @@ Calculate genotype statistics for a VCF record with GT field.
 - `maf`: minor allele frequency
 - `hwepval`: Hardy-Weinberg p-value
 """
-function gtstats(record::VCF.Record)
+function gtstats!(
+    record::VCF.Record,
+    missings_by_sample::Vector=zeros(Int, length(record.genotype))
+    )
     # n11: number of homozygote REF/REF or REF|REF
     # n00: number of homozygote ALT/ALT or ALT|ALT
     # n01: number of heterozygote REF/ALT or REF|ALT
@@ -110,6 +119,7 @@ function gtstats(record::VCF.Record)
         geno = record.genotype[i]
         if gtkey > endof(geno)
             missings += 1
+            missings_by_sample[i] += 1
         else
             # "0" => 0x30, "1" => 0x31
             if record.data[geno[gtkey][1]] == 0x30
@@ -128,7 +138,7 @@ function gtstats(record::VCF.Record)
     maf         = n0 < n1? altfreq : reffreq
     hwepval     = hwe(n00, n01, n11)
     return n00, n01, n11, n0, n1, altfreq, reffreq, missings,
-    minorallele, maf, hwepval
+        minorallele, maf, hwepval
 end
 
 """
