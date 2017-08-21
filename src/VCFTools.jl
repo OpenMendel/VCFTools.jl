@@ -2,7 +2,7 @@ module VCFTools
 
 using CodecZlib, Distributions, GeneticVariation, ProgressMeter
 
-export gtstats, gtstats!, hwe
+export gtstats, hwe
 
 # package code goes here
 include("gtstats.jl")

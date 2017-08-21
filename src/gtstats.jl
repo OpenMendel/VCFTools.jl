@@ -49,7 +49,7 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         # calcuate summary statistics
         lines += 1
         n00, n01, n11, n0, n1, altfreq, reffreq, missings,
-            minorallele, maf, hwepval = gtstats!(record, missings_by_sample)
+            minorallele, maf, hwepval = gtstats(record, missings_by_sample)
         missfreq = missings / (n0 + n1)
         altfreq  = n0 / (n0 + n1)
         minoralleles = minorallele == 0 ? n0 : n1
@@ -83,7 +83,7 @@ function gtstats(vcffile::AbstractString, out::AbstractString)
 end
 
 """
-    gtstats!(record, missings_by_sample)
+    gtstats(record[, missings_by_sample])
 
 Calculate genotype statistics for a VCF record with GT field.
 
@@ -105,9 +105,9 @@ is incremented by 1 if `i`-th individual has missing genotype in this record
 - `maf`: minor allele frequency
 - `hwepval`: Hardy-Weinberg p-value
 """
-function gtstats!(
+function gtstats(
     record::VCF.Record,
-    missings_by_sample::Vector=zeros(Int, length(record.genotype))
+    missings_by_sample::Union{Vector,Void}=nothing
     )
     # n11: number of homozygote REF/REF or REF|REF
     # n00: number of homozygote ALT/ALT or ALT|ALT
@@ -119,7 +119,7 @@ function gtstats!(
         geno = record.genotype[i]
         if gtkey > endof(geno)
             missings += 1
-            missings_by_sample[i] += 1
+            (missings_by_sample == nothing) || (missings_by_sample[i] += 1)
         else
             # "0" => 0x30, "1" => 0x31
             if record.data[geno[gtkey][1]] == 0x30
