@@ -24,7 +24,7 @@ One line with 15 tab-delimited fiels is written per marker:
 """
 function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     # open VCF file
-    vcflines = countgzlines(vcffile)
+    vcflines = endswith(vcffile, ".gz")? countgzlines(vcffile) : countlines(vcffile)
     reader = endswith(vcffile, ".gz") ?
         VCF.Reader(GzipDecompressionStream(open(vcffile, "r"))) :
         VCF.Reader(open(vcffile, "r"))
