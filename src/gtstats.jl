@@ -1,28 +1,36 @@
 """
-    gtstats(vcffile, [out])
+    gtstats(vcffile, [out=DevNull])
 
 Calculate genotype statistics for each marker in a VCF file with GT field data.
 It is similar to the gsstats.jar utility  <https://faculty.washington.edu/browning/beagle_utilities/utilities.html#gtstats>.
 
 # Input
 - `vcffile`: VCF file, ending with .vcf or .vcf.gz
-- `out`: IOStream for output. Defulat is the `STDOUT`. Setting `out=DevNull`
-suppresses output. One line with 15 tab-delimited fiels is written per marker:
+- `out`: file name or IOStream. Default is `out=DevNull` (output).
+One line with 15 tab-delimited fiels is written per marker to `out`:
     - 1-8)  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)
     -   9)  Missing genotype count
     -  10)  Missing genotype frequency
-    -  11)  Non-REF allele count
-    -  12)  Non-REF allele frequency
-    -  13)  Minor allele count             (REF allele vs Non-REF alleles)
-    -  14)  Minor allele frequency         (REF allele vs Non-REF alleles)
-    -  15)  HWE P-value                    (REF allele vs Non-REF alleles)
+    -  11)  ALT allele count
+    -  12)  ALT allele frequency
+    -  13)  Minor allele count             (REF allele vs ALT alleles)
+    -  14)  Minor allele frequency         (REF allele vs ALT alleles)
+    -  15)  HWE P-value                    (REF allele vs ALT alleles)
 
 # Output
 - `records`: number of records in the input VCF file
 - `samples`: number of individuals in the input VCF file
-- `lines`  : number of lines written to `out`
+- `lines`  : number of lines written to `out`; equivalently number of markers
+    with GT field
+- `missings_by_sample`: number of missing genotypes in each sample
+- `missings_by_record`: number of missing genotypes in each record (marker)
+- `maf_by_record`: minor allele frequency in each record (marker)
+- `minorallele_by_record`: a Boolean vector indicating the minor allele in each
+    record (marker). `minorallele_by_record[i]=true` means the minor allele is
+    the REF allele for marker `i`; `minorallele_by_record[i]=false` means the
+    minor allele is the ALT allele for marker `i`
 """
-function gtstats(vcffile::AbstractString, out::IO=STDOUT)
+function gtstats(vcffile::AbstractString, out::IO=DevNull)
     # open VCF file
     reader = VCF.Reader(openvcf(vcffile, "r"))
     # set up progress bar
@@ -33,7 +41,7 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     missings_by_sample = zeros(Int, samples)
     missings_by_record = Int[]
     maf_by_record = Float64[]
-    minorallele_by_record = Int[]
+    minorallele_by_record = Bool[]
     sizehint!(maf_by_record, records)
     sizehint!(missings_by_record, records)
     sizehint!(minorallele_by_record, records)
@@ -49,7 +57,7 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
             minorallele, maf, hwepval = gtstats(record, missings_by_sample)
         missfreq = missings / (n0 + n1)
         altfreq  = n0 / (n0 + n1)
-        minoralleles = minorallele == 0 ? n0 : n1
+        minoralleles = minorallele ? n0 : n1
         push!(missings_by_record, missings)
         push!(maf_by_record, maf)
         push!(minorallele_by_record, minorallele)
@@ -66,21 +74,13 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         maf_by_record, minorallele_by_record
 end
 
-"""
-    gtstats(vcffile, out)
-
-Calculate genotype statistics for each marker in a VCF file with GT field data.
-Output is written to the file specified by `out`.
-"""
 function gtstats(vcffile::AbstractString, out::AbstractString)
-    ofile = endswith(out, ".gz") ?
-        GzipCompressionStream(open(out, "w")) :
-        open(out, "w")
+    ofile = endswith(out, ".gz") ? GzipCompressionStream(open(out, "w")) : open(out, "w")
     gtstats(vcffile, ofile)
 end
 
 """
-    gtstats(record[, missings_by_sample])
+    gtstats(record, [missings_by_sample=nothing])
 
 Calculate genotype statistics for a VCF record with GT field.
 
@@ -98,7 +98,7 @@ is incremented by 1 if `i`-th individual has missing genotype in this record
 - `altfreq`: proportion of ALT alleles
 - `reffreq`: proportion of REF alleles
 - `missings`: number of missing genotypes
-- `minorallele`: minor allele, 0 (ALT allele) or 1 (REF allele)
+- `minorallele`: minor allele: `false` (ALT allele) or `true` (REF allele)
 - `maf`: minor allele frequency
 - `hwepval`: Hardy-Weinberg p-value
 """
@@ -131,7 +131,7 @@ function gtstats(
     n1          = n01 + 2n11
     altfreq     = n0 / (n0 + n1)
     reffreq     = n1 / (n0 + n1)
-    minorallele = n0 < n1? 0 : 1
+    minorallele = n1 < n0
     maf         = n0 < n1? altfreq : reffreq
     hwepval     = hwe(n00, n01, n11)
     return n00, n01, n11, n0, n1, altfreq, reffreq, missings,
@@ -211,6 +211,6 @@ Number of samples (individuals) in a VCF file.
 function nsamples(vcffile::AbstractString)
     reader = VCF.Reader(openvcf(vcffile, "r"))
     samples = length(VCF.header(reader).sampleID)
-    clode(reader)
+    close(reader)
     samples
 end

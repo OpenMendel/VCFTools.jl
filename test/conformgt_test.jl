@@ -11,7 +11,7 @@ end
 @testset "flip_gt_allele" begin
     record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
     #@code_warntype flip_gt_allele(record)
-    record_out = flip_gt_allele(record)
+    record_out = VCFTools.flip_gt_allele(record)
     #@show record_out
     @test VCF.ref(record_out) == "A"
     @test VCF.alt(record_out) == ["G"]
@@ -24,9 +24,7 @@ end
     record2 = VCF.Record("20\t14370\trs6054257\tA\tG\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t1|1:48:1:51,51\t0|1:48:8:51,51")
     #@code_warntype match_gt_allele(record1, record2)
     #@inferred match_gt_allele(record1, record2)
-    record1_out, record2_out = match_gt_allele(record1, record2)
-    #@show record1_out
-    #@show record2_out
+    record1_out, record2_out = VCFTools.match_gt_allele(record1, record2)
     @test VCF.ref(record1_out) == VCF.ref(record2_out)
     @test VCF.alt(record1_out) == VCF.alt(record2_out)
     @test VCF.genotype(record1_out) == VCF.genotype(record2_out)
