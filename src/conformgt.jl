@@ -18,9 +18,10 @@ The matched VCF records are written into files `outfile.tgt.vcf.gz` and
 - `chrom`: chromosome name; must be identical in target and reference files
 - `posrange`: position range in the reference file
 - `checkfreq`: significance level for testing equal alelle frequencies between
-mached target and reference records. If the test pvalue is less than `checkfreq`,
-the records are not output. Setting `checkfreq=0` or `checkfreq=false` (default) implies
-not checking allele frequencies.
+mached target and reference records. If the test pvalue is  `≤ checkfreq`,
+the records are not output. Setting `checkfreq=0` or `checkfreq=false` (default)
+implies not checking allele frequencies. Setting `checkfreq=1` effectively rejects
+all tests and no matched records are output.
 
 # Output
 - `lines`: number of matched VCF records
@@ -105,7 +106,7 @@ function conformgt_by_id(
     for record_tgt in reader_tgt
         # update progress bar
         record_counter += 1
-        ProgressMeter.update!(pbar, record_counter)   
+        ProgressMeter.update!(pbar, record_counter)
         # if no "GT" field, skip this record
         VCF.findgenokey(record_tgt, "GT") == 0 && continue
         # if no ID, skip
@@ -130,7 +131,7 @@ function conformgt_by_id(
             _, _, _, n0_ref, n1_ref, = gtstats(record_gt_ref, nothing)
             _, _, _, n0_tgt, n1_tgt, = gtstats(record_gt_tgt, nothing)
             pval = binomial_proportion_test(n0_ref, n1_ref, n0_tgt, n1_tgt)
-            pval < checkfreq || continue
+            pval ≤ checkfreq && continue
         end
         # write to matched target and reference file
         lines += 1
