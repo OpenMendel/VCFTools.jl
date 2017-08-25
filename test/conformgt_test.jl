@@ -60,10 +60,14 @@ end
     while !done(reader_ref, state_ref)
         record_ref, state_ref = next(reader_ref, state_ref)
         record_tgt, state_tgt = next(reader_tgt, state_tgt)
-        @test VCF.chrom(record_ref) == VCF.chrom(record_tgt)
-        @test VCF.pos(record_ref) == VCF.pos(record_tgt)
         @test VCF.id(record_ref) == VCF.id(record_tgt)
+        @test VCF.ref(record_ref) == VCF.ref(record_tgt)
+        @test VCF.alt(record_ref) == VCF.alt(record_tgt)
     end
+    @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 0.05)
+    @test lines == 451
+    @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 1)
+    @test lines == 0
     # Profile.clear()
     # @profile conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     # Profile.print(format=:flat)
