@@ -19,6 +19,11 @@ end
     #@time gtstats("test.08Jun17.d8b.vcf")
     # output tuple: (records, samples, lines, missings_by_sample, missings_by_record, maf_by_record, minorallele_by_record)
 
+    # download test file and unzip
+    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+        joinpath(Pkg.dir("VCFTools"), "test/test.08Jun17.d8b.vcf.gz"))
+    write("test.08Jun17.d8b.vcf", read(GzipDecompressionStream(open("test.08Jun17.d8b.vcf.gz", "r"))))
+
     @testset "input: text file, output: text file" begin
         @time out = gtstats("test.08Jun17.d8b.vcf", "gtstats.out.txt")
         @test out[1:3] == (1356, 191, 1356)

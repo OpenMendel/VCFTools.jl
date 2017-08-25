@@ -45,7 +45,9 @@ end
 
 @testset "conformgt_by_id" begin
     refvcf = "chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz"
+    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz", joinpath(Pkg.dir("VCFTools"), "test/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz"))
     tgtvcf = "test.08Jun17.d8b.vcf.gz"
+    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz")
     outvcf = "conformgt.matched"
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
