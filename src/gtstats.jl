@@ -6,8 +6,8 @@ It is similar to the gsstats.jar utility  <https://faculty.washington.edu/browni
 
 # Input
 - `vcffile`: VCF file, ending with .vcf or .vcf.gz
-- `out`: IOStream for output. Defulat is the `STDOUT`
-One line with 15 tab-delimited fiels is written per marker:
+- `out`: IOStream for output. Defulat is the `STDOUT`. Setting `out=DevNull`
+suppresses output. One line with 15 tab-delimited fiels is written per marker:
     - 1-8)  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)
     -   9)  Missing genotype count
     -  10)  Missing genotype frequency
@@ -24,15 +24,12 @@ One line with 15 tab-delimited fiels is written per marker:
 """
 function gtstats(vcffile::AbstractString, out::IO=STDOUT)
     # open VCF file
-    vcflines = endswith(vcffile, ".gz")? countgzlines(vcffile) : countlines(vcffile)
-    reader = endswith(vcffile, ".gz") ?
-        VCF.Reader(GzipDecompressionStream(open(vcffile, "r"))) :
-        VCF.Reader(open(vcffile, "r"))
+    reader = VCF.Reader(openvcf(vcffile, "r"))
     # set up progress bar
-    records = vcflines - length(VCF.header(reader)) - 1
+    records = nrecords(vcffile)
     out == STDOUT || (pbar = ProgressMeter.Progress(records, 1))
     # allocate ouput arrays
-    samples = length(VCF.header(reader).sampleID)
+    samples = nsamples(reader)
     missings_by_sample = zeros(Int, samples)
     missings_by_record = Int[]
     maf_by_record = Float64[]
@@ -162,7 +159,58 @@ function hwe(n00::Integer, n01::Integer, n11::Integer)
     return pval
 end
 
-function countgzlines(gzfile::AbstractString)
-    endswith(gzfile, "gz") || throw(ArgumentError("File name should end with .gz"))
-    countlines(GzipDecompressionStream(open(gzfile, "r")))
+"""
+    countvcflines(vcffile)
+
+Count the number of lines in a VCF (`.vcf` or `.vcf.gz`) file.
+"""
+function countvcflines(vcffile::AbstractString)
+    countlines(openvcf(vcffile, "r"))
+end
+
+"""
+    openvcf(vcffile, [mode = "r"])
+
+Open VCF file (`.vcf` or `.vcf.gz`) and return an IO stream.
+"""
+function openvcf(vcffile::AbstractString, mode::AbstractString="r")
+    if endswith(vcffile, ".vcf")
+        return open(vcffile, mode)
+    elseif endswith(vcffile, ".vcf.gz") && mode == "r"
+        return GzipDecompressionStream(open(vcffile, mode))
+    elseif endswith(vcffile, ".vcf.gz") && mode ∈ ["w", "a"]
+        return GzipCompressionStream(open(vcffile, mode))
+    elseif endswith(vcffile, ".vcf.gz") && mode ∉ ["r", "w", "a"]
+        throw(ArgumentError("mode can only be r, w, or a for vcf.gz file"))
+    else
+        throw(ArgumentError("vcffile name should end with vcf or vcf.gz"))
+    end
+end
+
+"""
+    nrecords(vcffile)
+
+Number of records (markers) in a VCF file.
+"""
+function nrecords(vcffile::AbstractString)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    records = countvcflines(vcffile) - length(VCF.header(reader)) - 1
+    close(reader)
+    records
+end
+
+function nsamples(reader::VCF.Reader)
+    length(VCF.header(reader).sampleID)
+end
+
+"""
+    nsamples(vcffile)
+
+Number of samples (individuals) in a VCF file.
+"""
+function nsamples(vcffile::AbstractString)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    samples = length(VCF.header(reader).sampleID)
+    clode(reader)
+    samples
 end

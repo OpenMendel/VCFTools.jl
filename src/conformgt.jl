@@ -34,31 +34,17 @@ function conformgt_by_id(
     posrange::Range,
     checkfreq::Number = false
     )
-    # open reference VCF file
-    reflines = endswith(reffile, ".gz")? countgzlines(reffile) : countlines(reffile)
-    if endswith(reffile, ".vcf")
-        reader_ref = VCF.Reader(open(reffile, "r"))
-    elseif endswith(reffile, ".vcf.gz")
-        reader_ref = VCF.Reader(GzipDecompressionStream(open(reffile, "r")))
-    else
-        throw(ArgumentError("reffile name should end with vcf or vcf.gz"))
-    end
-    records_ref = reflines - length(VCF.header(reader_ref)) - 1
-    # open target VCF file
-    tgtlines = endswith(tgtfile, ".gz")? countgzlines(tgtfile) : countlines(tgtfile)
-    if endswith(tgtfile, ".vcf")
-        reader_tgt = VCF.Reader(open(tgtfile, "r"))
-    elseif endswith(tgtfile, ".vcf.gz")
-        reader_tgt = VCF.Reader(GzipDecompressionStream(open(tgtfile, "r")))
-    else
-        throw(ArgumentError("reffile name should end with vcf or vcf.gz"))
-    end
-    records_tgt = tgtlines - length(VCF.header(reader_tgt)) - 1
+    # open reference and target VCF files
+    reader_ref = VCF.Reader(openvcf(reffile, "r"))
+    reader_tgt = VCF.Reader(openvcf(tgtfile, "r"))
+    records_ref, records_tgt = nrecords(reffile), nrecords(tgtfile)
     # create output files
-    writer_ref = VCF.Writer(GzipCompressionStream(open(join([outfile, ".ref.vcf.gz"]), "w")), VCF.header(reader_ref))
-    writer_tgt = VCF.Writer(GzipCompressionStream(open(join([outfile, ".tgt.vcf.gz"]), "w")), VCF.header(reader_tgt))
+    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
+        VCF.header(reader_ref))
+    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
+        VCF.header(reader_tgt))
     # collect IDs in the reference panel
-    info("Scan IDs in reference panel")
+    info("Scan IDs in reference panel"; prefix = "conformgt_by_id: ")
     pbar = ProgressMeter.Progress(records_ref, 1)
     id_list_ref = Vector{String}[]
     record_counter = 0
@@ -91,13 +77,9 @@ function conformgt_by_id(
     end
     close(reader_ref)
     # match target IDs to reference IDs
-    info("Match target IDs to reference IDs")
+    info("Match target IDs to reference IDs"; prefix = "conformgt_by_id: ")
     # re-set reference reader
-    if endswith(reffile, ".vcf")
-        reader_ref = VCF.Reader(open(reffile, "r"))
-    elseif endswith(reffile, ".vcf.gz")
-        reader_ref = VCF.Reader(GzipDecompressionStream(open(reffile, "r")))
-    end
+    reader_ref = VCF.Reader(openvcf(reffile, "r"))
     record_ref = VCF.Record()
     state_ref = start(reader_ref)
     # loop over target records
@@ -143,7 +125,7 @@ function conformgt_by_id(
     close(VCF.BioCore.IO.stream(writer_ref))
     close(VCF.BioCore.IO.stream(writer_tgt))
     # return
-    info("$(lines) records are matched")
+    info("$(lines) records are matched"; prefix = "conformgt_by_id: ")
     return lines
 end
 
