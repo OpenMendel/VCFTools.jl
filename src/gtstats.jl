@@ -64,7 +64,7 @@ function gtstats(vcffile::AbstractString, out::IO=STDOUT)
         # update progress bar
         out == STDOUT || ProgressMeter.update!(pbar, records)
     end
-    close(out)
+    close(out); close(reader)
     return records, samples, lines, missings_by_sample, missings_by_record,
         maf_by_record, minorallele_by_record
 end
