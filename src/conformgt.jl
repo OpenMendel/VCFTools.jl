@@ -8,7 +8,7 @@ The function will:
 0. Exclude target VCF records whose test of equal allele frequency is rejected
 at significance level `checkfreq`
 0. Adjust target VCF records so that chromosome strand and allele order match the VCF reference file
-The matched VCF records are written into files `outfile.tgt.vcf.gz` and
+0. The matched VCF records are written into files `outfile.tgt.vcf.gz` and
 `outfile.ref.vcf.gz`, both with only "GT" data.
 
 # Input

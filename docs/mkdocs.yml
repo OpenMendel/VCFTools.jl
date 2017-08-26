@@ -34,5 +34,6 @@ docs_dir: 'build'
 pages:
 - Home: index.md
 - Manual:
-    - VCF file summary: summaryinfo.md
-- Interface:
+  - VCF summary: summaryinfo.md
+  - Match GT markers in two VCF: conformgt.md
+- API: api.md

@@ -23,6 +23,7 @@ This package supports Julia `0.6`.
 ```@contents
 Pages = [
     "summaryinfo.md",
+    "conformgt.md"
 ]
 Depth = 2
 ```
