@@ -13,7 +13,6 @@ Pages = ["api.md"]
 
 ```@docs
 conformgt_by_id
-filter_genotype
 gtstats
 nrecords
 nsamples

@@ -4,12 +4,12 @@
 Match the VCF records in `tgtfile` to those in `reffile` according to ID.
 The function will:
 0. Find corresponding VCF records in the target and reference files
-0. Exclude target VCF records whose ID cannot be matched to any reference VCF record.
+0. Exclude target VCF records whose ID cannot be matched to any reference VCF record
 0. Exclude target VCF records whose test of equal allele frequency is rejected
 at significance level `checkfreq`
 0. Adjust target VCF records so that chromosome strand and allele order match the VCF reference file
 0. The matched VCF records are written into files `outfile.tgt.vcf.gz` and
-`outfile.ref.vcf.gz`, both with only "GT" data.
+`outfile.ref.vcf.gz`, both with only "GT" data
 
 # Input
 - `reffile`: VCF file with reference genotype (GT) data
@@ -21,7 +21,7 @@ at significance level `checkfreq`
 mached target and reference records. If the test pvalue is  `≤ checkfreq`,
 the records are not output. Setting `checkfreq=0` or `checkfreq=false` (default)
 implies not checking allele frequencies. Setting `checkfreq=1` effectively rejects
-all tests and no matched records are output.
+all tests and no matched records are output
 
 # Output
 - `lines`: number of matched VCF records
@@ -155,7 +155,7 @@ function match_gt_allele(record1::VCF.Record, record2::VCF.Record)
 end
 
 """
-    filter_genotype(record[, genokey=["GT"]])
+    filter_genotype(record, [genokey=["GT"]])
 
 Filter a VCF record according to `genokey` and output a VCF record with
 genotype formats only in `genokey`.
