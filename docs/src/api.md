@@ -12,8 +12,10 @@ Pages = ["api.md"]
 ## Functions
 
 ```@docs
-mle_fs!
-mle_mm!
-fit_mle!
-fit_reml!
+conformgt_by_id
+filter_genotype
+gtstats
+nrecords
+nsamples
+openvcf
 ```
