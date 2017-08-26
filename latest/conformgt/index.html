@@ -1,0 +1,640 @@
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Utilities for handling VCF files">
+      
+      
+      
+        <meta name="author" content="Hua Zhou">
+      
+      
+        <link rel="shortcut icon" href="../assets/images/favicon.png">
+      
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.8.1">
+    
+    
+      
+        <title>Match GT markers in two VCF - VCFTools.jl</title>
+      
+    
+    
+      <script src="../assets/javascripts/modernizr-1df76c4e58.js"></script>
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application-bfecc7305d.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-02c2a4388f.palette.css">
+      
+    
+    
+      
+        
+        
+        
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    
+    
+      <link rel="stylesheet" href="../assets/Documenter.css">
+    
+    
+  </head>
+  
+  
+  
+  
+    <body data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
+    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <a href=".." title="VCFTools.jl" class="md-icon md-icon--home md-header-nav__button">
+          </a>
+        
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <span class="md-flex__ellipsis md-header-nav__title">
+          
+            
+              
+                <span class="md-header-nav__parent">
+                  Manual
+                </span>
+              
+            
+            Match GT markers in two VCF
+          
+        </span>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="search"></label>
+  <div class="md-search__inner">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" required placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <label class="md-icon md-search__icon" for="search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result" data-md-lang-search="" data-md-lang-tokenizer="[\s\-]+">
+          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+
+  <a href="https://github.com/OpenMendel/VCFTools.jl" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
+    </div>
+  </a>
+
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="drawer">
+    
+      <i class="md-icon md-icon--home md-nav__button"></i>
+    
+    VCFTools.jl
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+
+  <a href="https://github.com/OpenMendel/VCFTools.jl" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
+    </div>
+  </a>
+
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href=".." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Manual
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Manual
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../summaryinfo/" title="VCF summary" class="md-nav__link">
+      VCF summary
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Match GT markers in two VCF
+      </label>
+    
+    <a href="./" title="Match GT markers in two VCF" class="md-nav__link md-nav__link--active">
+      Match GT markers in two VCF
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-files" title="Example files" class="md-nav__link">
+    Example files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#match-gt-data-according-to-id" title="Match GT data according to ID" class="md-nav__link">
+    Match GT data according to ID
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="API" class="md-nav__link">
+      API
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-files" title="Example files" class="md-nav__link">
+    Example files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#match-gt-data-according-to-id" title="Match GT data according to ID" class="md-nav__link">
+    Match GT data according to ID
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/OpenMendel/VCFTools.jl/edit/master/docs/conformgt.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
+                
+                
+                <p><a id='Match-markers-in-two-VCF-files-1'></a></p>
+<h1 id="match-markers-in-two-vcf-files">Match markers in two VCF files</h1>
+<p>Applications such as haplotyping and imputation need to match the markers in a target VCF file to those in a reference panel in a VCF file. Matching can be by marker ID, if the two data sets are on different builds, or by chromosome position, if the two data sets are on the same build.</p>
+<p><a id='Example-files-1'></a></p>
+<h2 id="example-files">Example files</h2>
+<p>We need example VCF files for demonstation. We can manually download the target VCF file from the <a href="http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz">link</a> (877KB) and put it in current working directory. Or, within Julia,</p>
+<div class="codehilite"><pre><span></span><span class="n">isfile</span><span class="p">(</span><span class="s">&quot;test.08Jun17.d8b.vcf.gz&quot;</span><span class="p">)</span> <span class="o">||</span> <span class="n">download</span><span class="p">(</span><span class="s">&quot;http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz&quot;</span><span class="p">,</span> 
+    <span class="n">joinpath</span><span class="p">(</span><span class="n">pwd</span><span class="p">(),</span> <span class="s">&quot;test.08Jun17.d8b.vcf.gz&quot;</span><span class="p">))</span>
+<span class="n">stat</span><span class="p">(</span><span class="s">&quot;test.08Jun17.d8b.vcf.gz&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>StatStruct(mode=0o100644, size=876514)
+</pre></div>
+
+
+<p>We can manually download the reference panel for chromosome 22 form the <a href="http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz">link</a> (51.5MB) and put it in the current working directory. Or, within Julia,</p>
+<div class="codehilite"><pre><span></span><span class="n">isfile</span><span class="p">(</span><span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">)</span> <span class="o">||</span> <span class="n">download</span><span class="p">(</span><span class="s">&quot;http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">,</span> 
+    <span class="n">joinpath</span><span class="p">(</span><span class="n">pwd</span><span class="p">(),</span> <span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">))</span>
+<span class="n">stat</span><span class="p">(</span><span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>StatStruct(mode=0o100644, size=51505515)
+</pre></div>
+
+
+<p>There are 294,622 markers and 1,092 samples (or 2,184 haplotypes) in the reference panel.</p>
+<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">VCFTools</span>
+
+<span class="n">nrecords</span><span class="p">(</span><span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">),</span> <span class="n">nsamples</span><span class="p">(</span><span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>(294622, 1092)
+</pre></div>
+
+
+<p>First 10 lines of the reference panel VCF:</p>
+<div class="codehilite"><pre><span></span><span class="n">fh</span> <span class="o">=</span> <span class="n">openvcf</span><span class="p">(</span><span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="kp">in</span> <span class="mi">1</span><span class="o">:</span><span class="mi">10</span>
+    <span class="n">println</span><span class="p">(</span><span class="n">readline</span><span class="p">(</span><span class="n">fh</span><span class="p">))</span>
+<span class="k">end</span>
+<span class="n">close</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>##fileformat=VCFv4.1
+##filedate=20130518
+##source=&quot;simplfy-vcf 0.9&quot;
+##FORMAT=&lt;ID=GT,Number=1,Type=String,Description=&quot;Genotype&quot;&gt;
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO    FORMAT  HG00096 HG00097 HG00099 HG00100 HG00101 HG00102 HG00103 HG00104 HG00106 HG00108 HG00109 HG00110 HG00111 HG00112 HG00113 HG00114 HG00116 HG00117 HG00118 HG00119 HG00120 HG00121 HG00122 HG00123 HG00124 HG00125 HG00126 HG00127 HG00128 HG00129 HG00130 HG00131 HG00133 HG00134 HG00135 HG00136 HG00137 HG00138 HG00139 HG00140 HG00141 HG00142 HG00143 HG00146 HG00148 HG00149 HG00150 HG00151 HG00152 HG00154 HG00155 HG00156 HG00158 HG00159 HG00160 HG00171 HG00173 HG00174 HG00176 HG00177 HG00178 HG00179 HG00180 HG00182 HG00183 HG00185 HG00186 HG00187 HG00188 HG00189 HG00190 HG00231 HG00232 HG00233 HG00234 HG00235 HG00236 HG00237 HG00238 HG00239 HG00240 HG00242 HG00243 HG00244 HG00245 HG00246 HG00247 HG00249 HG00250 HG00251 HG00252 HG00253 HG00254 HG00255 HG00256 HG00257 HG00258 HG00259 HG00260 HG00261 HG00262 HG00263 HG00264 HG00265 HG00266 HG00267 HG00268 HG00269 HG00270 HG00271 HG00272 HG00273 HG00274 HG00275 HG00276 HG00277 HG00278 HG00280 HG00281 HG00282 HG00284 HG00285 HG00306 HG00309 HG00310 HG00311 HG00312 HG00313 HG00315 HG00318 HG00319 HG00320 HG00321 HG00323 HG00324 HG00325 HG00326 HG00327 HG00328 HG00329 HG00330 HG00331 HG00332 HG00334 HG00335 HG00336 HG00337 HG00338 HG00339 HG00341 HG00342 HG00343 HG00344 HG00345 HG00346 HG00349 HG00350 HG00351 HG00353 HG00355 HG00356 HG00357 HG00358 HG00359 HG00360 HG00361 HG00362 HG00364 HG00366 HG00367 HG00369 HG00372 HG00373 HG00375 HG00376 HG00377 HG00378 HG00381 HG00382 HG00383 HG00384 HG00403 HG00404 HG00406 HG00407 HG00418 HG00419 HG00421 HG00422 HG00427 HG00428 HG00436 HG00437 HG00442 HG00443 HG00445 HG00446 HG00448 HG00449 HG00451 HG00452 HG00457 HG00458 HG00463 HG00464 HG00472 HG00473 HG00475 HG00476 HG00478 HG00479 HG00500 HG00501 HG00512 HG00513 HG00524 HG00525 HG00530 HG00531 HG00533 HG00534 HG00536 HG00537 HG00542 HG00543 HG00553 HG00554 HG00556 HG00557 HG00559 HG00560 HG00565 HG00566 HG00577 HG00578 HG00580 HG00581 HG00583 HG00584 HG00589 HG00590 HG00592 HG00593 HG00595 HG00596 HG00607 HG00608 HG00610 HG00611 HG00613 HG00614 HG00619 HG00620 HG00625 HG00626 HG00628 HG00629 HG00634 HG00635 HG00637 HG00638 HG00640 HG00641 HG00650 HG00651 HG00653 HG00654 HG00656 HG00657 HG00662 HG00663 HG00671 HG00672 HG00683 HG00684 HG00689 HG00690 HG00692 HG00693 HG00698 HG00699 HG00701 HG00702 HG00704 HG00705 HG00707 HG00708 HG00731 HG00732 HG00734 HG00736 HG00737 HG00740 HG01047 HG01048 HG01051 HG01052 HG01055 HG01060 HG01061 HG01066 HG01067 HG01069 HG01070 HG01072 HG01073 HG01075 HG01079 HG01080 HG01082 HG01083 HG01085 HG01095 HG01097 HG01098 HG01101 HG01102 HG01104 HG01105 HG01107 HG01108 HG01112 HG01113 HG01124 HG01125 HG01133 HG01134 HG01136 HG01137 HG01140 HG01148 HG01149 HG01167 HG01168 HG01170 HG01171 HG01173 HG01174 HG01176 HG01183 HG01187 HG01188 HG01190 HG01191 HG01197 HG01198 HG01204 HG01250 HG01251 HG01257 HG01259 HG01271 HG01272 HG01274 HG01275 HG01277 HG01278 HG01334 HG01342 HG01344 HG01345 HG01350 HG01351 HG01353 HG01354 HG01356 HG01357 HG01359 HG01360 HG01365 HG01366 HG01374 HG01375 HG01377 HG01378 HG01383 HG01384 HG01389 HG01390 HG01437 HG01440 HG01441 HG01455 HG01456 HG01461 HG01462 HG01465 HG01488 HG01489 HG01491 HG01492 HG01494 HG01495 HG01497 HG01498 HG01515 HG01516 HG01518 HG01519 HG01521 HG01522 HG01550 HG01551 HG01617 HG01618 HG01619 HG01620 HG01623 HG01624 HG01625 HG01626 NA06984 NA06986 NA06989 NA06994 NA07000 NA07037 NA07048 NA07051 NA07056 NA07347 NA07357 NA10847 NA10851 NA11829 NA11830 NA11831 NA11843 NA11892 NA11893 NA11894 NA11919 NA11920 NA11930 NA11931 NA11932 NA11933 NA11992 NA11993 NA11994 NA11995 NA12003 NA12004 NA12006 NA12043 NA12044 NA12045 NA12046 NA12058 NA12144 NA12154 NA12155 NA12249 NA12272 NA12273 NA12275 NA12282 NA12283 NA12286 NA12287 NA12340 NA12341 NA12342 NA12347 NA12348 NA12383 NA12399 NA12400 NA12413 NA12489 NA12546 NA12716 NA12717 NA12718 NA12748 NA12749 NA12750 NA12751 NA12761 NA12763 NA12775 NA12777 NA12778 NA12812 NA12814 NA12815 NA12827 NA12829 NA12830 NA12842 NA12843 NA12872 NA12873 NA12874 NA12889 NA12890 NA18486 NA18487 NA18489 NA18498 NA18499 NA18501 NA18502 NA18504 NA18505 NA18507 NA18508 NA18510 NA18511 NA18516 NA18517 NA18519 NA18520 NA18522 NA18523 NA18525 NA18526 NA18527 NA18528 NA18530 NA18532 NA18534 NA18535 NA18536 NA18537 NA18538 NA18539 NA18541 NA18542 NA18543 NA18544 NA18545 NA18546 NA18547 NA18548 NA18549 NA18550 NA18552 NA18553 NA18555 NA18557 NA18558 NA18559 NA18560 NA18561 NA18562 NA18563 NA18564 NA18565 NA18566 NA18567 NA18570 NA18571 NA18572 NA18573 NA18574 NA18576 NA18577 NA18579 NA18582 NA18592 NA18593 NA18595 NA18596 NA18597 NA18599 NA18602 NA18603 NA18605 NA18606 NA18608 NA18609 NA18610 NA18611 NA18612 NA18613 NA18614 NA18615 NA18616 NA18617 NA18618 NA18619 NA18620 NA18621 NA18622 NA18623 NA18624 NA18626 NA18627 NA18628 NA18630 NA18631 NA18632 NA18633 NA18634 NA18635 NA18636 NA18637 NA18638 NA18639 NA18640 NA18641 NA18642 NA18643 NA18645 NA18647 NA18740 NA18745 NA18747 NA18748 NA18749 NA18757 NA18853 NA18856 NA18858 NA18861 NA18867 NA18868 NA18870 NA18871 NA18873 NA18874 NA18907 NA18908 NA18909 NA18910 NA18912 NA18916 NA18917 NA18923 NA18924 NA18933 NA18934 NA18939 NA18940 NA18941 NA18942 NA18943 NA18944 NA18945 NA18946 NA18947 NA18948 NA18949 NA18950 NA18951 NA18952 NA18953 NA18954 NA18956 NA18957 NA18959 NA18960 NA18961 NA18962 NA18963 NA18964 NA18965 NA18966 NA18968 NA18971 NA18973 NA18974 NA18975 NA18976 NA18977 NA18978 NA18980 NA18981 NA18982 NA18983 NA18984 NA18985 NA18986 NA18987 NA18988 NA18989 NA18990 NA18992 NA18994 NA18995 NA18998 NA18999 NA19000 NA19002 NA19003 NA19004 NA19005 NA19007 NA19009 NA19010 NA19012 NA19020 NA19028 NA19035 NA19036 NA19038 NA19041 NA19044 NA19046 NA19054 NA19055 NA19056 NA19057 NA19058 NA19059 NA19060 NA19062 NA19063 NA19064 NA19065 NA19066 NA19067 NA19068 NA19070 NA19072 NA19074 NA19075 NA19076 NA19077 NA19078 NA19079 NA19080 NA19081 NA19082 NA19083 NA19084 NA19085 NA19087 NA19088 NA19093 NA19095 NA19096 NA19098 NA19099 NA19102 NA19107 NA19108 NA19113 NA19114 NA19116 NA19117 NA19118 NA19119 NA19121 NA19129 NA19130 NA19131 NA19137 NA19138 NA19146 NA19147 NA19149 NA19150 NA19152 NA19160 NA19171 NA19172 NA19175 NA19185 NA19189 NA19190 NA19197 NA19198 NA19200 NA19204 NA19207 NA19209 NA19213 NA19222 NA19223 NA19225 NA19235 NA19236 NA19247 NA19248 NA19256 NA19257 NA19307 NA19308 NA19309 NA19310 NA19311 NA19312 NA19313 NA19315 NA19316 NA19317 NA19318 NA19319 NA19321 NA19324 NA19327 NA19328 NA19331 NA19332 NA19334 NA19338 NA19346 NA19347 NA19350 NA19351 NA19352 NA19355 NA19359 NA19360 NA19371 NA19372 NA19373 NA19374 NA19375 NA19376 NA19377 NA19379 NA19380 NA19381 NA19382 NA19383 NA19384 NA19385 NA19390 NA19391 NA19393 NA19394 NA19395 NA19396 NA19397 NA19398 NA19399 NA19401 NA19403 NA19404 NA19428 NA19429 NA19430 NA19431 NA19434 NA19435 NA19436 NA19437 NA19438 NA19439 NA19440 NA19443 NA19444 NA19445 NA19446 NA19448 NA19449 NA19451 NA19452 NA19453 NA19455 NA19456 NA19457 NA19461 NA19462 NA19463 NA19466 NA19467 NA19468 NA19469 NA19470 NA19471 NA19472 NA19473 NA19474 NA19625 NA19648 NA19651 NA19652 NA19654 NA19655 NA19657 NA19660 NA19661 NA19663 NA19664 NA19672 NA19675 NA19676 NA19678 NA19679 NA19681 NA19682 NA19684 NA19685 NA19700 NA19701 NA19703 NA19704 NA19707 NA19711 NA19712 NA19713 NA19716 NA19717 NA19719 NA19720 NA19722 NA19723 NA19725 NA19726 NA19728 NA19729 NA19731 NA19732 NA19734 NA19735 NA19737 NA19738 NA19740 NA19741 NA19746 NA19747 NA19749 NA19750 NA19752 NA19753 NA19755 NA19756 NA19758 NA19759 NA19761 NA19762 NA19764 NA19770 NA19771 NA19773 NA19774 NA19776 NA19777 NA19779 NA19780 NA19782 NA19783 NA19785 NA19786 NA19788 NA19789 NA19794 NA19795 NA19818 NA19819 NA19834 NA19835 NA19900 NA19901 NA19904 NA19908 NA19909 NA19914 NA19916 NA19917 NA19920 NA19921 NA19922 NA19923 NA19982 NA19984 NA19985 NA20126 NA20127 NA20276 NA20278 NA20281 NA20282 NA20287 NA20289 NA20291 NA20294 NA20296 NA20298 NA20299 NA20314 NA20317 NA20322 NA20332 NA20334 NA20336 NA20339 NA20340 NA20341 NA20342 NA20344 NA20346 NA20348 NA20351 NA20356 NA20357 NA20359 NA20363 NA20412 NA20414 NA20502 NA20503 NA20504 NA20505 NA20506 NA20507 NA20508 NA20509 NA20510 NA20512 NA20513 NA20515 NA20516 NA20517 NA20518 NA20519 NA20520 NA20521 NA20522 NA20524 NA20525 NA20527 NA20528 NA20529 NA20530 NA20531 NA20532 NA20533 NA20534 NA20535 NA20536 NA20537 NA20538 NA20539 NA20540 NA20541 NA20542 NA20543 NA20544 NA20581 NA20582 NA20585 NA20586 NA20588 NA20589 NA20752 NA20753 NA20754 NA20755 NA20756 NA20757 NA20758 NA20759 NA20760 NA20761 NA20765 NA20766 NA20768 NA20769 NA20770 NA20771 NA20772 NA20773 NA20774 NA20775 NA20778 NA20783 NA20785 NA20786 NA20787 NA20790 NA20792 NA20795 NA20796 NA20797 NA20798 NA20799 NA20800 NA20801 NA20802 NA20803 NA20804 NA20805 NA20806 NA20807 NA20808 NA20809 NA20810 NA20811 NA20812 NA20813 NA20814 NA20815 NA20816 NA20818 NA20819 NA20826 NA20828
+22  16050408    rs149201999 T   C   .   PASS    .   GT  0|0 0|1 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|0 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+22  16050612    rs146752890 C   G   .   PASS    .   GT  0|1 0|1 0|1 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|1 0|0 0|1 0|0 0|1 0|0 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+22  16050678    rs139377059 C   T   .   PASS    .   GT  0|0 0|1 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+22  16050984    rs188945759 C   G   .   PASS    .   GT  0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+22  16051107    rs6518357   C   A   .   PASS    .   GT  0|0 0|1 0|1 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+</pre></div>
+
+
+<p><a id='Match-GT-data-according-to-ID-1'></a></p>
+<h2 id="match-gt-data-according-to-id">Match GT data according to ID</h2>
+<p><code>conformgt_by_id</code> function matches the markers with GT field in two VCF files according to marker ID. </p>
+<p>Below command instructs <code>conformgt_by_id</code> to  </p>
+<ol>
+<li>Match the markers in <code>tgtvcf</code> file to those in <code>refvcf</code> file by IDs, from position 20000086 to 20099941 on chromosome 22</li>
+<li>Adjust target VCF markers so that chromosome strand and allele order match the VCF reference file</li>
+<li>Test the allele frequencies being equal between the target and reference markers. The last argument specifies the significance level. Setting it to <code>0==false</code> effectively disable this test. Setting it to <code>1</code> effectively rejects all tests and not matched markers are output</li>
+<li>The matched VCF records are written into files <code>outfile.tgt.vcf.gz</code> and <code>outfile.ref.vcf.gz</code>, both with only GT field</li>
+</ol>
+<div class="codehilite"><pre><span></span><span class="n">tgtvcf</span> <span class="o">=</span> <span class="s">&quot;test.08Jun17.d8b.vcf.gz&quot;</span>
+<span class="n">refvcf</span> <span class="o">=</span> <span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span>
+<span class="n">outvcf</span> <span class="o">=</span> <span class="s">&quot;conformgt.matched&quot;</span>
+<span class="nd">@time</span> <span class="n">conformgt_by_id</span><span class="p">(</span><span class="n">refvcf</span><span class="p">,</span> <span class="n">tgtvcf</span><span class="p">,</span> <span class="n">outvcf</span><span class="p">,</span> <span class="s">&quot;22&quot;</span><span class="p">,</span> <span class="mi">20000086</span><span class="o">:</span><span class="mi">20099941</span><span class="p">,</span> <span class="kc">false</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>[1m[36mconformgt_by_id: [39m[22m[36mScan IDs in reference panel
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[1m[36mconformgt_by_id: [39m[22m[36mMatch target IDs to reference IDs
+[32mProgress:  80%|█████████████████████████████████        |  ETA: 0:00:02[39m
+
+ 18.233624 seconds (201.51 M allocations: 21.274 GiB, 13.95% gc time)
+
+
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[1m[36mconformgt_by_id: [39m[22m[36m766 records are matched
+[39m
+</pre></div>
+
+
+<p>766</p>
+<div class="codehilite"><pre><span></span><span class="n">stat</span><span class="p">(</span><span class="s">&quot;conformgt.matched.tgt.vcf.gz&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>StatStruct(mode=0o100644, size=47433)
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span><span class="n">stat</span><span class="p">(</span><span class="s">&quot;conformgt.matched.ref.vcf.gz&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>StatStruct(mode=0o100644, size=133829)
+</pre></div>
+
+
+<p>The first 5 markers in the matched target file are</p>
+<div class="codehilite"><pre><span></span><span class="n">fh</span> <span class="o">=</span> <span class="n">openvcf</span><span class="p">(</span><span class="s">&quot;conformgt.matched.tgt.vcf.gz&quot;</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="kp">in</span> <span class="mi">1</span><span class="o">:</span><span class="mi">35</span>
+    <span class="n">println</span><span class="p">(</span><span class="n">readline</span><span class="p">(</span><span class="n">fh</span><span class="p">))</span>
+<span class="k">end</span>
+<span class="n">close</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>##fileformat=VCFv4.1
+##INFO=&lt;ID=LDAF,Number=1,Type=Float,Description=&quot;MLE Allele Frequency Accounting for LD&quot;&gt;
+##INFO=&lt;ID=AVGPOST,Number=1,Type=Float,Description=&quot;Average posterior probability from MaCH/Thunder&quot;&gt;
+##INFO=&lt;ID=RSQ,Number=1,Type=Float,Description=&quot;Genotype imputation quality from MaCH/Thunder&quot;&gt;
+##INFO=&lt;ID=ERATE,Number=1,Type=Float,Description=&quot;Per-marker Mutation rate from MaCH/Thunder&quot;&gt;
+##INFO=&lt;ID=THETA,Number=1,Type=Float,Description=&quot;Per-marker Transition rate from MaCH/Thunder&quot;&gt;
+##INFO=&lt;ID=CIEND,Number=2,Type=Integer,Description=&quot;Confidence interval around END for imprecise variants&quot;&gt;
+##INFO=&lt;ID=CIPOS,Number=2,Type=Integer,Description=&quot;Confidence interval around POS for imprecise variants&quot;&gt;
+##INFO=&lt;ID=END,Number=1,Type=Integer,Description=&quot;End position of the variant described in this record&quot;&gt;
+##INFO=&lt;ID=HOMLEN,Number=.,Type=Integer,Description=&quot;Length of base pair identical micro-homology at event breakpoints&quot;&gt;
+##INFO=&lt;ID=HOMSEQ,Number=.,Type=String,Description=&quot;Sequence of base pair identical micro-homology at event breakpoints&quot;&gt;
+##INFO=&lt;ID=SVLEN,Number=1,Type=Integer,Description=&quot;Difference in length between REF and ALT alleles&quot;&gt;
+##INFO=&lt;ID=SVTYPE,Number=1,Type=String,Description=&quot;Type of structural variant&quot;&gt;
+##INFO=&lt;ID=AC,Number=.,Type=Integer,Description=&quot;Alternate Allele Count&quot;&gt;
+##INFO=&lt;ID=AN,Number=1,Type=Integer,Description=&quot;Total Allele Count&quot;&gt;
+##ALT=&lt;ID=DEL,Description=&quot;Deletion&quot;&gt;
+##FORMAT=&lt;ID=GT,Number=1,Type=String,Description=&quot;Genotype&quot;&gt;
+##FORMAT=&lt;ID=DS,Number=1,Type=Float,Description=&quot;Genotype dosage from MaCH/Thunder&quot;&gt;
+##FORMAT=&lt;ID=GL,Number=.,Type=Float,Description=&quot;Genotype Likelihoods&quot;&gt;
+##INFO=&lt;ID=AA,Number=1,Type=String,Description=&quot;Ancestral Allele, ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/pilot_data/technical/reference/ancestral_alignments/README&quot;&gt;
+##INFO=&lt;ID=AF,Number=1,Type=Float,Description=&quot;Global Allele Frequency based on AC/AN&quot;&gt;
+##INFO=&lt;ID=AMR_AF,Number=1,Type=Float,Description=&quot;Allele Frequency for samples from AMR based on AC/AN&quot;&gt;
+##INFO=&lt;ID=ASN_AF,Number=1,Type=Float,Description=&quot;Allele Frequency for samples from ASN based on AC/AN&quot;&gt;
+##INFO=&lt;ID=AFR_AF,Number=1,Type=Float,Description=&quot;Allele Frequency for samples from AFR based on AC/AN&quot;&gt;
+##INFO=&lt;ID=EUR_AF,Number=1,Type=Float,Description=&quot;Allele Frequency for samples from EUR based on AC/AN&quot;&gt;
+##INFO=&lt;ID=VT,Number=1,Type=String,Description=&quot;indicates what type of variant the line represents&quot;&gt;
+##INFO=&lt;ID=SNPSOURCE,Number=.,Type=String,Description=&quot;indicates if a snp was called when analysing the low coverage or exome alignment data&quot;&gt;
+##reference=GRCh37
+##reference=GRCh37
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO    FORMAT  HG00096 HG00097 HG00099 HG00100 HG00101 HG00102 HG00103 HG00104 HG00106 HG00108 HG00109 HG00110 HG00111 HG00112 HG00113 HG00114 HG00116 HG00117 HG00118 HG00119 HG00120 HG00121 HG00122 HG00123 HG00124 HG00125 HG00126 HG00127 HG00128 HG00129 HG00130 HG00131 HG00133 HG00134 HG00135 HG00136 HG00137 HG00138 HG00139 HG00140 HG00141 HG00142 HG00143 HG00146 HG00148 HG00149 HG00150 HG00151 HG00152 HG00154 HG00155 HG00156 HG00158 HG00159 HG00160 HG00171 HG00173 HG00174 HG00176 HG00177 HG00178 HG00179 HG00180 HG00182 HG00183 HG00185 HG00186 HG00187 HG00188 HG00189 HG00190 HG00231 HG00232 HG00233 HG00234 HG00235 HG00236 HG00237 HG00238 HG00239 HG00240 HG00242 HG00243 HG00244 HG00245 HG00246 HG00247 HG00249 HG00250 HG00251 HG00252 HG00253 HG00254 HG00255 HG00256 HG00257 HG00258 HG00259 HG00260 HG00261 HG00262 HG00263 HG00264 HG00265 HG00266 HG00267 HG00268 HG00269 HG00270 HG00271 HG00272 HG00273 HG00274 HG00275 HG00276 HG00277 HG00278 HG00280 HG00281 HG00282 HG00284 HG00285 HG00306 HG00309 HG00310 HG00311 HG00312 HG00313 HG00315 HG00318 HG00319 HG00320 HG00321 HG00323 HG00324 HG00325 HG00326 HG00327 HG00328 HG00329 HG00330 HG00331 HG00332 HG00334 HG00335 HG00336 HG00337 HG00338 HG00339 HG00341 HG00342 HG00343 HG00344 HG00345 HG00346 HG00349 HG00350 HG00351 HG00353 HG00355 HG00356 HG00357 HG00358 HG00359 HG00360 HG00361 HG00362 HG00364 HG00366 HG00367 HG00369 HG00372 HG00373 HG00375 HG00376 HG00377 HG00378 HG00381 HG00382 HG00383 HG00384 HG00403 HG00404 HG00406 HG00407 HG00418 HG00419 HG00421 HG00422 HG00427 HG00428
+22  20000086    rs138720731 T   C   100 PASS    AC=7;RSQ=0.8454;AVGPOST=0.9983;AA=T;AN=2184;LDAF=0.0040;THETA=0.0001;VT=SNP;SNPSOURCE=LOWCOV;ERATE=0.0003;AF=0.0032;AFR_AF=0.01 GT  0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0
+22  20000146    rs73387790  G   A   100 PASS    LDAF=0.0169;RSQ=0.9482;THETA=0.0004;AA=G;AN=2184;AVGPOST=0.9972;VT=SNP;SNPSOURCE=LOWCOV;AC=36;ERATE=0.0003;AF=0.02;AFR_AF=0.07;EUR_AF=0.0013    GT  0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0
+22  20000428    rs55902548  G   T   100 PASS    AC=323;AVGPOST=0.9983;AA=G;AN=2184;VT=SNP;RSQ=0.9949;LDAF=0.1473;SNPSOURCE=LOWCOV;ERATE=0.0003;THETA=0.0003;AF=0.15;ASN_AF=0.0017;AMR_AF=0.15;AFR_AF=0.31;EUR_AF=0.15   GT  1/0 0/0 0/1 0/0 0/0 1/0 0/0 0/1 0/1 0/0 0/0 0/1 0/0 0/0 0/0 0/0 0/0 1/0 1/0 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/1 0/0 0/0 0/0 0/0 0/0 0/0 1/0 1/0 0/1 0/1 1/1 0/0 0/0 0/0 0/0 0/0 1/0 0/0 1/0 0/0 0/0 1/1 0/0 0/0 0/0 1/0 0/0 1/1 0/0 1/0 0/0 0/0 0/1 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/1 0/0 0/0 0/0 0/0 0/0 0/1 0/0 0/0 0/1 0/0 0/1 1/0 0/0 0/0 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 1/0 1/0 1/0 0/0 0/0 0/0 0/0 0/0 1/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 1/0 0/1 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/1 0/0 0/0 0/0 0/0 0/0 0/0 1/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 1/0 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 1/0 0/0 1/1 0/0 0/0 0/0 1/0 0/1 0/1 0/0 1/0 0/0 0/0 0/0 0/0 0/0 1/0 1/0 0/0 0/0 0/0 1/0 0/0 0/1 0/1 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0
+22  20000771    rs114690707 A   C   100 PASS    ERATE=0.0004;AC=28;AN=2184;RSQ=0.9857;VT=SNP;AA=A;LDAF=0.0130;SNPSOURCE=LOWCOV;AVGPOST=0.9995;THETA=0.0003;AF=0.01;AMR_AF=0.01;AFR_AF=0.05  GT  0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0
+22  20000793    rs189842693 T   C   100 PASS    ERATE=0.0004;RSQ=0.7411;AA=T;AN=2184;AVGPOST=0.9981;AC=6;VT=SNP;SNPSOURCE=LOWCOV;LDAF=0.0031;THETA=0.0003;AF=0.0027;ASN_AF=0.0035;EUR_AF=0.01   GT  0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 1/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/1 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0 0/0
+</pre></div>
+
+
+<p>The first 5 markers in the matched reference file are</p>
+<div class="codehilite"><pre><span></span><span class="n">fh</span> <span class="o">=</span> <span class="n">openvcf</span><span class="p">(</span><span class="s">&quot;conformgt.matched.ref.vcf.gz&quot;</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="kp">in</span> <span class="mi">1</span><span class="o">:</span><span class="mi">10</span>
+    <span class="n">println</span><span class="p">(</span><span class="n">readline</span><span class="p">(</span><span class="n">fh</span><span class="p">))</span>
+<span class="k">end</span>
+<span class="n">close</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>##fileformat=VCFv4.1
+##filedate=20130518
+##source=&quot;simplfy-vcf 0.9&quot;
+##FORMAT=&lt;ID=GT,Number=1,Type=String,Description=&quot;Genotype&quot;&gt;
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO    FORMAT  HG00096 HG00097 HG00099 HG00100 HG00101 HG00102 HG00103 HG00104 HG00106 HG00108 HG00109 HG00110 HG00111 HG00112 HG00113 HG00114 HG00116 HG00117 HG00118 HG00119 HG00120 HG00121 HG00122 HG00123 HG00124 HG00125 HG00126 HG00127 HG00128 HG00129 HG00130 HG00131 HG00133 HG00134 HG00135 HG00136 HG00137 HG00138 HG00139 HG00140 HG00141 HG00142 HG00143 HG00146 HG00148 HG00149 HG00150 HG00151 HG00152 HG00154 HG00155 HG00156 HG00158 HG00159 HG00160 HG00171 HG00173 HG00174 HG00176 HG00177 HG00178 HG00179 HG00180 HG00182 HG00183 HG00185 HG00186 HG00187 HG00188 HG00189 HG00190 HG00231 HG00232 HG00233 HG00234 HG00235 HG00236 HG00237 HG00238 HG00239 HG00240 HG00242 HG00243 HG00244 HG00245 HG00246 HG00247 HG00249 HG00250 HG00251 HG00252 HG00253 HG00254 HG00255 HG00256 HG00257 HG00258 HG00259 HG00260 HG00261 HG00262 HG00263 HG00264 HG00265 HG00266 HG00267 HG00268 HG00269 HG00270 HG00271 HG00272 HG00273 HG00274 HG00275 HG00276 HG00277 HG00278 HG00280 HG00281 HG00282 HG00284 HG00285 HG00306 HG00309 HG00310 HG00311 HG00312 HG00313 HG00315 HG00318 HG00319 HG00320 HG00321 HG00323 HG00324 HG00325 HG00326 HG00327 HG00328 HG00329 HG00330 HG00331 HG00332 HG00334 HG00335 HG00336 HG00337 HG00338 HG00339 HG00341 HG00342 HG00343 HG00344 HG00345 HG00346 HG00349 HG00350 HG00351 HG00353 HG00355 HG00356 HG00357 HG00358 HG00359 HG00360 HG00361 HG00362 HG00364 HG00366 HG00367 HG00369 HG00372 HG00373 HG00375 HG00376 HG00377 HG00378 HG00381 HG00382 HG00383 HG00384 HG00403 HG00404 HG00406 HG00407 HG00418 HG00419 HG00421 HG00422 HG00427 HG00428 HG00436 HG00437 HG00442 HG00443 HG00445 HG00446 HG00448 HG00449 HG00451 HG00452 HG00457 HG00458 HG00463 HG00464 HG00472 HG00473 HG00475 HG00476 HG00478 HG00479 HG00500 HG00501 HG00512 HG00513 HG00524 HG00525 HG00530 HG00531 HG00533 HG00534 HG00536 HG00537 HG00542 HG00543 HG00553 HG00554 HG00556 HG00557 HG00559 HG00560 HG00565 HG00566 HG00577 HG00578 HG00580 HG00581 HG00583 HG00584 HG00589 HG00590 HG00592 HG00593 HG00595 HG00596 HG00607 HG00608 HG00610 HG00611 HG00613 HG00614 HG00619 HG00620 HG00625 HG00626 HG00628 HG00629 HG00634 HG00635 HG00637 HG00638 HG00640 HG00641 HG00650 HG00651 HG00653 HG00654 HG00656 HG00657 HG00662 HG00663 HG00671 HG00672 HG00683 HG00684 HG00689 HG00690 HG00692 HG00693 HG00698 HG00699 HG00701 HG00702 HG00704 HG00705 HG00707 HG00708 HG00731 HG00732 HG00734 HG00736 HG00737 HG00740 HG01047 HG01048 HG01051 HG01052 HG01055 HG01060 HG01061 HG01066 HG01067 HG01069 HG01070 HG01072 HG01073 HG01075 HG01079 HG01080 HG01082 HG01083 HG01085 HG01095 HG01097 HG01098 HG01101 HG01102 HG01104 HG01105 HG01107 HG01108 HG01112 HG01113 HG01124 HG01125 HG01133 HG01134 HG01136 HG01137 HG01140 HG01148 HG01149 HG01167 HG01168 HG01170 HG01171 HG01173 HG01174 HG01176 HG01183 HG01187 HG01188 HG01190 HG01191 HG01197 HG01198 HG01204 HG01250 HG01251 HG01257 HG01259 HG01271 HG01272 HG01274 HG01275 HG01277 HG01278 HG01334 HG01342 HG01344 HG01345 HG01350 HG01351 HG01353 HG01354 HG01356 HG01357 HG01359 HG01360 HG01365 HG01366 HG01374 HG01375 HG01377 HG01378 HG01383 HG01384 HG01389 HG01390 HG01437 HG01440 HG01441 HG01455 HG01456 HG01461 HG01462 HG01465 HG01488 HG01489 HG01491 HG01492 HG01494 HG01495 HG01497 HG01498 HG01515 HG01516 HG01518 HG01519 HG01521 HG01522 HG01550 HG01551 HG01617 HG01618 HG01619 HG01620 HG01623 HG01624 HG01625 HG01626 NA06984 NA06986 NA06989 NA06994 NA07000 NA07037 NA07048 NA07051 NA07056 NA07347 NA07357 NA10847 NA10851 NA11829 NA11830 NA11831 NA11843 NA11892 NA11893 NA11894 NA11919 NA11920 NA11930 NA11931 NA11932 NA11933 NA11992 NA11993 NA11994 NA11995 NA12003 NA12004 NA12006 NA12043 NA12044 NA12045 NA12046 NA12058 NA12144 NA12154 NA12155 NA12249 NA12272 NA12273 NA12275 NA12282 NA12283 NA12286 NA12287 NA12340 NA12341 NA12342 NA12347 NA12348 NA12383 NA12399 NA12400 NA12413 NA12489 NA12546 NA12716 NA12717 NA12718 NA12748 NA12749 NA12750 NA12751 NA12761 NA12763 NA12775 NA12777 NA12778 NA12812 NA12814 NA12815 NA12827 NA12829 NA12830 NA12842 NA12843 NA12872 NA12873 NA12874 NA12889 NA12890 NA18486 NA18487 NA18489 NA18498 NA18499 NA18501 NA18502 NA18504 NA18505 NA18507 NA18508 NA18510 NA18511 NA18516 NA18517 NA18519 NA18520 NA18522 NA18523 NA18525 NA18526 NA18527 NA18528 NA18530 NA18532 NA18534 NA18535 NA18536 NA18537 NA18538 NA18539 NA18541 NA18542 NA18543 NA18544 NA18545 NA18546 NA18547 NA18548 NA18549 NA18550 NA18552 NA18553 NA18555 NA18557 NA18558 NA18559 NA18560 NA18561 NA18562 NA18563 NA18564 NA18565 NA18566 NA18567 NA18570 NA18571 NA18572 NA18573 NA18574 NA18576 NA18577 NA18579 NA18582 NA18592 NA18593 NA18595 NA18596 NA18597 NA18599 NA18602 NA18603 NA18605 NA18606 NA18608 NA18609 NA18610 NA18611 NA18612 NA18613 NA18614 NA18615 NA18616 NA18617 NA18618 NA18619 NA18620 NA18621 NA18622 NA18623 NA18624 NA18626 NA18627 NA18628 NA18630 NA18631 NA18632 NA18633 NA18634 NA18635 NA18636 NA18637 NA18638 NA18639 NA18640 NA18641 NA18642 NA18643 NA18645 NA18647 NA18740 NA18745 NA18747 NA18748 NA18749 NA18757 NA18853 NA18856 NA18858 NA18861 NA18867 NA18868 NA18870 NA18871 NA18873 NA18874 NA18907 NA18908 NA18909 NA18910 NA18912 NA18916 NA18917 NA18923 NA18924 NA18933 NA18934 NA18939 NA18940 NA18941 NA18942 NA18943 NA18944 NA18945 NA18946 NA18947 NA18948 NA18949 NA18950 NA18951 NA18952 NA18953 NA18954 NA18956 NA18957 NA18959 NA18960 NA18961 NA18962 NA18963 NA18964 NA18965 NA18966 NA18968 NA18971 NA18973 NA18974 NA18975 NA18976 NA18977 NA18978 NA18980 NA18981 NA18982 NA18983 NA18984 NA18985 NA18986 NA18987 NA18988 NA18989 NA18990 NA18992 NA18994 NA18995 NA18998 NA18999 NA19000 NA19002 NA19003 NA19004 NA19005 NA19007 NA19009 NA19010 NA19012 NA19020 NA19028 NA19035 NA19036 NA19038 NA19041 NA19044 NA19046 NA19054 NA19055 NA19056 NA19057 NA19058 NA19059 NA19060 NA19062 NA19063 NA19064 NA19065 NA19066 NA19067 NA19068 NA19070 NA19072 NA19074 NA19075 NA19076 NA19077 NA19078 NA19079 NA19080 NA19081 NA19082 NA19083 NA19084 NA19085 NA19087 NA19088 NA19093 NA19095 NA19096 NA19098 NA19099 NA19102 NA19107 NA19108 NA19113 NA19114 NA19116 NA19117 NA19118 NA19119 NA19121 NA19129 NA19130 NA19131 NA19137 NA19138 NA19146 NA19147 NA19149 NA19150 NA19152 NA19160 NA19171 NA19172 NA19175 NA19185 NA19189 NA19190 NA19197 NA19198 NA19200 NA19204 NA19207 NA19209 NA19213 NA19222 NA19223 NA19225 NA19235 NA19236 NA19247 NA19248 NA19256 NA19257 NA19307 NA19308 NA19309 NA19310 NA19311 NA19312 NA19313 NA19315 NA19316 NA19317 NA19318 NA19319 NA19321 NA19324 NA19327 NA19328 NA19331 NA19332 NA19334 NA19338 NA19346 NA19347 NA19350 NA19351 NA19352 NA19355 NA19359 NA19360 NA19371 NA19372 NA19373 NA19374 NA19375 NA19376 NA19377 NA19379 NA19380 NA19381 NA19382 NA19383 NA19384 NA19385 NA19390 NA19391 NA19393 NA19394 NA19395 NA19396 NA19397 NA19398 NA19399 NA19401 NA19403 NA19404 NA19428 NA19429 NA19430 NA19431 NA19434 NA19435 NA19436 NA19437 NA19438 NA19439 NA19440 NA19443 NA19444 NA19445 NA19446 NA19448 NA19449 NA19451 NA19452 NA19453 NA19455 NA19456 NA19457 NA19461 NA19462 NA19463 NA19466 NA19467 NA19468 NA19469 NA19470 NA19471 NA19472 NA19473 NA19474 NA19625 NA19648 NA19651 NA19652 NA19654 NA19655 NA19657 NA19660 NA19661 NA19663 NA19664 NA19672 NA19675 NA19676 NA19678 NA19679 NA19681 NA19682 NA19684 NA19685 NA19700 NA19701 NA19703 NA19704 NA19707 NA19711 NA19712 NA19713 NA19716 NA19717 NA19719 NA19720 NA19722 NA19723 NA19725 NA19726 NA19728 NA19729 NA19731 NA19732 NA19734 NA19735 NA19737 NA19738 NA19740 NA19741 NA19746 NA19747 NA19749 NA19750 NA19752 NA19753 NA19755 NA19756 NA19758 NA19759 NA19761 NA19762 NA19764 NA19770 NA19771 NA19773 NA19774 NA19776 NA19777 NA19779 NA19780 NA19782 NA19783 NA19785 NA19786 NA19788 NA19789 NA19794 NA19795 NA19818 NA19819 NA19834 NA19835 NA19900 NA19901 NA19904 NA19908 NA19909 NA19914 NA19916 NA19917 NA19920 NA19921 NA19922 NA19923 NA19982 NA19984 NA19985 NA20126 NA20127 NA20276 NA20278 NA20281 NA20282 NA20287 NA20289 NA20291 NA20294 NA20296 NA20298 NA20299 NA20314 NA20317 NA20322 NA20332 NA20334 NA20336 NA20339 NA20340 NA20341 NA20342 NA20344 NA20346 NA20348 NA20351 NA20356 NA20357 NA20359 NA20363 NA20412 NA20414 NA20502 NA20503 NA20504 NA20505 NA20506 NA20507 NA20508 NA20509 NA20510 NA20512 NA20513 NA20515 NA20516 NA20517 NA20518 NA20519 NA20520 NA20521 NA20522 NA20524 NA20525 NA20527 NA20528 NA20529 NA20530 NA20531 NA20532 NA20533 NA20534 NA20535 NA20536 NA20537 NA20538 NA20539 NA20540 NA20541 NA20542 NA20543 NA20544 NA20581 NA20582 NA20585 NA20586 NA20588 NA20589 NA20752 NA20753 NA20754 NA20755 NA20756 NA20757 NA20758 NA20759 NA20760 NA20761 NA20765 NA20766 NA20768 NA20769 NA20770 NA20771 NA20772 NA20773 NA20774 NA20775 NA20778 NA20783 NA20785 NA20786 NA20787 NA20790 NA20792 NA20795 NA20796 NA20797 NA20798 NA20799 NA20800 NA20801 NA20802 NA20803 NA20804 NA20805 NA20806 NA20807 NA20808 NA20809 NA20810 NA20811 NA20812 NA20813 NA20814 NA20815 NA20816 NA20818 NA20819 NA20826 NA20828
+22  20000086    rs138720731 T   C   .   PASS    .   GT  0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+22  20000146    rs73387790  G   A   .   PASS    .   GT  0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 1|0 0|1 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 1|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 1|0 0|0 1|1 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 1|1 0|0 1|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|1 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+22  20000428    rs55902548  G   T   .   PASS    .   GT  1|0 0|0 0|1 0|0 0|0 1|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 1|0 1|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 1|0 1|0 0|1 0|1 1|1 0|0 0|0 0|0 0|0 0|0 1|0 0|0 1|0 0|0 0|0 1|1 0|0 0|0 0|0 1|0 0|0 1|1 0|0 1|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|1 1|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 1|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 1|1 0|0 0|0 0|0 1|0 0|1 0|1 0|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 1|0 0|0 0|0 0|0 1|0 0|0 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|1 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 1|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 1|0 1|1 0|0 0|0 1|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 1|1 0|0 0|0 0|0 0|0 1|0 0|0 0|0 1|0 0|0 0|1 0|0 0|0 1|0 0|0 0|0 0|0 1|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 1|0 1|0 0|0 0|0 0|0 0|0 1|0 0|0 0|1 0|0 1|1 0|0 0|0 1|0 0|0 0|0 1|0 0|0 0|0 1|0 0|0 0|1 1|0 1|0 0|1 1|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 1|1 0|0 1|1 0|0 0|0 0|0 0|1 0|1 0|0 1|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|1 0|1 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|1 0|1 0|0 1|1 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 1|0 0|1 0|0 0|0 0|0 0|0 0|1 0|1 0|0 1|0 1|0 1|0 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|1 1|0 0|0 0|1 0|0 0|0 0|1 0|0 1|1 0|1 0|1 1|1 0|1 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 1|1 0|0 1|0 1|0 0|0 0|0 0|1 0|0 1|0 0|1 0|1 0|1 1|1 0|1 1|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 1|0 0|0 1|1 0|0 0|1 1|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|1 0|1 0|0 1|0 0|0 1|0 1|0 0|0 0|0 0|0 0|0 1|1 0|0 1|0 0|1 0|0 0|0 1|0 0|0 1|0 1|1 0|0 0|1 0|0 0|0 1|0 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|1 1|0 0|0 1|1 0|1 0|0 0|0 0|1 0|0 0|0 0|1 1|1 1|0 0|0 0|1 0|0 0|1 0|1 0|0 1|0 0|0 1|0 0|0 1|1 1|0 1|1 0|1 0|0 0|0 0|0 1|0 0|0 1|0 0|0 1|1 0|0 1|0 0|0 0|1 1|1 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 1|1 1|1 1|0 1|1 0|0 0|0 1|0 0|0 1|1 0|0 0|1 0|0 0|1 0|1 1|0 0|0 0|0 0|0 0|0 1|1 0|0 0|0 1|0 0|0 1|0 0|1 0|0 1|1 1|0 1|0 0|0 1|0 1|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|1 0|0 0|0 1|1 0|1 1|0 1|1 1|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 0|0 0|0 1|0 0|0 1|0 0|0 0|0 0|1 1|1 0|0 0|1 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 1|1 1|0 0|0 0|0 1|1 0|1 0|0 1|0 0|1 0|0 1|1 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|1 1|0 0|0 0|0 1|1 0|1 1|0 1|0 0|0 1|0 0|1 0|0 0|0 0|0 0|0 0|1 0|0 1|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|1 0|0 0|0 0|0 0|1 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|1 0|0 0|0 0|0 1|1 0|0 1|0 0|0 0|0 1|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 1|0 0|0 0|0 0|0 0|0 1|0 0|0 0|1 1|0 0|0 0|1 0|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 1|0 0|1 0|0 1|0 0|0 1|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0
+22  20000771    rs114690707 A   C   .   PASS    .   GT  0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 1|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 1|0 1|1 1|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+22  20000793    rs189842693 T   C   .   PASS    .   GT  0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 1|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|1 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0 0|0
+</pre></div>
+
+
+<p>Not only the IDs of the two sets of markers match, the REF alleles match as well.</p>
+<p>If we turn on testing allele frequencies at significance level 0.05, less matched markers are reported</p>
+<div class="codehilite"><pre><span></span><span class="nd">@time</span> <span class="n">conformgt_by_id</span><span class="p">(</span><span class="n">refvcf</span><span class="p">,</span> <span class="n">tgtvcf</span><span class="p">,</span> <span class="n">outvcf</span><span class="p">,</span> <span class="s">&quot;22&quot;</span><span class="p">,</span> <span class="mi">20000086</span><span class="o">:</span><span class="mi">20099941</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>[1m[36mconformgt_by_id: [39m[22m[36mScan IDs in reference panel
+[32mProgress:   3%|█                                        |  ETA: 0:01:16[39m
+
+ 17.980943 seconds (201.61 M allocations: 21.303 GiB, 14.02% gc time)
+
+
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[1m[36mconformgt_by_id: [39m[22m[36mMatch target IDs to reference IDs
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[1m[36mconformgt_by_id: [39m[22m[36m451 records are matched
+[39m
+</pre></div>
+
+
+<p>451</p>
+                
+                  
+                
+              
+              
+                
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../summaryinfo/" title="VCF summary" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                VCF summary
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../api/" title="API" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                API
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
+        and
+        <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
+          Material for MkDocs</a>
+      </div>
+      
+        
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application-6940329b9f.js"></script>
+      
+      
+      <script>app.initialize({url:{base:".."}})</script>
+      
+        <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../assets/mathjaxhelper.js"></script>
+      
+    
+    
+      
+    
+  </body>
+</html>
