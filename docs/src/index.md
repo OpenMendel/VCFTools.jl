@@ -8,11 +8,11 @@
 
 - Calculate genotype statistics (minor allele frequencies, minor allele, count of missing genotypes, etc) from a VCF file.  
 - Extract specific data fields from a VCF file.   
-- Match GT records in two VCF files according to ID.  
+- Match markers in two VCF files according to ID.  
 
 ## Installation
 
-Use the Julia package manager to install VCFTools.jl.
+Use the Julia package manager to install `VCFTools.jl`.
 ```julia
 Pkg.clone("https://github.com/OpenMendel/VCFTools.jl.git")
 ```
@@ -23,7 +23,8 @@ This package supports Julia `0.6`.
 ```@contents
 Pages = [
     "summaryinfo.md",
-    "conformgt.md"
+    "conformgt.md",
+    "api.md"
 ]
 Depth = 2
 ```

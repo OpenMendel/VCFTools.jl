@@ -1,7 +1,7 @@
 
 # Match markers in two VCF files
 
-Applications such as haplotyping and imputation need to match the markers in a target VCF file to those in a reference panel in a VCF file. Matching can be by marker ID, if the two data sets are on different builds, or by chromosome position, if the two data sets are on the same build.
+Applications such as haplotyping and imputation often need to match the markers in a target VCF file to those in a reference panel. Matching can be by marker ID, if the two data sets are on different builds, or by chromosome position, if the two data sets are on the same build.
 
 ## Example files
 
@@ -21,7 +21,7 @@ stat("test.08Jun17.d8b.vcf.gz")
 
 
 
-We can manually download the reference panel for chromosome 22 form the [link](http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz) (51.5MB) and put it in the current working directory. Or, within Julia,
+We can manually download the reference panel for chromosome 22 (1000 Genome Project) from the [link](http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz) (51.5MB) and put it in the current working directory. Or, within Julia,
 
 
 ```julia
@@ -83,7 +83,7 @@ close(fh)
 Below command instructs `conformgt_by_id` to  
 0. Match the markers in `tgtvcf` file to those in `refvcf` file by IDs, from position 20000086 to 20099941 on chromosome 22
 0. Adjust target VCF markers so that chromosome strand and allele order match the VCF reference file  
-0. Test the allele frequencies being equal between the target and reference markers. The last argument specifies the significance level. Setting it to `0==false` effectively disable this test. Setting it to `1` effectively rejects all tests and not matched markers are output  
+0. Test the allele frequencies being equal between the target and reference markers. The last argument specifies the significance level   Setting it to `0==false` effectively disable this test. Setting it to `1` effectively rejects all tests and no matched markers are output  
 0. The matched VCF records are written into files `outfile.tgt.vcf.gz` and `outfile.ref.vcf.gz`, both with only GT field
 
 
@@ -95,16 +95,14 @@ outvcf = "conformgt.matched"
 ```
 
     [1m[36mconformgt_by_id: [39m[22m[36mScan IDs in reference panel
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
     [1m[36mconformgt_by_id: [39m[22m[36mMatch target IDs to reference IDs
-    [32mProgress:  80%|█████████████████████████████████        |  ETA: 0:00:02[39m
-
-     18.233624 seconds (201.51 M allocations: 21.274 GiB, 13.95% gc time)
-
-
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
     [1m[36mconformgt_by_id: [39m[22m[36m766 records are matched
     [39m
+
+     22.144993 seconds (205.00 M allocations: 21.465 GiB, 11.19% gc time)
+
 
 
 
@@ -218,14 +216,14 @@ If we turn on testing allele frequencies at significance level 0.05, less matche
 ```
 
     [1m[36mconformgt_by_id: [39m[22m[36mScan IDs in reference panel
-    [32mProgress:   3%|█                                        |  ETA: 0:01:16[39m
+    [32mProgress:   2%|█                                        |  ETA: 0:01:35[39m
 
-     17.980943 seconds (201.61 M allocations: 21.303 GiB, 14.02% gc time)
+     19.454887 seconds (201.67 M allocations: 21.305 GiB, 13.65% gc time)
 
 
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
     [1m[36mconformgt_by_id: [39m[22m[36mMatch target IDs to reference IDs
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
     [1m[36mconformgt_by_id: [39m[22m[36m451 records are matched
     [39m
 

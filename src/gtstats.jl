@@ -1,12 +1,11 @@
 """
     gtstats(vcffile, [out=DevNull])
 
-Calculate genotype statistics for each marker in a VCF file with GT field data.
-It is similar to the gsstats.jar utility  <https://faculty.washington.edu/browning/beagle_utilities/utilities.html#gtstats>.
+Calculate genotype statistics for each marker with GT field in a VCF file.
 
 # Input
 - `vcffile`: VCF file, ending with .vcf or .vcf.gz
-- `out`: file name or IOStream. Default is `out=DevNull` (output).
+- `out`: output file name or IOStream. Default is `out=DevNull` (no output).
 One line with 15 tab-delimited fiels is written per marker to `out`:
     - 1-8)  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)
     -   9)  Missing genotype count
@@ -86,8 +85,7 @@ Calculate genotype statistics for a VCF record with GT field.
 
 # Input
 - `record`: a VCF record
-- `missings_by_sample`: accumulator of misisngs by sample, `missings_by_sample[i]`
-is incremented by 1 if `i`-th individual has missing genotype in this record
+- `missings_by_sample`: accumulator of misisngs by sample, `missings_by_sample[i]` is incremented by 1 if `i`-th individual has missing genotype in this record
 
 # Output
 - `n00`: number of homozygote ALT/ALT or ALT|ALT
