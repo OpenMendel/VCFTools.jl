@@ -3,7 +3,7 @@
 
 ## Example VCF file
 
-We need an example VCF file for demonstation. We can manually download it from [link](http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia, 
+We need an example VCF file for demonstation. You can manually download it from [link](http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia, 
 
 
 ```julia
@@ -109,7 +109,12 @@ samples = nsamples("test.08Jun17.d8b.vcf.gz")
     maf_by_record, minorallele_by_record = gtstats("test.08Jun17.d8b.vcf.gz");
 ```
 
-      0.880414 seconds (1.52 M allocations: 150.334 MiB, 2.94% gc time)
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:01[39m
+
+      2.410830 seconds (2.45 M allocations: 205.609 MiB, 2.49% gc time)
+
+
+    
 
 
 
@@ -223,7 +228,7 @@ The optional second argument of `gtstats` function specifies an output file or I
 @time gtstats("test.08Jun17.d8b.vcf.gz", "gtstats.out.txt");
 ```
 
-      0.195748 seconds (853.63 k allocations: 111.180 MiB, 9.76% gc time)
+      0.257322 seconds (878.81 k allocations: 113.305 MiB, 6.52% gc time)
 
 
 The output file can be read as a `DataFrame` for further analysis.

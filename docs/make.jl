@@ -19,6 +19,7 @@ deploydocs(
 #       pages     = [
 #           "Home"  => "index.md",
 # 	  "VCF summary" => "summaryinfo.md",
+#       "Filter data fields" => "filter.md",
 #      "Match markers in two VCF" => "conformgt.md",
 #      "API" => "api.md"
 #       ]
