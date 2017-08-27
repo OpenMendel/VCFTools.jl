@@ -155,15 +155,35 @@ end
 Filter a VCF record according to `genokey` and output a VCF record with
 genotype formats only in `genokey`.
 """
-function filter_genotype(record::VCF.Record, genokey=["GT"])
-    isa(genokey, Vector) || (genokey = [genokey])
-    format_in = VCF.format(record)
-    for gk in genokey
-        gk ∈ format_in || throw(ArgumentError("Format $(gk) not found"))
-    end
-    gt_out = [Dict(gk => VCF.genotype(record, i, gk) for gk in genokey)
+function filter_genotype(
+    record::VCF.Record,
+    genokey::Vector{T} = ["GT"]
+    ) where T <: AbstractString
+    format_out = genokey ∩ VCF.format(record)
+    gt_out = [Dict(gk => VCF.genotype(record, i, gk) for gk in format_out)
         for i in 1:length(record.genotype)]
     return VCF.Record(record; genotype = gt_out)
+end
+
+"""
+    filter_genotype(vcffile, outfile, [genokey=["GT"]])
+
+Filter a VCF file according to `genokey` (default `["GT"]`). Output a VCF
+file with genotype formats only in `genokey`. Record (markers) with no fields
+in `genokey` are skipped.
+"""
+function filter_genotype(
+    vcffile::T,
+    outfile::T = "filtered.vcf.gz",
+    genokey::Vector{T} = ["GT"]
+    ) where T <: AbstractString
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    writer = VCF.Writer(openvcf(outfile, "w"), VCF.header(reader))
+    for record in reader
+        VCF.write(writer, filter_genotype(record, genokey))
+    end
+    flush(writer); close(reader); close(writer)
+    nothing
 end
 
 """

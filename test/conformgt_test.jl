@@ -1,11 +1,52 @@
 using CodecZlib, GeneticVariation
 
-@testset "filter_genotype" begin
+@testset "filter_genotype(record)" begin
     record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
     #@code_warntype filter_genotype(record, ["GT"])
+    # GT field
     record_out = filter_genotype(record, ["GT"])
     @test VCF.format(record_out) == ["GT"]
     @test VCF.genotype(record_out) == [["0|0"], ["1|0"]]
+    # DP field
+    record_out = filter_genotype(record, ["DP"])
+    @test VCF.format(record_out) == ["DP"]
+    @test VCF.genotype(record_out) == [["1"], ["8"]]
+    # GT and DP fields
+    record_out = filter_genotype(record, ["GT", "DP"])
+    @test VCF.format(record_out) == ["DP", "GT"]
+    @test VCF.genotype(record_out) == [["1", "0|0"], ["8", "1|0"]]
+    # Only one matching format
+    record_out = filter_genotype(record, ["GT", "DS"])
+    @test VCF.format(record_out) == ["GT"]
+    @test VCF.genotype(record_out) == [["0|0"], ["1|0"]]
+    # no matching field
+    record_out = filter_genotype(record, ["DS"])
+    @test VCF.hasformat(record_out) == false
+end
+
+@testset "filter_genotype(file)" begin
+    # retrieve GT data
+    filter_genotype("test.08Jun17.d8b.vcf.gz")
+    reader_in = VCF.Reader(openvcf("test.08Jun17.d8b.vcf.gz", "r"))
+    reader_out = VCF.Reader(openvcf("filtered.vcf.gz", "r"))
+    state_in = start(reader_in)
+    state_out = start(reader_out)
+    while !done(reader_in, state_in)
+        record_in, state_in = next(reader_in, state_in)
+        record_out, state_out = next(reader_out, state_out)
+        @test VCF.format(record_out) == ["GT"]
+        @test VCF.genotype(record_in, :, "GT") == VCF.genotype(record_out, :, "GT")
+    end
+    close(reader_in); close(reader_out)
+    # no matching formats
+    filter_genotype("test.08Jun17.d8b.vcf.gz", "filtered.vcf.gz", ["GQ"])
+    reader_out = VCF.Reader(openvcf("filtered.vcf.gz", "r"))
+    state_out = start(reader_out)
+    while !done(reader_out, state_out)
+        record_out, state_out = next(reader_out, state_out)
+        @test VCF.hasformat(record_out) == false
+    end
+    close(reader_out)
 end
 
 @testset "flip_gt_allele" begin
