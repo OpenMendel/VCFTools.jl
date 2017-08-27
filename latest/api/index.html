@@ -233,8 +233,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../conformgt/" title="Match GT markers in two VCF" class="md-nav__link">
-      Match GT markers in two VCF
+    <a href="../conformgt/" title="Match markers in two VCF" class="md-nav__link">
+      Match markers in two VCF
     </a>
   </li>
 
@@ -374,10 +374,7 @@
 <ol>
 <li>Find corresponding VCF records in the target and reference files</li>
 <li>Exclude target VCF records whose ID cannot be matched to any reference VCF record</li>
-<li>Exclude target VCF records whose test of equal allele frequency is rejected</li>
-</ol>
-<p>at significance level <code>checkfreq</code></p>
-<ol>
+<li>Exclude target VCF records whose test of equal allele frequency is rejected at significance level <code>checkfreq</code></li>
 <li>Adjust target VCF records so that chromosome strand and allele order match the VCF reference file</li>
 <li>The matched VCF records are written into files <code>outfile.tgt.vcf.gz</code> and</li>
 </ol>
@@ -387,27 +384,26 @@
 <li><code>reffile</code>: VCF file with reference genotype (GT) data</li>
 <li><code>tgtfile</code>: VCF file with target genotype (GT) data</li>
 <li><code>outfile</code>: the prefix for output filenames</li>
-<li><code>chrom</code>: chromosome name; must be identical in target and reference files</li>
+<li><code>chrom</code>: chromosome name, must be identical in target and reference files</li>
 <li><code>posrange</code>: position range in the reference file</li>
-<li><code>checkfreq</code>: significance level for testing equal alelle frequencies between</li>
+<li><code>checkfreq</code>: significance level for testing equal alelle frequencies between mached target and reference records. If the test pvalue is  <code>≤ checkfreq</code>, the records are not output. Setting <code>checkfreq=0</code> or <code>checkfreq=false</code> (default) implies not checking allele frequencies. Setting <code>checkfreq=1</code> effectively rejects all tests and no matched records are output</li>
 </ul>
-<p>mached target and reference records. If the test pvalue is  <code>≤ checkfreq</code>, the records are not output. Setting <code>checkfreq=0</code> or <code>checkfreq=false</code> (default) implies not checking allele frequencies. Setting <code>checkfreq=1</code> effectively rejects all tests and no matched records are output</p>
 <p><strong>Output</strong></p>
 <ul>
 <li><code>lines</code>: number of matched VCF records</li>
 </ul>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/a0e9a96f4a940713f52f60c38d172a6d50c47561/src/conformgt.jl#L1-L28' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/conformgt.jl#L1-L23' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.gtstats' href='#VCFTools.gtstats'>#</a>
 <strong><code>VCFTools.gtstats</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>gtstats(vcffile, [out=DevNull])
 </pre></div>
 
 
-<p>Calculate genotype statistics for each marker in a VCF file with GT field data. It is similar to the gsstats.jar utility  <a href="https://faculty.washington.edu/browning/beagle_utilities/utilities.html#gtstats">https://faculty.washington.edu/browning/beagle_utilities/utilities.html#gtstats</a>.</p>
+<p>Calculate genotype statistics for each marker with GT field in a VCF file.</p>
 <p><strong>Input</strong></p>
 <ul>
 <li><code>vcffile</code>: VCF file, ending with .vcf or .vcf.gz</li>
-<li><code>out</code>: file name or IOStream. Default is <code>out=DevNull</code> (output).</li>
+<li><code>out</code>: output file name or IOStream. Default is <code>out=DevNull</code> (no output).</li>
 </ul>
 <p>One line with 15 tab-delimited fiels is written per marker to <code>out</code>:     - 1-8)  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)     -   9)  Missing genotype count     -  10)  Missing genotype frequency     -  11)  ALT allele count     -  12)  ALT allele frequency     -  13)  Minor allele count             (REF allele vs ALT alleles)     -  14)  Minor allele frequency         (REF allele vs ALT alleles)     -  15)  HWE P-value                    (REF allele vs ALT alleles)</p>
 <p><strong>Output</strong></p>
@@ -420,7 +416,7 @@
 <li><code>maf_by_record</code>: minor allele frequency in each record (marker)</li>
 <li><code>minorallele_by_record</code>: a Boolean vector indicating the minor allele in each   record (marker). <code>minorallele_by_record[i]=true</code> means the minor allele is   the REF allele for marker <code>i</code>; <code>minorallele_by_record[i]=false</code> means the   minor allele is the ALT allele for marker <code>i</code></li>
 </ul>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/a0e9a96f4a940713f52f60c38d172a6d50c47561/src/gtstats.jl#L1-L32' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L1-L31' class='documenter-source'>source</a><br></p>
 <div class="codehilite"><pre><span></span>gtstats(record, [missings_by_sample=nothing])
 </pre></div>
 
@@ -429,9 +425,8 @@
 <p><strong>Input</strong></p>
 <ul>
 <li><code>record</code>: a VCF record</li>
-<li><code>missings_by_sample</code>: accumulator of misisngs by sample, <code>missings_by_sample[i]</code></li>
+<li><code>missings_by_sample</code>: accumulator of misisngs by sample, <code>missings_by_sample[i]</code> is incremented by 1 if <code>i</code>-th individual has missing genotype in this record</li>
 </ul>
-<p>is incremented by 1 if <code>i</code>-th individual has missing genotype in this record</p>
 <p><strong>Output</strong></p>
 <ul>
 <li><code>n00</code>: number of homozygote ALT/ALT or ALT|ALT</li>
@@ -446,7 +441,7 @@
 <li><code>maf</code>: minor allele frequency</li>
 <li><code>hwepval</code>: Hardy-Weinberg p-value</li>
 </ul>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/a0e9a96f4a940713f52f60c38d172a6d50c47561/src/gtstats.jl#L82-L104' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L81-L102' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.nrecords' href='#VCFTools.nrecords'>#</a>
 <strong><code>VCFTools.nrecords</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>nrecords(vcffile)
@@ -454,7 +449,7 @@
 
 
 <p>Number of records (markers) in a VCF file.</p>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/a0e9a96f4a940713f52f60c38d172a6d50c47561/src/gtstats.jl#L190-L194' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L188-L192' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.nsamples' href='#VCFTools.nsamples'>#</a>
 <strong><code>VCFTools.nsamples</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>nsamples(vcffile)
@@ -462,7 +457,7 @@
 
 
 <p>Number of samples (individuals) in a VCF file.</p>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/a0e9a96f4a940713f52f60c38d172a6d50c47561/src/gtstats.jl#L206-L210' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L204-L208' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.openvcf' href='#VCFTools.openvcf'>#</a>
 <strong><code>VCFTools.openvcf</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>openvcf(vcffile, [mode = &quot;r&quot;])
@@ -470,7 +465,7 @@
 
 
 <p>Open VCF file (<code>.vcf</code> or <code>.vcf.gz</code>) and return an IO stream.</p>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/a0e9a96f4a940713f52f60c38d172a6d50c47561/src/gtstats.jl#L171-L175' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L169-L173' class='documenter-source'>source</a><br></p>
                 
                   
                 
@@ -489,7 +484,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../conformgt/" title="Match GT markers in two VCF" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../conformgt/" title="Match markers in two VCF" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -498,7 +493,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Match GT markers in two VCF
+                Match markers in two VCF
               </span>
             </div>
           </a>

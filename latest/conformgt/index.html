@@ -20,7 +20,7 @@
     
     
       
-        <title>Match GT markers in two VCF - VCFTools.jl</title>
+        <title>Match markers in two VCF - VCFTools.jl</title>
       
     
     
@@ -87,7 +87,7 @@
                 </span>
               
             
-            Match GT markers in two VCF
+            Match markers in two VCF
           
         </span>
       </div>
@@ -248,11 +248,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Match GT markers in two VCF
+        Match markers in two VCF
       </label>
     
-    <a href="./" title="Match GT markers in two VCF" class="md-nav__link md-nav__link--active">
-      Match GT markers in two VCF
+    <a href="./" title="Match markers in two VCF" class="md-nav__link md-nav__link--active">
+      Match markers in two VCF
     </a>
     
       
@@ -358,7 +358,7 @@
                 
                 <p><a id='Match-markers-in-two-VCF-files-1'></a></p>
 <h1 id="match-markers-in-two-vcf-files">Match markers in two VCF files</h1>
-<p>Applications such as haplotyping and imputation need to match the markers in a target VCF file to those in a reference panel in a VCF file. Matching can be by marker ID, if the two data sets are on different builds, or by chromosome position, if the two data sets are on the same build.</p>
+<p>Applications such as haplotyping and imputation often need to match the markers in a target VCF file to those in a reference panel. Matching can be by marker ID, if the two data sets are on different builds, or by chromosome position, if the two data sets are on the same build.</p>
 <p><a id='Example-files-1'></a></p>
 <h2 id="example-files">Example files</h2>
 <p>We need example VCF files for demonstation. We can manually download the target VCF file from the <a href="http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz">link</a> (877KB) and put it in current working directory. Or, within Julia,</p>
@@ -372,7 +372,7 @@
 </pre></div>
 
 
-<p>We can manually download the reference panel for chromosome 22 form the <a href="http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz">link</a> (51.5MB) and put it in the current working directory. Or, within Julia,</p>
+<p>We can manually download the reference panel for chromosome 22 (1000 Genome Project) from the <a href="http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz">link</a> (51.5MB) and put it in the current working directory. Or, within Julia,</p>
 <div class="codehilite"><pre><span></span><span class="n">isfile</span><span class="p">(</span><span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">)</span> <span class="o">||</span> <span class="n">download</span><span class="p">(</span><span class="s">&quot;http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">,</span> 
     <span class="n">joinpath</span><span class="p">(</span><span class="n">pwd</span><span class="p">(),</span> <span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">))</span>
 <span class="n">stat</span><span class="p">(</span><span class="s">&quot;chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz&quot;</span><span class="p">)</span>
@@ -423,7 +423,7 @@
 <ol>
 <li>Match the markers in <code>tgtvcf</code> file to those in <code>refvcf</code> file by IDs, from position 20000086 to 20099941 on chromosome 22</li>
 <li>Adjust target VCF markers so that chromosome strand and allele order match the VCF reference file</li>
-<li>Test the allele frequencies being equal between the target and reference markers. The last argument specifies the significance level. Setting it to <code>0==false</code> effectively disable this test. Setting it to <code>1</code> effectively rejects all tests and not matched markers are output</li>
+<li>Test the allele frequencies being equal between the target and reference markers. The last argument specifies the significance level   Setting it to <code>0==false</code> effectively disable this test. Setting it to <code>1</code> effectively rejects all tests and no matched markers are output</li>
 <li>The matched VCF records are written into files <code>outfile.tgt.vcf.gz</code> and <code>outfile.ref.vcf.gz</code>, both with only GT field</li>
 </ol>
 <div class="codehilite"><pre><span></span><span class="n">tgtvcf</span> <span class="o">=</span> <span class="s">&quot;test.08Jun17.d8b.vcf.gz&quot;</span>
@@ -434,16 +434,13 @@
 
 
 <div class="codehilite"><pre><span></span>[1m[36mconformgt_by_id: [39m[22m[36mScan IDs in reference panel
-[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
 [1m[36mconformgt_by_id: [39m[22m[36mMatch target IDs to reference IDs
-[32mProgress:  80%|█████████████████████████████████        |  ETA: 0:00:02[39m
-
- 18.233624 seconds (201.51 M allocations: 21.274 GiB, 13.95% gc time)
-
-
-[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
 [1m[36mconformgt_by_id: [39m[22m[36m766 records are matched
 [39m
+
+ 22.144993 seconds (205.00 M allocations: 21.465 GiB, 11.19% gc time)
 </pre></div>
 
 
@@ -540,14 +537,14 @@
 
 
 <div class="codehilite"><pre><span></span>[1m[36mconformgt_by_id: [39m[22m[36mScan IDs in reference panel
-[32mProgress:   3%|█                                        |  ETA: 0:01:16[39m
+[32mProgress:   2%|█                                        |  ETA: 0:01:35[39m
 
- 17.980943 seconds (201.61 M allocations: 21.303 GiB, 14.02% gc time)
+ 19.454887 seconds (201.67 M allocations: 21.305 GiB, 13.65% gc time)
 
 
-[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
 [1m[36mconformgt_by_id: [39m[22m[36mMatch target IDs to reference IDs
-[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:08[39m
+[32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:09[39m
 [1m[36mconformgt_by_id: [39m[22m[36m451 records are matched
 [39m
 </pre></div>
