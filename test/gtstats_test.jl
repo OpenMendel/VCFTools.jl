@@ -6,11 +6,41 @@ using GeneticVariation, CodecZlib
     @test VCFTools.hwe(1469, 138, 5) ≈ 0.406002899
 end
 
+@testset "openvcf" begin
+    # download test file if not exist
+    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+        joinpath(Pkg.dir("VCFTools"), "test/test.08Jun17.d8b.vcf.gz"))
+    @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "r+")
+    @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "w+")
+    @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "c")
+    # VCF file name has to end with vcf or vcf.gz
+    @test_throws ArgumentError openvcf("test.08Jun17.d8b")
+end
+
+
+@testset "nrecords(vcf)" begin
+    # download test file if not exist
+    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+        joinpath(Pkg.dir("VCFTools"), "test/test.08Jun17.d8b.vcf.gz"))
+    @test nrecords("test.08Jun17.d8b.vcf.gz") == 1356
+end
+
+@testset "nsamples(vcf)" begin
+    # download test file if not exist
+    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+        joinpath(Pkg.dir("VCFTools"), "test/test.08Jun17.d8b.vcf.gz"))
+    @test nsamples("test.08Jun17.d8b.vcf.gz") == 191
+end
+
 @testset "gtstats(record)" begin
     record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
     #@code_warntype gtstats(record)
     @test gtstats(record)[1:end-1] == (1, 1, 0, 3, 1, 0.75, 0.25, 0, true, 0.25)
     @test gtstats(record)[end] ≈ 0.82414089574
+    # with missing data
+    record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t.\t1|0:48:8:51,51")
+    @test gtstats(record)[1:end-1] == (0, 1, 0, 1, 1, 0.5, 0.5, 1, false, 0.5)
+    @test gtstats(record)[end] ≈ 0.31731050786291415
 end
 
 @testset "gtstats(vcf)" begin
