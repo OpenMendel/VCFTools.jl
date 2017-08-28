@@ -69,6 +69,9 @@ end
     @test VCF.ref(record1_out) == VCF.ref(record2_out)
     @test VCF.alt(record1_out) == VCF.alt(record2_out)
     @test VCF.genotype(record1_out) == VCF.genotype(record2_out)
+    # ambiguous case
+    record3 = VCF.Record("20\t14370\trs6054257\tC\tT\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t1|1:48:1:51,51\t0|1:48:8:51,51")
+    @test_throws ArgumentError VCFTools.match_gt_allele(record1, record3)
 end
 
 @testset "binomial_proportion_test" begin
@@ -106,6 +109,37 @@ end
     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 0.05)
     @test lines == 451
     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 1)
+    @test lines == 0
+    # Profile.clear()
+    # @profile conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
+    # Profile.print(format=:flat)
+end
+
+@testset "conformgt_by_pos" begin
+    refvcf = "chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz"
+    tgtvcf = "test.08Jun17.d8b.vcf.gz"
+    outvcf = "conformgt.matched"
+    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase1_vcf/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz", joinpath(Pkg.dir("VCFTools"), "test/chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz"))
+    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+        joinpath(Pkg.dir("VCFTools"), "test/test.08Jun17.d8b.vcf.gz"))
+    #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
+    #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
+    @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
+    @test lines == 768
+    reader_ref = VCF.Reader(GzipDecompressionStream(open(join([outvcf, ".ref.vcf.gz"]), "r")))
+    reader_tgt = VCF.Reader(GzipDecompressionStream(open(join([outvcf, ".tgt.vcf.gz"]), "r")))
+    state_ref, state_tgt = start(reader_ref), start(reader_tgt)
+    while !done(reader_ref, state_ref)
+        record_ref, state_ref = next(reader_ref, state_ref)
+        record_tgt, state_tgt = next(reader_tgt, state_tgt)
+        @test VCF.chrom(record_ref) == VCF.chrom(record_tgt)
+        @test VCF.pos(record_ref) == VCF.pos(record_tgt)
+        @test VCF.ref(record_ref) == VCF.ref(record_tgt)
+        @test VCF.alt(record_ref) == VCF.alt(record_tgt)
+    end
+    @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 0.05)
+    @test lines == 453
+    @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 1)
     @test lines == 0
     # Profile.clear()
     # @profile conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
