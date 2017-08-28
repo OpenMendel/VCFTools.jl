@@ -108,19 +108,19 @@ function gtstats(
     # n00: number of homozygote ALT/ALT or ALT|ALT
     # n01: number of heterozygote REF/ALT or REF|ALT
     missings = n00 = n10 = n11 = 0
-    samples = length(record.genotype)
     gtkey = VCF.findgenokey(record, "GT")
-    for i in 1:samples
+    for i in 1:endof(record.genotype)
         geno = record.genotype[i]
-        if gtkey > endof(geno)
+        # dropped field or "." => 0x2e
+        if gtkey > endof(geno) || record.data[geno[gtkey]] == [0x2e]
             missings += 1
-            (missings_by_sample == nothing) || (missings_by_sample[i] += 1)
+            missings_by_sample == nothing || (missings_by_sample[i] += 1)
         else
             # "0" => 0x30, "1" => 0x31
             if record.data[geno[gtkey][1]] == 0x30
-                n00 += record.data[geno[gtkey][3]] == 0x30? 1 : 0
+                n00 += record.data[geno[gtkey][3]] == 0x30 ? 1 : 0
             elseif record.data[geno[gtkey][1]] == 0x31
-                n11 += record.data[geno[gtkey][3]] == 0x31? 1 : 0
+                n11 += record.data[geno[gtkey][3]] == 0x31 ? 1 : 0
             end
         end
     end
