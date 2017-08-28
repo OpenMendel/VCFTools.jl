@@ -109,12 +109,7 @@ samples = nsamples("test.08Jun17.d8b.vcf.gz")
     maf_by_record, minorallele_by_record = gtstats("test.08Jun17.d8b.vcf.gz");
 ```
 
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:01[39m
-
-      2.410830 seconds (2.45 M allocations: 205.609 MiB, 2.49% gc time)
-
-
-    
+      0.914261 seconds (2.04 M allocations: 197.348 MiB, 3.84% gc time)
 
 
 
@@ -228,7 +223,7 @@ The optional second argument of `gtstats` function specifies an output file or I
 @time gtstats("test.08Jun17.d8b.vcf.gz", "gtstats.out.txt");
 ```
 
-      0.257322 seconds (878.81 k allocations: 113.305 MiB, 6.52% gc time)
+      0.207211 seconds (1.37 M allocations: 159.816 MiB, 10.48% gc time)
 
 
 The output file can be read as a `DataFrame` for further analysis.
