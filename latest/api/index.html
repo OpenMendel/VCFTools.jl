@@ -233,6 +233,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../filter/" title="Filter data fields" class="md-nav__link">
+      Filter data fields
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../conformgt/" title="Match markers in two VCF" class="md-nav__link">
       Match markers in two VCF
     </a>
@@ -357,6 +369,7 @@
 <h2 id="index">Index</h2>
 <ul>
 <li><a href="./#VCFTools.conformgt_by_id"><code>VCFTools.conformgt_by_id</code></a></li>
+<li><a href="./#VCFTools.filter_genotype"><code>VCFTools.filter_genotype</code></a></li>
 <li><a href="./#VCFTools.gtstats"><code>VCFTools.gtstats</code></a></li>
 <li><a href="./#VCFTools.nrecords"><code>VCFTools.nrecords</code></a></li>
 <li><a href="./#VCFTools.nsamples"><code>VCFTools.nsamples</code></a></li>
@@ -392,7 +405,21 @@
 <ul>
 <li><code>lines</code>: number of matched VCF records</li>
 </ul>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/conformgt.jl#L1-L23' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/conformgt.jl#L1-L23' class='documenter-source'>source</a><br></p>
+<p><a id='VCFTools.filter_genotype' href='#VCFTools.filter_genotype'>#</a>
+<strong><code>VCFTools.filter_genotype</code></strong> &mdash; <em>Function</em>.</p>
+<div class="codehilite"><pre><span></span>filter_genotype(record, [genokey=[&quot;GT&quot;]])
+</pre></div>
+
+
+<p>Filter a VCF record according to <code>genokey</code> and output a VCF record with genotype formats only in <code>genokey</code>.</p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/conformgt.jl#L152-L157' class='documenter-source'>source</a><br></p>
+<div class="codehilite"><pre><span></span>filter_genotype(vcffile, outfile, [genokey=[&quot;GT&quot;]])
+</pre></div>
+
+
+<p>Filter a VCF file according to <code>genokey</code> (default <code>["GT"]</code>). Output a VCF file with genotype formats only in <code>genokey</code>. Record (markers) with no fields in <code>genokey</code> are skipped.</p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/conformgt.jl#L168-L174' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.gtstats' href='#VCFTools.gtstats'>#</a>
 <strong><code>VCFTools.gtstats</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>gtstats(vcffile, [out=DevNull])
@@ -416,7 +443,7 @@
 <li><code>maf_by_record</code>: minor allele frequency in each record (marker)</li>
 <li><code>minorallele_by_record</code>: a Boolean vector indicating the minor allele in each   record (marker). <code>minorallele_by_record[i]=true</code> means the minor allele is   the REF allele for marker <code>i</code>; <code>minorallele_by_record[i]=false</code> means the   minor allele is the ALT allele for marker <code>i</code></li>
 </ul>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L1-L31' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/gtstats.jl#L1-L31' class='documenter-source'>source</a><br></p>
 <div class="codehilite"><pre><span></span>gtstats(record, [missings_by_sample=nothing])
 </pre></div>
 
@@ -441,7 +468,7 @@
 <li><code>maf</code>: minor allele frequency</li>
 <li><code>hwepval</code>: Hardy-Weinberg p-value</li>
 </ul>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L81-L102' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/gtstats.jl#L81-L102' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.nrecords' href='#VCFTools.nrecords'>#</a>
 <strong><code>VCFTools.nrecords</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>nrecords(vcffile)
@@ -449,7 +476,7 @@
 
 
 <p>Number of records (markers) in a VCF file.</p>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L188-L192' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/gtstats.jl#L188-L192' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.nsamples' href='#VCFTools.nsamples'>#</a>
 <strong><code>VCFTools.nsamples</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>nsamples(vcffile)
@@ -457,7 +484,7 @@
 
 
 <p>Number of samples (individuals) in a VCF file.</p>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L204-L208' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/gtstats.jl#L204-L208' class='documenter-source'>source</a><br></p>
 <p><a id='VCFTools.openvcf' href='#VCFTools.openvcf'>#</a>
 <strong><code>VCFTools.openvcf</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>openvcf(vcffile, [mode = &quot;r&quot;])
@@ -465,7 +492,7 @@
 
 
 <p>Open VCF file (<code>.vcf</code> or <code>.vcf.gz</code>) and return an IO stream.</p>
-<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/ecf4c7d818ddced74442a40a1553cc6230d058ef/src/gtstats.jl#L169-L173' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/OpenMendel/VCFTools.jl/tree/0b5791588f4290d47374cf1e56aed0a336816f06/src/gtstats.jl#L169-L173' class='documenter-source'>source</a><br></p>
                 
                   
                 
