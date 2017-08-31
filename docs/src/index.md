@@ -24,6 +24,7 @@ This package supports Julia `0.6`.
 Pages = [
     "summaryinfo.md",
     "filter.md",
+    "convert.md",
     "conformgt.md",
     "api.md"
 ]

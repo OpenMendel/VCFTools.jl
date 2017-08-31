@@ -36,5 +36,6 @@ pages:
 - Manual:
   - VCF summary: summaryinfo.md
   - Filter data fields: filter.md
+  - Convert GT data to numeric arrays:: convert.md
   - Match markers in two VCF: conformgt.md
 - API: api.md

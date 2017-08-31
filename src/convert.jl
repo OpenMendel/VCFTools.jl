@@ -32,7 +32,7 @@ function copy_gt!(
     ) where T <: Real
     for j in 1:size(A, 2)
         if eof(reader)
-            warning("Only $j records left in reader; $(j+1)-th to last column are set to missing values")
+            warn("Only $j records left in reader; $(j+1)-th to last column are set to missing values")
             fill!(view(A, :, (j + 1):size(A, 2)), Nullable(zero(T), false))
             break
         else
@@ -50,7 +50,7 @@ function copy_gt!(
         # second pass: impute, convert, center, scale
         ct = 2maf
         wt = maf == 0 ? 1.0 : 1.0 / √(2maf * (1 - maf))
-        @simd for i in 1:size(A, 1)
+        for i in 1:size(A, 1)
             geno = record.genotype[i]
             # dropped field or "." => 0x2e
             if gtkey > endof(geno) || record.data[geno[gtkey]] == [0x2e]

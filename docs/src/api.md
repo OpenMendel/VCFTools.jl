@@ -17,6 +17,8 @@ nrecords
 nsamples
 gtstats
 filter_genotype
+copy_gt!
+convert_gt
 conformgt_by_id
 conformgt_by_pos
 ```
