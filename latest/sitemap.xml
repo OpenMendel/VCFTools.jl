@@ -4,7 +4,7 @@
     
     <url>
      <loc>/</loc>
-     <lastmod>2017-08-28</lastmod>
+     <lastmod>2017-09-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -13,19 +13,25 @@
         
     <url>
      <loc>/summaryinfo/</loc>
-     <lastmod>2017-08-28</lastmod>
+     <lastmod>2017-09-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/filter/</loc>
-     <lastmod>2017-08-28</lastmod>
+     <lastmod>2017-09-01</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
+    <url>
+     <loc>/convert/</loc>
+     <lastmod>2017-09-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/conformgt/</loc>
-     <lastmod>2017-08-28</lastmod>
+     <lastmod>2017-09-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
@@ -34,7 +40,7 @@
     
     <url>
      <loc>/api/</loc>
-     <lastmod>2017-08-28</lastmod>
+     <lastmod>2017-09-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
