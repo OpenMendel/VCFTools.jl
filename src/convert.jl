@@ -1,8 +1,42 @@
 using NullableArrays
-import SnpArrays.isnan, SnpArrays.convert, SnpArrays.randgeno
 
 """
-    copy_gt!(A, reader; [impute=false], [center=false], [scale=false])
+Convert a two-bit genotype to a real number (minor allele count) of type
+`t` according to specified SNP model. Missing genotype is converted
+to null. `minor_allele==true` indicates `REF` is the minor allele;
+`minor_allele==false` indicates `ALT` is the minor allele.
+"""
+function convert_gt(
+    t::Type{T},
+    a::NTuple{2, Bool},
+    minor_allele::Bool,
+    model::Symbol = :additive
+    ) where T <: Real
+    if minor_allele # REF is the minor allele
+        if model == :additive
+            return convert(T, a[1] + a[2])
+        elseif model == :dominant
+            return convert(T, a[1] | a[2])
+        elseif model == :recessive
+            return convert(T, a[1] & a[2])
+        else
+            throw(ArgumentError("un-recognized SNP model: $model"))
+        end
+    else # ALT is the minor allele
+        if model == :additive
+            return convert(T, !a[1] + !a[2])
+        elseif model == :dominant
+            return convert(T, !a[1] | !a[2])
+        elseif model == :recessive
+            return convert(T, !a[1] & !a[2])
+        else
+            throw(ArgumentError("un-recognized SNP model: $model"))
+        end
+    end
+end
+
+"""
+    copy_gt!(A, reader; [model=:additive], [impute=false], [center=false], [scale=false])
 
 Fill the columns of a nullable matrix `A` by the GT data from VCF records in
 `reader`. Each column of `A` corresponds to one record. Record without GT field
@@ -19,8 +53,8 @@ is converted to `NaN`.
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
 
 # Output
-- `A`: `isnull(A[i, j]) == true` indicates missing genotype, even when
-    `A.values[i, j]` may hold the imputed genotype
+- `A`: `isnull(A[i, j]) == true` indicates missing genotype. If `impute=true`,
+    `isnull(A[i, j]) == false` for all entries.
 """
 function copy_gt!(
     A::Union{NullableMatrix{T}, NullableVector{T}},
@@ -32,7 +66,7 @@ function copy_gt!(
     ) where T <: Real
     for j in 1:size(A, 2)
         if eof(reader)
-            warn("Only $j records left in reader; $(j+1)-th to last column are set to missing values")
+            warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
             fill!(view(A, :, (j + 1):size(A, 2)), Nullable(zero(T), false))
             break
         else
@@ -52,26 +86,27 @@ function copy_gt!(
         wt = maf == 0 ? 1.0 : 1.0 / √(2maf * (1 - maf))
         for i in 1:size(A, 1)
             geno = record.genotype[i]
-            # dropped field or "." => 0x2e
+            # Missing genotype: dropped field or "." => 0x2e
             if gtkey > endof(geno) || record.data[geno[gtkey]] == [0x2e]
-                A[i, j] = Nullable(zero(T), false)
-            else
+                if impute
+                    if minor_allele # REF is the minor allele
+                        a1, a2 = rand() ≤ maf, rand() ≤ maf
+                    else # ALT is the minor allele
+                        a1, a2 = rand() > maf, rand() > maf
+                    end
+                    A[i, j] = Nullable(convert_gt(T, (a1, a2), minor_allele, model), true)
+                else
+                    A[i, j] = Nullable(zero(T), false)
+                end
+            else # not missing
                 # "0" (ALT) => 0x30, "1" (REF) => 0x31
-                # In SnpArray: A1 = ALT, A2 = REF
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
-                if a1 && !a2 # (true, false) in SnpArrays is preserved for missing genotype
-                    a1, a2 = (false, true)
-                end
+                A[i, j] = Nullable(convert_gt(T, (a1, a2), minor_allele, model), true)
             end
-            # impute if asked
-            if isnan(a1, a2) && impute
-                a1, a2 = randgeno(maf, minor_allele)
-            end
-            A[i, j] = Nullable(convert(T, (a1, a2), !minor_allele, model), true)
             # center and scale if asked
-            center && (A.values[i, j] -= ct)
-            scale && (A.values[i, j] *= wt)
+            center && !isnull(A[i, j]) && (A.values[i, j] -= ct)
+            scale && !isnull(A[i, j]) && (A.values[i, j] *= wt)
         end
     end
     A
@@ -111,5 +146,6 @@ function convert_gt(
     reader = VCF.Reader(openvcf(vcffile, "r"))
     copy_gt!(out, reader; model = model, impute = impute,
         center = center, scale = scale)
+    close(reader)
     out
 end
