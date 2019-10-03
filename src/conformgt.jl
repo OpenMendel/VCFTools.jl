@@ -26,7 +26,7 @@ function conformgt_by_id(
     tgtfile::AbstractString,
     outfile::AbstractString,
     chrom::AbstractString,
-    posrange::Range,
+    posrange::AbstractRange,
     checkfreq::Number = false
     )
     # open reference and target VCF files
@@ -153,7 +153,7 @@ function conformgt_by_pos(
     tgtfile::AbstractString,
     outfile::AbstractString,
     chrom::AbstractString,
-    posrange::Range,
+    posrange::AbstractRange,
     checkfreq::Number = false
     )
     # open reference and target VCF files
@@ -278,6 +278,7 @@ function filter_genotype(
     format_out = genokey ∩ VCF.format(record)
     gt_out = [Dict(gk => VCF.genotype(record, i, gk) for gk in format_out)
         for i in 1:length(record.genotype)]
+
     return VCF.Record(record; genotype = gt_out)
 end
 
@@ -324,7 +325,7 @@ end
     flip_01!(s[, r])
 Flip the digits 0 and 1 in a UInt8 vector `s` in range `r`.
 """
-function flip_01!(s::Vector{UInt8}, r::Range = 1:length(s))
+function flip_01!(s::Vector{UInt8}, r::AbstractRange = 1:length(s))
     for i in r
         if s[i] == 0x30
             s[i] = 0x31

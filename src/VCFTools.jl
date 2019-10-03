@@ -4,6 +4,7 @@ module VCFTools
 	using Distributions
 	using HypothesisTests
 	using ProgressMeter
+	using DelimitedFiles
 	import GeneticVariation.VCF
 
 	export conformgt_by_id, conformgt_by_pos,

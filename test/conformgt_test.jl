@@ -89,8 +89,10 @@ end
     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
     tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", joinpath(Pkg.dir("VCFTools"), "test/chr22.1kg.phase3.v5a.vcf.gz"))
-    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", joinpath(Pkg.dir("VCFTools"), "test/test.08Jun17.d8b.vcf.gz"))
+    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+        joinpath(dirname(pathof(VCFTools)), "..", "test/chr22.1kg.phase3.v5a.vcf.gz"))
+    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+        joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
@@ -118,8 +120,10 @@ end
     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
     tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", joinpath(Pkg.dir("VCFTools"), "test/chr22.1kg.phase3.v5a.vcf.gz"))
-    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", joinpath(Pkg.dir("VCFTools"), "test/test.08Jun17.d8b.vcf.gz"))
+    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+        joinpath(dirname(pathof(VCFTools)), "..", "test/chr22.1kg.phase3.v5a.vcf.gz"))
+    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+        joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)

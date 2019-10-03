@@ -34,7 +34,7 @@ function gtstats(vcffile::AbstractString, out::IO=DevNull)
     reader = VCF.Reader(openvcf(vcffile, "r"))
     # set up progress bar
     records = nrecords(vcffile)
-    out == STDOUT || (pbar = ProgressMeter.Progress(records, 1))
+    out == stdout || (pbar = ProgressMeter.Progress(records, 1))
     # allocate ouput arrays
     samples = nsamples(reader)
     missings_by_sample = zeros(Int, samples)
@@ -66,7 +66,7 @@ function gtstats(vcffile::AbstractString, out::IO=DevNull)
         print(out, '\t', missings, '\t', missfreq, '\t', n0, '\t',
         altfreq, '\t', minoralleles, '\t', maf, '\t', hwepval, '\n')
         # update progress bar
-        out == STDOUT || ProgressMeter.update!(pbar, records)
+        out == stdout || ProgressMeter.update!(pbar, records)
     end
     close(out); close(reader)
     return records, samples, lines, missings_by_sample, missings_by_record,
@@ -74,7 +74,7 @@ function gtstats(vcffile::AbstractString, out::IO=DevNull)
 end
 
 function gtstats(vcffile::AbstractString, out::AbstractString)
-    ofile = endswith(out, ".gz") ? GzipCompressionStream(open(out, "w")) : open(out, "w")
+    ofile = endswith(out, ".gz") ? GzipCompressorStream(open(out, "w")) : open(out, "w")
     gtstats(vcffile, ofile)
 end
 
@@ -85,7 +85,7 @@ Calculate genotype statistics for a VCF record with GT field.
 
 # Input
 - `record`: a VCF record
-- `missings_by_sample`: accumulator of misisngs by sample, `missings_by_sample[i]` is incremented by 1 if `i`-th individual has missing genotype in this record
+- `missings_by_sample`: accumulator of missings by sample, `missings_by_sample[i]` is incremented by 1 if `i`-th individual has missing genotype in this record
 
 # Output
 - `n00`: number of homozygote ALT/ALT or ALT|ALT
@@ -102,17 +102,17 @@ Calculate genotype statistics for a VCF record with GT field.
 """
 function gtstats(
     record::VCF.Record,
-    missings_by_sample::Union{Vector,Void}=nothing
+    missings_by_sample::Union{Vector,Nothing}=nothing
     )
     # n11: number of homozygote REF/REF or REF|REF
     # n00: number of homozygote ALT/ALT or ALT|ALT
     # n01: number of heterozygote REF/ALT or REF|ALT
     missings = n00 = n10 = n11 = 0
     gtkey = VCF.findgenokey(record, "GT")
-    for i in 1:endof(record.genotype)
+    for i in 1:lastindex(record.genotype)
         geno = record.genotype[i]
         # dropped field or "." => 0x2e
-        if gtkey > endof(geno) || record.data[geno[gtkey]] == [0x2e]
+        if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
             missings += 1
             missings_by_sample == nothing || (missings_by_sample[i] += 1)
         else
@@ -130,7 +130,7 @@ function gtstats(
     altfreq     = n0 / (n0 + n1)
     reffreq     = n1 / (n0 + n1)
     minorallele = n1 < n0
-    maf         = n0 < n1? altfreq : reffreq
+    maf         = n0 < n1 ? altfreq : reffreq
     hwepval     = hwe(n00, n01, n11)
     return n00, n01, n11, n0, n1, altfreq, reffreq, missings,
         minorallele, maf, hwepval
@@ -175,9 +175,9 @@ function openvcf(vcffile::AbstractString, mode::AbstractString="r")
     if endswith(vcffile, ".vcf")
         return open(vcffile, mode)
     elseif endswith(vcffile, ".vcf.gz") && mode == "r"
-        return GzipDecompressionStream(open(vcffile, mode))
+        return GzipDecompressorStream(open(vcffile, mode))
     elseif endswith(vcffile, ".vcf.gz") && mode ∈ ["w", "a"]
-        return GzipCompressionStream(open(vcffile, mode))
+        return GzipDecompressorStream(open(vcffile, mode))
     elseif endswith(vcffile, ".vcf.gz") && mode ∉ ["r", "w", "a"]
         throw(ArgumentError("mode can only be r, w, or a for vcf.gz file"))
     else

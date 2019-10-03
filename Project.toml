@@ -11,6 +11,7 @@ ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 GeneticVariation = "9bc6ac9d-e6b2-5f70-b0a8-242a01662520"
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [compat]
 #Documenter = ">=0.20"

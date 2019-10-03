@@ -1,5 +1,3 @@
-using NullableArrays
-
 """
 Convert a two-bit genotype to a real number (minor allele count) of type
 `t` according to specified SNP model. Missing genotype is converted
@@ -57,7 +55,7 @@ is converted to `NaN`.
     `isnull(A[i, j]) == false` for all entries.
 """
 function copy_gt!(
-    A::Union{NullableMatrix{T}, NullableVector{T}},
+    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
     reader::VCF.Reader;
     model::Symbol = :additive,
     impute::Bool = false,
@@ -66,8 +64,8 @@ function copy_gt!(
     ) where T <: Real
     for j in 1:size(A, 2)
         if eof(reader)
-            warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
-            fill!(view(A, :, (j + 1):size(A, 2)), Nullable(zero(T), false))
+            @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
+            fill!(view(A, :, (j + 1):size(A, 2)), missing)
             break
         else
             record = read(reader)
@@ -76,7 +74,7 @@ function copy_gt!(
         # if no GT field, fill by missing values
         if gtkey == 0
             @inbounds @simd for i in 1:size(A, 1)
-                A[i, j] = Nullable(zero(T), false)
+                A[i, j] = missing
             end
         end
         # convert GT field to numbers according to specified genetic model
@@ -87,26 +85,26 @@ function copy_gt!(
         for i in 1:size(A, 1)
             geno = record.genotype[i]
             # Missing genotype: dropped field or "." => 0x2e
-            if gtkey > endof(geno) || record.data[geno[gtkey]] == [0x2e]
+            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
                 if impute
                     if minor_allele # REF is the minor allele
                         a1, a2 = rand() ≤ maf, rand() ≤ maf
                     else # ALT is the minor allele
                         a1, a2 = rand() > maf, rand() > maf
                     end
-                    A[i, j] = Nullable(convert_gt(T, (a1, a2), minor_allele, model), true)
+                    A[i, j] = convert_gt(T, (a1, a2), minor_allele, model)
                 else
-                    A[i, j] = Nullable(zero(T), false)
+                    A[i, j] = missing
                 end
             else # not missing
                 # "0" (ALT) => 0x30, "1" (REF) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
-                A[i, j] = Nullable(convert_gt(T, (a1, a2), minor_allele, model), true)
+                A[i, j] = convert_gt(T, (a1, a2), minor_allele, model)
             end
             # center and scale if asked
-            center && !isnull(A[i, j]) && (A.values[i, j] -= ct)
-            scale && !isnull(A[i, j]) && (A.values[i, j] *= wt)
+            center && !ismissing(A[i, j]) && (A[i, j] -= ct)
+            scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
         end
     end
     A
