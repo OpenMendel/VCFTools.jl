@@ -1,0 +1,22 @@
+name = "VCFTools"
+uuid = "a620830f-fdd7-5ebc-8d26-3621ab35fbfe"
+
+keywords = ["Variant call format", "VCF"]
+authors = ["Hua Zhou <hwachou@gmail.com>", "OpenMendel Team"]
+version = "0.0.0"
+
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+GeneticVariation = "9bc6ac9d-e6b2-5f70-b0a8-242a01662520"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+
+[compat]
+#Documenter = ">=0.20"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
