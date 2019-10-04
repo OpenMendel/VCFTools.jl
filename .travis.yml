@@ -20,7 +20,6 @@ notifications:
 
 before_script: # install dependent unregistered packages
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("VCFTools"); Pkg.test("VCFTools"; coverage=true)'
   - julia -e 'using Pkg; Pkg.add([PackageSpec(url="https://github.com/biona001/VCFTools.jl")]);'
 
 after_script:
