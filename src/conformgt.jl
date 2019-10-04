@@ -34,12 +34,16 @@ function conformgt_by_id(
     reader_tgt = VCF.Reader(openvcf(tgtfile, "r"))
     records_ref, records_tgt = nrecords(reffile), nrecords(tgtfile)
     # create output files
-    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
+    # writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
+    #     VCF.header(reader_ref))
+    # writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
+    #     VCF.header(reader_tgt))
+    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf"]), "w"),
         VCF.header(reader_ref))
-    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
+    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf"]), "w"),
         VCF.header(reader_tgt))
     # collect IDs in the reference panel
-    info("Scan IDs in reference panel"; prefix = "conformgt_by_id: ")
+    @info("Scan IDs in reference panel")
     pbar = ProgressMeter.Progress(records_ref, 1)
     id_list_ref = Vector{String}[]
     record_counter = 0
@@ -72,11 +76,11 @@ function conformgt_by_id(
     end
     close(reader_ref)
     # match target IDs to reference IDs
-    info("Match target IDs to reference IDs"; prefix = "conformgt_by_id: ")
+    @info("Match target IDs to reference IDs")
     # re-set reference reader
     reader_ref = VCF.Reader(openvcf(reffile, "r"))
     record_ref = VCF.Record()
-    state_ref = start(reader_ref)
+    iter_state_ref = iterate(reader_ref)
     # loop over target records
     pbar = ProgressMeter.Progress(records_tgt, 1)
     lines = record_counter = 0
@@ -93,9 +97,10 @@ function conformgt_by_id(
         id_tgt = VCF.id(record_tgt)
         id_tgt ∈ id_list_ref || continue
         # search for matching reference record
-        while !done(reader_ref, state_ref)
-            record_ref, state_ref = next(reader_ref, state_ref)
+        while iter_state_ref !== nothing
+            record_ref, state_ref = iter_state_ref
             VCF.hasid(record_ref) && VCF.id(record_ref) == id_tgt && break
+            iter_state_ref = iterate(reader_ref, state_ref)
         end
         # check REF/ALT label match
         reflabel_tgt = VCF.ref(record_tgt)
@@ -120,7 +125,7 @@ function conformgt_by_id(
     close(VCF.BioCore.IO.stream(writer_ref))
     close(VCF.BioCore.IO.stream(writer_tgt))
     # return
-    info("$(lines) records are matched"; prefix = "conformgt_by_id: ")
+    @info("$(lines) records are matched")
     return lines
 end
 
@@ -160,15 +165,19 @@ function conformgt_by_pos(
     reader_ref = VCF.Reader(openvcf(reffile, "r"))
     reader_tgt = VCF.Reader(openvcf(tgtfile, "r"))
     records_ref, records_tgt = nrecords(reffile), nrecords(tgtfile)
-    # create output files
-    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
+    # create output files (.gz currently throws error)
+    # writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
+    #     VCF.header(reader_ref))
+    # writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
+    #     VCF.header(reader_tgt))
+    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf"]), "w"),
         VCF.header(reader_ref))
-    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
+    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf"]), "w"),
         VCF.header(reader_tgt))
     # initialize reference reader
-    record_ref, state_ref, pos_ref = VCF.Record(), start(reader_ref), 0
+    record_ref, iter_state_ref, pos_ref = VCF.Record(), iterate(reader_ref), 0
     # loop over target records
-    info("Match target POS to reference POS"; prefix = "conformgt_by_pos: ")
+    @info("Match target POS to reference POS")
     pbar = ProgressMeter.Progress(records_tgt, 1)
     lines = record_counter = 0
     for record_tgt in reader_tgt
@@ -194,15 +203,15 @@ function conformgt_by_pos(
         elseif pos_tgt > pos_ref
             matched = false
             # search for matching reference record
-            while !done(reader_ref, state_ref)
-                record_ref, state_ref = next(reader_ref, state_ref)
+            while iter_state_ref !== nothing
+                record_ref, state_ref = iter_state_ref
                 # if no "GT" field, skip this record
                 VCF.findgenokey(record_tgt, "GT") == 0 && continue
                 # if chromosome not matched, skip this record
                 VCF.chrom(record_ref) == chrom || continue
                 pos_ref = VCF.pos(record_ref)
                 if pos_ref < pos_tgt
-                    continue
+                    iter_state_ref = iterate(reader_ref, state_ref)
                 elseif pos_ref == pos_tgt
                     matched = true; break
                 elseif pos_ref > pos_tgt
@@ -235,7 +244,7 @@ function conformgt_by_pos(
     close(VCF.BioCore.IO.stream(writer_ref))
     close(VCF.BioCore.IO.stream(writer_tgt))
     # return
-    info("$(lines) records are matched"; prefix = "conformgt_by_pos: ")
+    @info("$(lines) records are matched")
     return lines
 end
 
@@ -291,7 +300,7 @@ in `genokey` are skipped.
 """
 function filter_genotype(
     vcffile::T,
-    outfile::T = "filtered.vcf.gz",
+    outfile::T = "filtered.vcf",
     genokey::Vector{T} = ["GT"]
     ) where T <: AbstractString
     reader = VCF.Reader(openvcf(vcffile, "r"))

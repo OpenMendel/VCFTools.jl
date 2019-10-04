@@ -140,7 +140,7 @@ function convert_gt(
     center::Bool = false,
     scale::Bool = false
     ) where T <: Real
-    out = NullableArray(t, nsamples(vcffile), nrecords(vcffile))
+    out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
     copy_gt!(out, reader; model = model, impute = impute,
         center = center, scale = scale)
