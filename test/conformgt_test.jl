@@ -114,7 +114,7 @@ end
 end
 
 # TODO: fix VCF.Reader on compressed files
-# @testset "conformgt_by_id" begin
+# @testset "conformgt_by_id(compressed)" begin
 #     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
 #     tgtvcf = "test.08Jun17.d8b.vcf.gz"
 #     outvcf = "conformgt.matched"
@@ -145,12 +145,20 @@ end
 #     # Profile.print(format=:flat)
 # end
 
-@testset "conformgt_by_id" begin
-    refvcf = "chr22.1kg.phase3.v5a.vcf"    
-    tgtvcf = "test.08Jun17.d8b.vcf"
+@testset "conformgt_by_id(decompressed)" begin
+    refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
+    tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    isfile(refvcf) || run(`gzip -d $refvcf`)
-    isfile(tgtvcf) || run(`gzip -d $tgtvcf`)
+    if !isfile(refvcf) 
+        download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+        abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$refvcf")))
+        run(`gunzip -k $refvcf`)
+    end
+    if !isfile(tgtvcf) 
+        download("http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz", 
+        abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$tgtvcf")))
+        run(`gunzip -k $tgtvcf`)
+    end
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
@@ -177,7 +185,7 @@ end
 end
 
 # TODO: fix VCF.Reader on compressed files
-# @testset "conformgt_by_pos" begin
+# @testset "conformgt_by_pos(compressed)" begin
 #     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
 #     tgtvcf = "test.08Jun17.d8b.vcf.gz"
 #     outvcf = "conformgt.matched"
@@ -209,12 +217,20 @@ end
 #     # Profile.print(format=:flat)
 # end
 
-@testset "conformgt_by_pos" begin
-    refvcf = "chr22.1kg.phase3.v5a.vcf"    
-    tgtvcf = "test.08Jun17.d8b.vcf"
+@testset "conformgt_by_pos(decompressed)" begin
+    refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
+    tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    isfile(refvcf) || run(`gzip -d $refvcf`)
-    isfile(tgtvcf) || run(`gzip -d $tgtvcf`)
+    if !isfile(refvcf) 
+        download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+        abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$refvcf"))) 
+        run(`gunzip -k $refvcf`)
+    end
+    if !isfile(tgtvcf) 
+        download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+        abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$tgtvcf")))
+        run(`gunzip -k $tgtvcf`)
+    end
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)

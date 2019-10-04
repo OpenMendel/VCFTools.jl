@@ -7,9 +7,12 @@ using GeneticVariation, CodecZlib, DelimitedFiles
 end
 
 @testset "openvcf" begin
-    # download test file if not exist
-    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    # download and extract test file if not exist
+    if !isfile("test.08Jun17.d8b.vcf.gz") 
+        download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
+        run(`gunzip -k test.08Jun17.d8b.vcf.gz`)
+    end
     @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "r+")
     @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "w+")
     @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "c")
@@ -17,18 +20,23 @@ end
     @test_throws ArgumentError openvcf("test.08Jun17.d8b")
 end
 
-
 @testset "nrecords(vcf)" begin
-    # download test file if not exist
-    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    # download and extract test file if not exist
+    if !isfile("test.08Jun17.d8b.vcf.gz") 
+        download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
+        run(`gunzip -k test.08Jun17.d8b.vcf.gz`)
+    end
     @test nrecords("test.08Jun17.d8b.vcf.gz") == 1356
 end
 
 @testset "nsamples(vcf)" begin
     # download test file if not exist
-    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    if !isfile("test.08Jun17.d8b.vcf.gz") 
+        download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
+        run(`gunzip -k test.08Jun17.d8b.vcf.gz`)
+    end
     @test nsamples("test.08Jun17.d8b.vcf.gz") == 191
 end
 
@@ -49,9 +57,12 @@ end
     #@time gtstats("test.08Jun17.d8b.vcf")
     # output tuple: (records, samples, lines, missings_by_sample, missings_by_record, maf_by_record, minorallele_by_record)
 
-    # download test file and unzip
-    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    # download and extract test file and unzip
+    if !isfile("test.08Jun17.d8b.vcf.gz") 
+        download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
+        run(`gunzip -k test.08Jun17.d8b.vcf.gz`)
+    end
     write("test.08Jun17.d8b.vcf", read(GzipDecompressorStream(open("test.08Jun17.d8b.vcf.gz", "r"))))
 
     @testset "input: text file, output: text file" begin
