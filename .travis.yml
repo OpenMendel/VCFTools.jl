@@ -20,7 +20,6 @@ notifications:
 
 before_script: # install dependent unregistered packages
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'using Pkg; Pkg.add([PackageSpec(url="https://github.com/biona001/VCFTools.jl")]);'
 
 after_script:
   - julia -e 'using Pkg, VCFTools; cd(joinpath(dirname(pathof(VCFTools)), "..")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
