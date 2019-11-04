@@ -33,11 +33,8 @@ end
 
 @testset "convert_gt(vcfile)" begin
     vcffile = "test.08Jun17.d8b.vcf.gz"
-    if !isfile(vcffile) 
-        download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile(vcffile) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$vcffile"))) 
-        run(`gunzip -k $vcffile`)
-    end
     #@code_warntype convert_gt(UInt8, vcffile; impute = false, center = false, scale = false)
     @inferred convert_gt(UInt8, vcffile; impute = false, center = false, scale = false)
     # convert to a matrix of UInt8, no impute/center/scale (default)
