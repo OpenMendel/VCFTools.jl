@@ -176,10 +176,8 @@ function openvcf(vcffile::AbstractString, mode::AbstractString="r")
         return open(vcffile, mode)
     elseif endswith(vcffile, ".vcf.gz") && mode == "r"
         return GzipDecompressorStream(open(vcffile, mode))
-        # return GZip.open(vcffile, mode) #won't throw `ERROR: zlib error: incorrect header check (code: -3)`
     elseif endswith(vcffile, ".vcf.gz") && mode ∈ ["w", "a"]
-        return GzipDecompressorStream(open(vcffile, mode))
-        # return GZip.open(vcffile, mode)
+        return GzipCompressorStream(open(vcffile, mode))
     elseif endswith(vcffile, ".vcf.gz") && mode ∉ ["r", "w", "a"]
         throw(ArgumentError("mode can only be r, w, or a for vcf.gz file"))
     else

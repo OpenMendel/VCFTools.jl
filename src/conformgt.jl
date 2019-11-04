@@ -34,13 +34,9 @@ function conformgt_by_id(
     reader_tgt = VCF.Reader(openvcf(tgtfile, "r"))
     records_ref, records_tgt = nrecords(reffile), nrecords(tgtfile)
     # create output files
-    # writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
-    #     VCF.header(reader_ref))
-    # writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
-    #     VCF.header(reader_tgt))
-    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf"]), "w"),
+    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
         VCF.header(reader_ref))
-    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf"]), "w"),
+    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
         VCF.header(reader_tgt))
     # collect IDs in the reference panel
     @info("Scan IDs in reference panel")
@@ -166,13 +162,9 @@ function conformgt_by_pos(
     reader_tgt = VCF.Reader(openvcf(tgtfile, "r"))
     records_ref, records_tgt = nrecords(reffile), nrecords(tgtfile)
     # create output files (.gz currently throws error)
-    # writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
-    #     VCF.header(reader_ref))
-    # writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
-    #     VCF.header(reader_tgt))
-    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf"]), "w"),
+    writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
         VCF.header(reader_ref))
-    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf"]), "w"),
+    writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
         VCF.header(reader_tgt))
     # initialize reference reader
     record_ref, iter_state_ref, pos_ref = VCF.Record(), iterate(reader_ref), 0
@@ -300,7 +292,7 @@ in `genokey` are skipped.
 """
 function filter_genotype(
     vcffile::T,
-    outfile::T = "filtered.vcf",
+    outfile::T = "filtered.vcf.gz",
     genokey::Vector{T} = ["GT"]
     ) where T <: AbstractString
     reader = VCF.Reader(openvcf(vcffile, "r"))
