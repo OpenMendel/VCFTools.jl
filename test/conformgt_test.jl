@@ -24,37 +24,11 @@ using CodecZlib, GeneticVariation
     @test VCF.hasformat(record_out) == false
 end
 
-# TODO: fix VCF.Reader on compressed files
-# @testset "filter_genotype(file.vcf.gz)" begin
-#     # retrieve (compressed) GT data 
-#     filter_genotype("test.08Jun17.d8b.vcf.gz")
-#     reader_in = VCF.Reader(openvcf("test.08Jun17.d8b.vcf.gz", "r"))
-#     reader_out = VCF.Reader(openvcf("filtered.vcf.gz", "r"))
-#     state_in = start(reader_in)
-#     state_out = start(reader_out)
-#     while !done(reader_in, state_in)
-#         record_in, state_in = next(reader_in, state_in)
-#         record_out, state_out = next(reader_out, state_out)
-#         @test VCF.format(record_out) == ["GT"]
-#         @test VCF.genotype(record_in, :, "GT") == VCF.genotype(record_out, :, "GT")
-#     end
-#     close(reader_in); close(reader_out)
-#     # no matching formats
-#     filter_genotype("test.08Jun17.d8b.vcf.gz", "filtered.vcf.gz", ["GQ"])
-#     reader_out = VCF.Reader(openvcf("filtered.vcf.gz", "r"))
-#     state_out = start(reader_out)
-#     while !done(reader_out, state_out)
-#         record_out, state_out = next(reader_out, state_out)
-#         @test VCF.hasformat(record_out) == false
-#     end
-#     close(reader_out)
-# end
-
-@testset "filter_genotype(file.vcf)" begin
-    # retrieve (uncompressed) GT data 
-    filter_genotype("test.08Jun17.d8b.vcf")
-    reader_in = VCF.Reader(openvcf("test.08Jun17.d8b.vcf", "r"))
-    reader_out = VCF.Reader(openvcf("filtered.vcf", "r"))
+@testset "filter_genotype(file)" begin
+    # retrieve (compressed) GT data 
+    filter_genotype("test.08Jun17.d8b.vcf.gz")
+    reader_in = VCF.Reader(openvcf("test.08Jun17.d8b.vcf.gz", "r"))
+    reader_out = VCF.Reader(openvcf("filtered.vcf.gz", "r"))
     iter_state_in, iter_state_out = iterate(reader_in), iterate(reader_out)
     while iter_state_in !== nothing
         record_in, state_in = iter_state_in
@@ -66,8 +40,8 @@ end
     end
     close(reader_in); close(reader_out)
     # no matching formats
-    filter_genotype("test.08Jun17.d8b.vcf", "filtered.vcf", ["GQ"])
-    reader_out = VCF.Reader(openvcf("filtered.vcf", "r"))
+    filter_genotype("test.08Jun17.d8b.vcf.gz", "filtered.vcf.gz", ["GQ"])
+    reader_out = VCF.Reader(openvcf("filtered.vcf.gz", "r"))
     iter_state_out = iterate(reader_out)
     while iter_state_out !== nothing
         record_out, state_out = iter_state_out
@@ -113,58 +87,20 @@ end
     @test pval ≈ 0.002759456 atol=1e-6
 end
 
-# TODO: fix VCF.Reader on compressed files
-# @testset "conformgt_by_id(compressed)" begin
-#     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
-#     tgtvcf = "test.08Jun17.d8b.vcf.gz"
-#     outvcf = "conformgt.matched"
-#     isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
-#         joinpath(dirname(pathof(VCFTools)), "..", "test/chr22.1kg.phase3.v5a.vcf.gz"))
-#     isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
-#         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
-#     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     @test lines == 823
-#     reader_ref = VCF.Reader(GzipDecompressionStream(open(join([outvcf, ".ref.vcf.gz"]), "r")))
-#     reader_tgt = VCF.Reader(GzipDecompressionStream(open(join([outvcf, ".tgt.vcf.gz"]), "r")))
-#     state_ref, state_tgt = start(reader_ref), start(reader_tgt)
-#     while !done(reader_ref, state_ref)
-#         record_ref, state_ref = next(reader_ref, state_ref)
-#         record_tgt, state_tgt = next(reader_tgt, state_tgt)
-#         @test VCF.id(record_ref) == VCF.id(record_tgt)
-#         @test VCF.ref(record_ref) == VCF.ref(record_tgt)
-#         # @test VCF.alt(record_ref) == VCF.alt(record_tgt)
-#     end
-#     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 0.05)
-#     @test lines == 488
-#     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 1)
-#     @test lines == 0
-#     # Profile.clear()
-#     # @profile conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     # Profile.print(format=:flat)
-# end
-
-@testset "conformgt_by_id(decompressed)" begin
+@testset "conformgt_by_id" begin
     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
     tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    if !isfile(refvcf) 
-        download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$refvcf")))
-        run(`gunzip -k $refvcf`)
-    end
-    if !isfile(tgtvcf) 
-        download("http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz", 
+    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$tgtvcf")))
-        run(`gunzip -k $tgtvcf`)
-    end
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @time lines = conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @test lines == 823
-    reader_ref = VCF.Reader(open(join([outvcf, ".ref.vcf"]), "r"))
-    reader_tgt = VCF.Reader(open(join([outvcf, ".tgt.vcf"]), "r"))
+    reader_ref = VCF.Reader(openvcf(join([outvcf, ".ref.vcf.gz"]), "r"))
+    reader_tgt = VCF.Reader(openvcf(join([outvcf, ".tgt.vcf.gz"]), "r"))
     iter_state_ref, iter_state_tgt = iterate(reader_ref), iterate(reader_tgt)
     while iter_state_ref !== nothing
         record_ref, state_ref = iter_state_ref
@@ -184,59 +120,20 @@ end
     # Profile.print(format=:flat)
 end
 
-# TODO: fix VCF.Reader on compressed files
-# @testset "conformgt_by_pos(compressed)" begin
-#     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
-#     tgtvcf = "test.08Jun17.d8b.vcf.gz"
-#     outvcf = "conformgt.matched"
-#     isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
-#         joinpath(dirname(pathof(VCFTools)), "..", "test/chr22.1kg.phase3.v5a.vcf.gz"))
-#     isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
-#         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
-#     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     @test lines == 833
-#     reader_ref = VCF.Reader(GzipDecompressionStream(open(join([outvcf, ".ref.vcf.gz"]), "r")))
-#     reader_tgt = VCF.Reader(GzipDecompressionStream(open(join([outvcf, ".tgt.vcf.gz"]), "r")))
-#     state_ref, state_tgt = start(reader_ref), start(reader_tgt)
-#     while !done(reader_ref, state_ref)
-#         record_ref, state_ref = next(reader_ref, state_ref)
-#         record_tgt, state_tgt = next(reader_tgt, state_tgt)
-#         @test VCF.chrom(record_ref) == VCF.chrom(record_tgt)
-#         @test VCF.pos(record_ref) == VCF.pos(record_tgt)
-#         @test VCF.ref(record_ref) == VCF.ref(record_tgt)
-#         # @test VCF.alt(record_ref) == VCF.alt(record_tgt)
-#     end
-#     @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 0.05)
-#     @test lines == 493
-#     @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, 1)
-#     @test lines == 0
-#     # Profile.clear()
-#     # @profile conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
-#     # Profile.print(format=:flat)
-# end
-
-@testset "conformgt_by_pos(decompressed)" begin
+@testset "conformgt_by_pos" begin
     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
     tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    if !isfile(refvcf) 
-        download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$refvcf"))) 
-        run(`gunzip -k $refvcf`)
-    end
-    if !isfile(tgtvcf) 
-        download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$tgtvcf")))
-        run(`gunzip -k $tgtvcf`)
-    end
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @time lines = conformgt_by_pos(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     @test lines == 833
-    reader_ref = VCF.Reader(open(join([outvcf, ".ref.vcf"]), "r"))
-    reader_tgt = VCF.Reader(open(join([outvcf, ".tgt.vcf"]), "r"))
+    reader_ref = VCF.Reader(openvcf(join([outvcf, ".ref.vcf.gz"]), "r"))
+    reader_tgt = VCF.Reader(openvcf(join([outvcf, ".tgt.vcf.gz"]), "r"))
     iter_state_ref, iter_state_tgt = iterate(reader_ref), iterate(reader_tgt)
     while iter_state_ref !== nothing
         record_ref, state_ref = iter_state_ref
