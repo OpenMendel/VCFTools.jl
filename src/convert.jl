@@ -147,3 +147,75 @@ function convert_gt(
     close(reader)
     out
 end
+
+"""
+    convert_ht(t, vcffile)
+
+Converts the GT data from a VCF file to a haplotype matrix of type `t`. One 
+column of the VCF record will become 2 column in the resulting matrix. If haplotypes
+are not phased, monomorphic alleles will have a 1 on the left column.
+"""
+function convert_ht(
+    t::Type{T},
+    vcffile::AbstractString
+    ) where T <: Real
+    out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), 2nrecords(vcffile))
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_ht!(out, reader)
+    close(reader)
+    return out
+end
+
+function copy_ht!(
+    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
+    reader::VCF.Reader
+    ) where T <: Real
+
+    n, p = size(A)
+    pp   = Int(p / 2)
+
+    # loop over every record, each filling 2 columns of A
+    for j in pp
+        if eof(reader)
+            @warn("Reached end! Check if output is correct!")
+            A = A[:, 1:2j]
+        else
+            record = read(reader)
+        end
+        gtkey = VCF.findgenokey(record, "GT")
+
+        # haplotype reference files must have GT field
+        if gtkey == 0
+            error("Missing GT field for record $j. Reference panels cannot have missing data!")
+        end
+
+        # need to know whether allele is REF or ALT... or do I?
+        _, _, _, _, _, _, _, _, minor_allele, _, _ = gtstats(record, nothing)
+
+        # loop over every marker in record
+        # for i in 1:n
+        #     geno = record.genotype[i]
+        #     # Missing genotype: dropped field or "." => 0x2e
+        #     if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+        #         if impute
+        #             if minor_allele # REF is the minor allele
+        #                 a1, a2 = rand() ≤ maf, rand() ≤ maf
+        #             else # ALT is the minor allele
+        #                 a1, a2 = rand() > maf, rand() > maf
+        #             end
+        #             A[i, j] = convert_gt(T, (a1, a2), minor_allele, model)
+        #         else
+        #             A[i, j] = missing
+        #         end
+        #     else # not missing
+        #         # "0" (ALT) => 0x30, "1" (REF) => 0x31
+        #         a1 = record.data[geno[gtkey][1]] == 0x31
+        #         a2 = record.data[geno[gtkey][3]] == 0x31
+        #         A[i, j] = convert_gt(T, (a1, a2), minor_allele, model)
+        #     end
+        #     # center and scale if asked
+        #     center && !ismissing(A[i, j]) && (A[i, j] -= ct)
+        #     scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
+        # end
+    end
+end

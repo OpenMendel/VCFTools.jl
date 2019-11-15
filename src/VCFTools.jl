@@ -10,7 +10,8 @@ module VCFTools
 	export conformgt_by_id, conformgt_by_pos,
 	    convert_gt, copy_gt!,
 	    filter_genotype, gtstats,
-	    nrecords, nsamples, openvcf
+	    nrecords, nsamples, openvcf,
+	    convert_ht, copy_ht!
 
 	# package code goes here
 	include("gtstats.jl")
