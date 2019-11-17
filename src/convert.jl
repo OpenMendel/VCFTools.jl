@@ -159,7 +159,7 @@ function convert_ht(
     t::Type{T},
     vcffile::AbstractString
     ) where T <: Real
-    out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), 2nrecords(vcffile))
+    out = Matrix{t}(undef, nsamples(vcffile), 2nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
     copy_ht!(out, reader)
     close(reader)
@@ -184,7 +184,7 @@ function convert_ht(
 end
 
 function copy_ht!(
-    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
+    A::Union{AbstractMatrix{T}, AbstractVector{T}},
     reader::VCF.Reader
     ) where T <: Real
 
