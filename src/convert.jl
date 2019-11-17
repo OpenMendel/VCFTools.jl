@@ -166,6 +166,23 @@ function convert_ht(
     return out
 end
 
+"""
+Convert a one-bit haplotype to a real number (minor allele count) of type
+`t`. Here `minor_allele==true` indicates `REF` is the minor allele;
+`minor_allele==false` indicates `ALT` is the minor allele.
+"""
+function convert_ht(
+    t::Type{T},
+    a::Bool,
+    minor_allele::Bool
+    ) where T <: Real
+    if minor_allele # REF is the minor allele
+        return convert(T, a)
+    else # ALT is the minor allele
+        return convert(T, !a)
+    end
+end
+
 function copy_ht!(
     A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
     reader::VCF.Reader
@@ -175,7 +192,7 @@ function copy_ht!(
     pp   = Int(p / 2)
 
     # loop over every record, each filling 2 columns of A
-    for j in pp
+    for j in 1:pp
         if eof(reader)
             @warn("Reached end! Check if output is correct!")
             A = A[:, 1:2j]
@@ -189,33 +206,22 @@ function copy_ht!(
             error("Missing GT field for record $j. Reference panels cannot have missing data!")
         end
 
-        # need to know whether allele is REF or ALT... or do I?
+        # check whether allele is REF or ALT
         _, _, _, _, _, _, _, _, minor_allele, _, _ = gtstats(record, nothing)
 
         # loop over every marker in record
-        # for i in 1:n
-        #     geno = record.genotype[i]
-        #     # Missing genotype: dropped field or "." => 0x2e
-        #     if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
-        #         if impute
-        #             if minor_allele # REF is the minor allele
-        #                 a1, a2 = rand() ≤ maf, rand() ≤ maf
-        #             else # ALT is the minor allele
-        #                 a1, a2 = rand() > maf, rand() > maf
-        #             end
-        #             A[i, j] = convert_gt(T, (a1, a2), minor_allele, model)
-        #         else
-        #             A[i, j] = missing
-        #         end
-        #     else # not missing
-        #         # "0" (ALT) => 0x30, "1" (REF) => 0x31
-        #         a1 = record.data[geno[gtkey][1]] == 0x31
-        #         a2 = record.data[geno[gtkey][3]] == 0x31
-        #         A[i, j] = convert_gt(T, (a1, a2), minor_allele, model)
-        #     end
-        #     # center and scale if asked
-        #     center && !ismissing(A[i, j]) && (A[i, j] -= ct)
-        #     scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
-        # end
+        for i in 1:n
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or "." => 0x2e
+            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+                error("Missing GT field for record $j entry $i. Reference panels cannot have missing data!")
+            else # not missing
+                # "0" (ALT) => 0x30, "1" (REF) => 0x31
+                a1 = record.data[geno[gtkey][1]] == 0x31
+                a2 = record.data[geno[gtkey][3]] == 0x31
+                A[i, 2j - 1] = convert_ht(T, a1, minor_allele)
+                A[i, 2j]     = convert_ht(T, a2, minor_allele)
+            end
+        end
     end
 end
