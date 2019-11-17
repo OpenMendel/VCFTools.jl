@@ -159,7 +159,7 @@ function convert_ht(
     t::Type{T},
     vcffile::AbstractString
     ) where T <: Real
-    out = Matrix{t}(undef, nsamples(vcffile), 2nrecords(vcffile))
+    out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
     copy_ht!(out, reader)
     close(reader)
@@ -189,10 +189,10 @@ function copy_ht!(
     ) where T <: Real
 
     n, p = size(A)
-    pp   = Int(p / 2)
+    nn   = Int(n / 2)
 
     # loop over every record, each filling 2 columns of A
-    for j in 1:pp
+    for j in 1:p
         if eof(reader)
             @warn("Reached end! Check if output is correct!")
             A = A[:, 1:2j]
@@ -210,7 +210,7 @@ function copy_ht!(
         _, _, _, _, _, _, _, _, minor_allele, _, _ = gtstats(record, nothing)
 
         # loop over every marker in record
-        for i in 1:n
+        for i in 1:nn
             geno = record.genotype[i]
             # Missing genotype: dropped field or "." => 0x2e
             if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
@@ -219,8 +219,8 @@ function copy_ht!(
                 # "0" (ALT) => 0x30, "1" (REF) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
-                A[i, 2j - 1] = convert_ht(T, a1, minor_allele)
-                A[i, 2j]     = convert_ht(T, a2, minor_allele)
+                A[2i - 1, j] = convert_ht(T, a1, minor_allele)
+                A[2i, 2]     = convert_ht(T, a2, minor_allele)
             end
         end
     end
