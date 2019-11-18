@@ -220,7 +220,7 @@ function copy_ht!(
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
                 A[2i - 1, j] = convert_ht(T, a1, minor_allele)
-                A[2i, 2]     = convert_ht(T, a2, minor_allele)
+                A[2i    , j] = convert_ht(T, a2, minor_allele)
             end
         end
     end
