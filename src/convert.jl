@@ -72,7 +72,7 @@ function copy_gt!(
         end
         gtkey = VCF.findgenokey(record, "GT")
         # if no GT field, fill by missing values
-        if gtkey == 0
+        if gtkey == nothing
             @inbounds @simd for i in 1:size(A, 1)
                 A[i, j] = missing
             end
@@ -202,7 +202,7 @@ function copy_ht!(
         gtkey = VCF.findgenokey(record, "GT")
 
         # haplotype reference files must have GT field
-        if gtkey == 0
+        if gtkey == nothing
             error("Missing GT field for record $j. Reference panels cannot have missing data!")
         end
 
