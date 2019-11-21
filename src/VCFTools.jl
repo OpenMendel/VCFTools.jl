@@ -11,11 +11,13 @@ module VCFTools
 	    convert_gt, copy_gt!,
 	    filter_genotype, gtstats,
 	    nrecords, nsamples, openvcf,
-	    convert_ht, copy_ht!
+	    convert_ht, copy_ht!,
+	    filter
 
 	# package code goes here
 	include("gtstats.jl")
 	include("conformgt.jl")
 	include("convert.jl")
+	include("filter.jl")
 
 end # module
