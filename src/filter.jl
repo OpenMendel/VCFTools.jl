@@ -1,5 +1,5 @@
 """
-	filter(src, record_index, sample_index; des = "filtered." * src)
+    filter(src, record_index, sample_index; des = "filtered." * src)
 
 Filter vcf files (.vcf or .vcf.gz) according to row indices `record_index` 
 and column indices `sample_index` and write to a new set of vcf files `des`.
@@ -13,11 +13,11 @@ and column indices `sample_index` and write to a new set of vcf files `des`.
 - `des`: output vcf file name; default it `"filtered." * src`.
 """
 function filter(
-	src::AbstractString, 
-	record_index::AbstractVector{<:Integer}, 
-	sample_index::AbstractVector{<:Integer}; 
-	des::AbstractString = "filtered." * src 
-	)
+    src::AbstractString, 
+    record_index::AbstractVector{<:Integer}, 
+    sample_index::AbstractVector{<:Integer}; 
+    des::AbstractString = "filtered." * src 
+    )
     # create record (row) and sample (column) masks
     records, samples = nrecords(src), nsamples(src)
     if eltype(record_index) == Bool
@@ -39,7 +39,7 @@ function filter(
 
     # write to des
     for (i, record) in enumerate(reader)
-    	record_index[i] && VCF.write(writer, filter_record(record, sample_mask))
+        record_index[i] && VCF.write(writer, filter_record(record, sample_mask))
     end
 
     close(reader)
@@ -48,26 +48,26 @@ function filter(
 end
 
 function filter_header(
-	reader::VCF.Reader,
-	sample_mask::BitVector
-	)
-	#save meta information
-	fileformat = VCF.header(reader).metainfo[1]
-	filedate   = VCF.MetaInfo("##filedate=" * string(Dates.today()))
-	signature  = VCF.MetaInfo("##source=VCFTools.jl")
-	metainfo = vcat(fileformat, filedate, signature, VCF.header(reader).metainfo[2:end])
+    reader::VCF.Reader,
+    sample_mask::BitVector
+    )
+    #save meta information
+    fileformat = VCF.header(reader).metainfo[1]
+    filedate   = VCF.MetaInfo("##filedate=" * string(Dates.today()))
+    signature  = VCF.MetaInfo("##source=VCFTools.jl")
+    metainfo = vcat(fileformat, filedate, signature, VCF.header(reader).metainfo[2:end])
 
-	#filter sampleID
-	sampleID = VCF.header(reader).sampleID[sample_mask]
-	return VCF.Header(metainfo, sampleID)
+    #filter sampleID
+    sampleID = VCF.header(reader).sampleID[sample_mask]
+    return VCF.Header(metainfo, sampleID)
 end
 
 function filter_record(
-	record::VCF.Record,
-	sample_mask::BitVector
-	)
-	# filter only genotype data
-	new_record = copy(record)
-	new_record.genotype = record.genotype[sample_mask]
-	return new_record
+    record::VCF.Record,
+    sample_mask::BitVector
+    )
+    # filter only genotype data
+    new_record = copy(record)
+    new_record.genotype = record.genotype[sample_mask]
+    return new_record
 end
