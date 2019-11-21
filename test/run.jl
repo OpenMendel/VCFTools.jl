@@ -38,3 +38,14 @@ record_index = bitrand(records)
 sample_index = bitrand(samples)
 VCFTools.filter(vcffile, record_index, sample_index)
 
+
+
+
+des = "filter." * vcffile
+reader = VCF.Reader(openvcf(vcffile, "r"))
+writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
+    
+
+
+
+

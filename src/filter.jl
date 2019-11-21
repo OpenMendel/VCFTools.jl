@@ -28,11 +28,10 @@ function filter(
     samples = nsamples(src)
 
     # write to des
-    # lines = 0
-    # for record in reader
-    # 	lines += 1
-    # 	VCF.write(writer, record)
-    # end
+    for (i, record) in enumerate(reader)
+    	record_index[i] && continue
+    	VCF.write(writer, filter_record(record, sample_mask))
+    end
 
     close(reader)
     flush(writer)
@@ -54,3 +53,12 @@ function filter_header(
 	return VCF.Header(metainfo, sampleID)
 end
 
+function filter_record(
+	record::VCF.Record,
+	sample_mask::BitVector
+	)
+	# filter only genotype data
+	new_record = copy(record)
+	new_record.genotype = record.genotype[sample_mask]
+	return new_record
+end
