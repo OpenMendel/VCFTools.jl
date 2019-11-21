@@ -58,7 +58,7 @@ function conformgt_by_id(
         # if not in search range, skip this record
         pos_ref < first(posrange) && continue
         # if no "GT" field, skip this record
-        VCF.findgenokey(record_ref, "GT") == 0 && continue
+        isnothing(VCF.findgenokey(record_ref, "GT")) && continue
         # if no ID, skip this record
         VCF.hasid(record_ref) || continue
         # add ID to list
@@ -85,7 +85,7 @@ function conformgt_by_id(
         record_counter += 1
         ProgressMeter.update!(pbar, record_counter)
         # if no "GT" field, skip this record
-        VCF.findgenokey(record_tgt, "GT") == 0 && continue
+        isnothing(VCF.findgenokey(record_tgt, "GT")) && continue
         # if no ID, skip
         VCF.hasid(record_tgt) || continue
         # if not in reference panel, skip
@@ -177,7 +177,7 @@ function conformgt_by_pos(
         record_counter += 1
         ProgressMeter.update!(pbar, record_counter)
         # if no "GT" field, skip this record
-        VCF.findgenokey(record_tgt, "GT") == 0 && continue
+        isnothing(VCF.findgenokey(record_tgt, "GT")) && continue
         # chromosome not matched, skip this record
         VCF.chrom(record_tgt) == chrom || continue
         # if past search range, break
@@ -198,7 +198,7 @@ function conformgt_by_pos(
             while iter_state_ref !== nothing
                 record_ref, state_ref = iter_state_ref
                 # if no "GT" field, skip this record
-                VCF.findgenokey(record_tgt, "GT") == 0 && continue
+                isnothing(VCF.findgenokey(record_tgt, "GT")) && continue
                 # if chromosome not matched, skip this record
                 VCF.chrom(record_ref) == chrom || continue
                 pos_ref = VCF.pos(record_ref)
@@ -248,8 +248,8 @@ Match the REF allele label of record 2 to that of record 1. Return the possibly
 REF/ALT flipped record 2 with only "GT" genotype data.
 """
 function match_gt_allele(record1::VCF.Record, record2::VCF.Record)
-    @assert VCF.findgenokey(record1, "GT") > 0 "record1 has no GT field"
-    @assert VCF.findgenokey(record2, "GT") > 0 "record2 has no GT field"
+    isnothing(VCF.findgenokey(record1, "GT")) && error("record1 has no GT field")
+    isnothing(VCF.findgenokey(record2, "GT")) && error("record2 has no GT field")
     ref1 = VCF.ref(record1)
     ref2 = VCF.ref(record2)
     alt2 = VCF.alt(record2)
@@ -313,7 +313,7 @@ REF label in the flipped record.
 """
 function flip_gt_allele(record::VCF.Record, altlabel::String = VCF.alt(record)[1])
     altlabel ∈ VCF.alt(record) || throw(ArgumentError("ALT label not found"))
-    VCF.findgenokey(record, "GT") == 0 && throw(ArgumentError("GT format not found"))
+    isnothing(VCF.findgenokey(record, "GT")) && throw(ArgumentError("GT format not found"))
     gt_out = [Dict("GT" => VCF.genotype(record, i, "GT"))
         for i in 1:length(record.genotype)]
     record_out = VCF.Record(record; ref = VCF.alt(record)[1],

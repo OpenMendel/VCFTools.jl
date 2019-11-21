@@ -62,6 +62,11 @@ function filter_header(
     return VCF.Header(metainfo, sampleID)
 end
 
+"""
+    filter_record(record, sample_mask)
+
+TODO: make this efficient
+"""
 function filter_record(
     record::VCF.Record,
     sample_mask::BitVector
