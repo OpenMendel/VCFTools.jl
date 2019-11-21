@@ -30,22 +30,23 @@ using Random
 using VCFTools
 
 cd("/Users/biona001/.julia/dev/VCFTools/test")
-vcffile = "test.08Jun17.d8b.vcf"
+vcffile = "test.08Jun17.d8b.vcf.gz"
 samples = nsamples(vcffile)
 records = nrecords(vcffile)
 
+Random.seed!(123)
 record_index = bitrand(records)
 sample_index = bitrand(samples)
 VCFTools.filter(vcffile, record_index, sample_index)
 
 
 
-
 des = "filter." * vcffile
 reader = VCF.Reader(openvcf(vcffile, "r"))
-writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
+writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_index))
     
 
-
+reader = VCF.Reader(openvcf(vcffile, "r"))
+record = read(reader)
 
 

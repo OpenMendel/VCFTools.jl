@@ -1,11 +1,25 @@
+"""
+	filter(src, record_index, sample_index; des = "filtered." * src)
+
+Filter vcf files (.vcf or .vcf.gz) according to row indices `record_index` 
+and column indices `sample_index` and write to a new set of vcf files `des`.
+
+# Input:
+- `src`: full vcf file name
+- `record_index`: row indices to keep.
+- `sample_index`: column indices to keep.
+
+# Optional arguments:
+- `des`: output vcf file name; default it `"filtered." * src`.
+"""
 function filter(
 	src::AbstractString, 
 	record_index::AbstractVector{<:Integer}, 
 	sample_index::AbstractVector{<:Integer}; 
 	des::AbstractString = "filtered." * src 
 	)
-
     # create record (row) and sample (column) masks
+    records, samples = nrecords(src), nsamples(src)
     if eltype(record_index) == Bool
         record_mask = record_index
     else
@@ -22,15 +36,10 @@ function filter(
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
     writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
-    
-    # needed constants
-    records = nrecords(src)
-    samples = nsamples(src)
 
     # write to des
     for (i, record) in enumerate(reader)
-    	record_index[i] && continue
-    	VCF.write(writer, filter_record(record, sample_mask))
+    	record_index[i] && VCF.write(writer, filter_record(record, sample_mask))
     end
 
     close(reader)
