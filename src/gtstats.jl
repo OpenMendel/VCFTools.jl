@@ -188,7 +188,7 @@ end
 """
     nrecords(vcffile)
 
-Number of records (markers) in a VCF file.
+Number of records (markers) in a VCF file. Each record is a row. 
 """
 function nrecords(vcffile::AbstractString)
     reader = VCF.Reader(openvcf(vcffile, "r"))
