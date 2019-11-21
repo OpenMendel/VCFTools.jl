@@ -36,5 +36,5 @@ records = nrecords(vcffile)
 
 record_index = bitrand(records)
 sample_index = bitrand(samples)
-lines = VCFTools.filter(vcffile, record_index, sample_index)
+VCFTools.filter(vcffile, record_index, sample_index)
 

@@ -21,7 +21,7 @@ function filter(
 
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
-    writer = VCF.Writer(openvcf(des, "w"), filtered_header(reader, sample_mask))
+    writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
     
     # needed constants
     records = nrecords(src)
@@ -39,11 +39,17 @@ function filter(
     close(VCF.BioCore.IO.stream(writer))
 end
 
-function filtered_header(
+function filter_header(
 	reader::VCF.Reader,
 	sample_mask::BitVector
 	)
-	metainfo = VCF.header(reader).metainfo
+	#save meta information
+	fileformat = VCF.header(reader).metainfo[1]
+	filedate   = VCF.MetaInfo("##filedate=" * string(Dates.today()))
+	signature  = VCF.MetaInfo("##source=VCFTools.jl")
+	metainfo = vcat(fileformat, filedate, signature, VCF.header(reader).metainfo[2:end])
+
+	#filter sampleID
 	sampleID = VCF.header(reader).sampleID[sample_mask]
 	return VCF.Header(metainfo, sampleID)
 end

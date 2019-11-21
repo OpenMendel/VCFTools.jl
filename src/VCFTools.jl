@@ -5,6 +5,7 @@ module VCFTools
 	using HypothesisTests
 	using ProgressMeter
 	using DelimitedFiles
+	using Dates
 	import GeneticVariation.VCF
 
 	export conformgt_by_id, conformgt_by_pos,
@@ -12,7 +13,7 @@ module VCFTools
 	    filter_genotype, gtstats,
 	    nrecords, nsamples, openvcf,
 	    convert_ht, copy_ht!,
-	    filter
+	    filter, filter_header
 
 	# package code goes here
 	include("gtstats.jl")
