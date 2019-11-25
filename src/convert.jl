@@ -231,8 +231,6 @@ end
 
 Converts dosage data from a VCF file to a numeric matrix of type `t`. Here `key` specifies
 the FORMAT field of the VCF file that encodes the dosage (default = "DS").
-
-TODO: calculate dosage using actual estimated alternate allele dosage P(0/1) + 2*P(1/1)
 """
 function convert_ds(
     t::Type{T},
@@ -241,11 +239,14 @@ function convert_ds(
     ) where T <: Real
     out = Matrix{t}(undef, nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_ds!(out, reader, key)
+    copy_ds!(out, reader, key = key)
     close(reader)
     return out
 end
 
+"""
+TODO: calculate dosage using actual estimated alternate allele dosage P(0/1) + 2*P(1/1) 
+"""
 function copy_ds!(
     A::Union{AbstractMatrix{T}, AbstractVector{T}},
     reader::VCF.Reader;

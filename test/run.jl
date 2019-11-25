@@ -51,4 +51,16 @@ writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_index))
 reader = VCF.Reader(openvcf(vcffile, "r"))
 record = read(reader)
 
+# test convert_ds
+using Revise
+using GeneticVariation
+using Random
+using VCFTools
+using BenchmarkTools
+
+
+cd("/Users/biona001/Benjamin_Folder/UCLA/research/2nd_project/benchmarks/AFRPed/minimac4")
+vcffile = "minimac4_result.dose.vcf"
+dosage = convert_ds(Float64, vcffile)
+
 
