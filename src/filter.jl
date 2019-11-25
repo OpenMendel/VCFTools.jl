@@ -39,6 +39,7 @@ function filter(
 
     # write to des
     for (i, record) in enumerate(reader)
+        # record_index[i] && VCF.write(writer, record)
         record_index[i] && VCF.write(writer, filter_record(record, sample_mask))
     end
 

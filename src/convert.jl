@@ -225,3 +225,62 @@ function copy_ht!(
         end
     end
 end
+
+"""
+    convert_ds(t, vcffile; key = "DS")
+
+Converts dosage data from a VCF file to a numeric matrix of type `t`. Here `key` specifies
+the FORMAT field of the VCF file that encodes the dosage (default = "DS").
+
+TODO: calculate dosage using actual estimated alternate allele dosage P(0/1) + 2*P(1/1)
+"""
+function convert_ds(
+    t::Type{T},
+    vcffile::AbstractString;
+    key::String = "DS"
+    ) where T <: Real
+    out = Matrix{t}(undef, nsamples(vcffile), nrecords(vcffile))
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_ds!(out, reader, key)
+    close(reader)
+    return out
+end
+
+function copy_ds!(
+    A::Union{AbstractMatrix{T}, AbstractVector{T}},
+    reader::VCF.Reader;
+    key::String = "DS"
+    ) where T <: Real
+    t = eltype(A)
+    for j in 1:size(A, 2)
+        if eof(reader)
+            @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
+            fill!(view(A, :, (j + 1):size(A, 2)), missing)
+            break
+        else
+            record = read(reader)
+        end
+        dskey = VCF.findgenokey(record, key)
+
+        # if no dosage field, fill by missing values
+        if dskey == nothing
+            @inbounds @simd for i in 1:size(A, 1)
+                A[i, j] = missing
+            end
+        end
+        # check whether allele is REF or ALT
+        _, _, _ , _, _, _, _, _, minorallele, _, _ = gtstats(record, nothing)
+
+        # loop over every marker in record
+        for i in 1:size(A, 1)
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or "." => 0x2e
+            if dskey > lastindex(geno) || record.data[geno[dskey]] == [0x2e]
+                A[i, j] = missing 
+            else # not missing
+                # TODO: calculate dosage using actual estimated alternate allele dosage P(0/1) + 2*P(1/1)
+                A[i, j] = parse(t, String(record.data[geno[dskey]]))
+            end
+        end
+    end
+end
