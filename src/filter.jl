@@ -39,8 +39,10 @@ function filter(
 
     # write to des
     for (i, record) in enumerate(reader)
-        # record_index[i] && VCF.write(writer, record)
-        record_index[i] && VCF.write(writer, filter_record(record, sample_mask))
+        if record_index[i] 
+            filter_record!(record, sample_mask)
+            VCF.write(writer, record)
+        end
     end
 
     close(reader)
@@ -52,28 +54,65 @@ function filter_header(
     reader::VCF.Reader,
     sample_mask::BitVector
     )
-    #save meta information
+    # save meta information
     fileformat = VCF.header(reader).metainfo[1]
     filedate   = VCF.MetaInfo("##filedate=" * string(Dates.today()))
     signature  = VCF.MetaInfo("##source=VCFTools.jl")
     metainfo = vcat(fileformat, filedate, signature, VCF.header(reader).metainfo[2:end])
 
-    #filter sampleID
+    # filter sampleID
     sampleID = VCF.header(reader).sampleID[sample_mask]
     return VCF.Header(metainfo, sampleID)
 end
 
 """
-    filter_record(record, sample_mask)
-
-TODO: make this efficient
+    filter_record!(record, sample_mask)
 """
-function filter_record(
+function filter_record!(
     record::VCF.Record,
     sample_mask::BitVector
     )
-    # filter only genotype data
-    new_record = copy(record)
-    new_record.genotype = record.genotype[sample_mask]
-    return new_record
+
+    # quick return
+    if all(sample_mask)
+        return nothing
+    end
+
+    p = length(record.genotype)
+    new_data = UInt8[]
+    new_genotype = Vector{UnitRange{Int64}}[]
+    sizehint!(new_data, p)
+    sizehint!(new_genotype, p)
+
+    # copy chrom, pos, id, ref, alt, qual, filter, information, format into new_data
+    for i in 1:(record.genotype[1][1][1] - 1)
+        push!(new_data, record.data[i])
+    end
+
+    # copy genotype indices and data 
+    for i in 1:length(record.genotype)
+        if sample_mask[i]
+            old_geno = record.genotype[i]
+            new_geno = UnitRange{Int64}[]
+            for g in old_geno
+                # save genotypes
+                new_start = length(new_data) + 1
+                new_end   = new_start + length(g) - 1
+                push!(new_geno, new_start:new_end)
+
+                # save strings to data
+                old_start = g[1]
+                old_end   = g[end]
+                [push!(new_data, record.data[i]) for i in old_start:old_end]
+                push!(new_data, 0x3a) # 0x3a = byte equivalent of char ':'
+            end
+            push!(new_genotype, new_geno)
+            new_data[end] = 0x09 # 0x3a = byte equivalent of char '\t'
+        end
+    end
+
+    # update pointers to data and genotype indices
+    record.data = new_data
+    record.genotype = new_genotype
+    record.filled = 1:length(new_data)
 end
