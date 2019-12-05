@@ -11,7 +11,7 @@ record = read(reader)
 
 record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
 record = VCF.Record("20\t14370\t.\tG\tA\t29\tPASS;fdsa\t.\tDS\t1.99\t1.01")
-record = VCF.Record("20\t14370\t.\tG\tA\t29\tPASS\t.\tGT\t1\\0\t0\\0")
+record = VCF.Record("20\t14370\t.\tG\tA\t29\tPASS\t.\tGT\t1/0\t0/0")
 record.genotype
 
 #test convert_ht
@@ -40,34 +40,38 @@ using Random
 using VCFTools
 using BenchmarkTools
 
+#import data
 cd("/Users/biona001/.julia/dev/VCFTools/test")
-vcffile = "test.08Jun17.d8b.vcf"
+vcffile = "test.08Jun17.d8b.vcf.gz"
 samples = nsamples(vcffile)
 records = nrecords(vcffile)
-
-vcffile = "test.08Jun17.d8b.vcf"
 reader = VCF.Reader(openvcf(vcffile, "r"))
 record = read(reader)
 
-
+# define masks
 Random.seed!(123)
-record_index = bitrand(records)
-# record_index = trues(records)
-sample_index = trues(samples)
-sample_index[1] = false
-sample_index[end] = false
+record_mask = bitrand(records)
+# sample_mask = bitrand(samples)
+sample_mask = trues(samples)
+# sample_mask[1] = false
+sample_mask[end] = false
 
-VCFTools.filter(vcffile, record_index, sample_index)
+des = "filtered.test.08Jun17.d8b.vcf.gz"
+VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
+reader = VCF.Reader(openvcf(des, "r"))
+record = read(reader)
+record.genotype
+
 X = convert_gt(Float32, vcffile)
 X_filter = convert_gt(Float32, "filtered." * vcffile)
 
-@benchmark VCFTools.filter(vcffile, record_index, sample_index)
+@benchmark VCFTools.filter(vcffile, record_mask, sample_mask)
 #new: 149.763 ms, 214.48 MiB
 #old: 134.655 ms, 177.42 MiB
 
 des = "filter." * vcffile
 reader = VCF.Reader(openvcf(vcffile, "r"))
-writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_index))
+writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
     
 reader = VCF.Reader(openvcf(vcffile, "r"))
 record = read(reader)

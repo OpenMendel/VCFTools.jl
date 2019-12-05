@@ -106,10 +106,11 @@ function filter_record!(
                 [push!(new_data, record.data[i]) for i in old_start:old_end]
                 push!(new_data, 0x3a) # 0x3a = byte equivalent of char ':'
             end
+            new_data[end] = 0x09 # turn last ':' into '\t'
             push!(new_genotype, new_geno)
-            new_data[end] = 0x09 # 0x09 = byte equivalent of char '\t'
         end
     end
+    resize!(new_data, length(new_data) - 1) # get rid of last '\t'
 
     # update pointers to data and genotype indices
     record.data = new_data
@@ -118,15 +119,25 @@ function filter_record!(
 end
 
 """
+    mask_gt(src, masks; des = "masked." * src, separator = '/')
+
+Creates a new VCF file `des` where genotype entry (i, j) of `src` 
+is missing if `masks[i, j]` is true. `src` is unchanged.
+
+# Arguments
+- `src`: Input VCF file name.
+- `masks`: Bit matrix. `masks[i, j] = true` means mask entry (i, j).
+- `des`: output VCF file name.
+- `separator`: Separator of VCF genotypes. Can be '/' (default) or '|'.  
 
 # Useful byte reprensetations
-String([0x09]) # '\t'
-String([0x3a]) # ':'
-String([0x30]) # '0'
-String([0x31]) # '1'
-String([0x2e]) # '.'
-String([0x7c]) # '|'
-String([0x2f]) # '/'
+- '\t': String([0x09])
+- ':': String([0x3a])
+- '0': String([0x30])
+- '1': String([0x31])
+- '.': String([0x2e])
+- '|': String([0x7c])
+- '/': String([0x2f])
 """
 function mask_gt(
     src::AbstractString, 
