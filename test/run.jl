@@ -87,6 +87,7 @@ samples = nsamples(vcffile)
 records = nrecords(vcffile)
 masks = bitrand(records, samples)
 mask_gt(vcffile, masks)
+@benchmark mask_gt(vcffile, masks) #82.221 ms, 108.69 MiB, 800187 alloc
 
 
 # test convert_ds

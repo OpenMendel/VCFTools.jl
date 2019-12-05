@@ -156,21 +156,17 @@ function mask_gt(
     # loop over each record
     for (i, record) in enumerate(reader)
         gtkey = VCF.findgenokey(record, "GT")
-        if isnothing(gtkey) 
-            write(writer, record)
-            continue
-        end
-
-        # loop over genotypes
-        new_record = copy(record)
-        for (j, geno) in enumerate(new_record.genotype)
-            if masks[i, j]
-                new_record.data[geno[gtkey][1]] = 0x2e
-                new_record.data[geno[gtkey][3]] = 0x2e
-                new_record.data[geno[gtkey][2]] = separator
+        if !isnothing(gtkey) 
+            # loop over genotypes
+            for (j, geno) in enumerate(record.genotype)
+                if masks[i, j]
+                    record.data[geno[gtkey][1]] = 0x2e
+                    record.data[geno[gtkey][2]] = separator
+                    record.data[geno[gtkey][3]] = 0x2e
+                end
             end
         end
-        write(writer, new_record)
+        write(writer, record)
     end
     flush(writer); close(reader); close(writer)
 end
