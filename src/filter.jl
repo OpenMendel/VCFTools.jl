@@ -90,7 +90,7 @@ function filter_record!(
     end
 
     # copy genotype indices and data 
-    for i in 1:length(record.genotype)
+    for i in 1:p
         if sample_mask[i]
             old_geno = record.genotype[i]
             new_geno = UnitRange{Int64}[]
@@ -107,7 +107,7 @@ function filter_record!(
                 push!(new_data, 0x3a) # 0x3a = byte equivalent of char ':'
             end
             push!(new_genotype, new_geno)
-            new_data[end] = 0x09 # 0x3a = byte equivalent of char '\t'
+            new_data[end] = 0x09 # 0x09 = byte equivalent of char '\t'
         end
     end
 
@@ -115,4 +115,59 @@ function filter_record!(
     record.data = new_data
     record.genotype = new_genotype
     record.filled = 1:length(new_data)
+end
+
+"""
+
+# Useful byte reprensetations
+String([0x09]) # '\t'
+String([0x3a]) # ':'
+String([0x30]) # '0'
+String([0x31]) # '1'
+String([0x2e]) # '.'
+String([0x7c]) # '|'
+String([0x2f]) # '/'
+"""
+function mask_gt(
+    src::AbstractString, 
+    masks::BitArray{2}; 
+    des::AbstractString = "masked." * src,
+    separator::Char = '/'
+    )
+    records, samples = nrecords(src), nsamples(src)
+    p, n = size(masks)
+    if !(records == p && samples == n)
+        throw(DimensionMismatch("size(src) = ($records, $samples) ≠ size(masks) = ($p, $n)."))
+    end
+
+    # define byte representation of separator
+    if separator == '/' 
+        separator = 0x2f
+    elseif separator == '|'
+        separator = 0x7c
+    else
+        throw(ArgumentError("separator must be / or | but got $separator."))
+    end
+
+    # create input and output VCF files
+    reader = VCF.Reader(openvcf(src, "r"))
+    writer = VCF.Writer(openvcf(des, "w"), VCF.header(reader))
+
+    # loop over each record
+    for (i, record) in enumerate(reader)
+        gtkey = VCF.findgenokey(record, "GT")
+        isnothing(gtkey) && write(writer, record)
+
+        # loop over genotypes
+        new_record = copy(record)
+        for (j, geno) in enumerate(new_record.genotype)
+            if masks[i, j]
+                new_record.data[geno[gtkey][1]] = 0x2e
+                new_record.data[geno[gtkey][3]] = 0x2e
+                new_record.data[geno[gtkey][2]] = separator
+            end
+        end
+        write(writer, new_record)
+    end
+    flush(writer); close(reader); close(writer)
 end

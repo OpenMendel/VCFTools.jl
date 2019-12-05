@@ -13,7 +13,8 @@ export conformgt_by_id, conformgt_by_pos,
     filter_genotype, gtstats,
     nrecords, nsamples, openvcf,
     convert_ht, copy_ht!,
-    filter, filter_header, convert_ds
+    filter, filter_header, convert_ds,
+    mask_gt
 
 # package code goes here
 include("gtstats.jl")
