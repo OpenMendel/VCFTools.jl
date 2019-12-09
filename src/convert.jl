@@ -84,8 +84,8 @@ function copy_gt!(
         wt = maf == 0 ? 1.0 : 1.0 / √(2maf * (1 - maf))
         for i in 1:size(A, 1)
             geno = record.genotype[i]
-            # Missing genotype: dropped field or "." => 0x2e
-            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
                 if impute
                     if minor_allele # REF is the minor allele
                         a1, a2 = rand() ≤ maf, rand() ≤ maf
@@ -97,7 +97,7 @@ function copy_gt!(
                     A[i, j] = missing
                 end
             else # not missing
-                # "0" (ALT) => 0x30, "1" (REF) => 0x31
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
                 A[i, j] = convert_gt(T, (a1, a2), minor_allele, model)
@@ -136,11 +136,11 @@ function copy_gt_as_is!(
         # second pass: convert
         for i in 1:size(A, 1)
             geno = record.genotype[i]
-            # Missing genotype: dropped field or "." => 0x2e
-            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
                 A[i, j] = missing
             else # not missing
-                # "0" (ALT) => 0x30, "1" (REF) => 0x31
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
                 A[i, j] = convert(T, a1 + a2)
@@ -148,6 +148,10 @@ function copy_gt_as_is!(
         end
     end
     return A
+end
+
+function geno_ismissing(record::VCF.record, range::UnitRange{Int})
+    return record.data[first(range)] == UInt8('.') || record.data[last(range)] == UInt8('.')
 end
 
 """
@@ -264,11 +268,11 @@ function copy_ht!(
         # loop over every marker in record
         for i in 1:nn
             geno = record.genotype[i]
-            # Missing genotype: dropped field or "." => 0x2e
-            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
                 error("Missing GT field for record $j entry $i. Reference panels cannot have missing data!")
             else # not missing
-                # "0" (ALT) => 0x30, "1" (REF) => 0x31
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
                 A[2i - 1, j] = convert_ht(T, a1, minor_allele)
@@ -308,11 +312,11 @@ function copy_ht_as_is!(
         # second pass: convert
         for i in 1:nn
             geno = record.genotype[i]
-            # Missing genotype: dropped field or "." => 0x2e
-            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
                 error("Missing GT field for record $j entry $i. Reference panels cannot have missing data!")
             else # not missing
-                # "0" (ALT) => 0x30, "1" (REF) => 0x31
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
                 A[2i - 1, j] = convert(T, a1)
