@@ -173,7 +173,7 @@ function mask_gt(
     # loop over each record
     for (i, record) in enumerate(reader)
         gtkey = VCF.findgenokey(record, "GT")
-        if !isnothing(gtkey) 
+        if gtkey == nothing 
             # loop over genotypes
             for (j, geno) in enumerate(record.genotype)
                 if masks[i, j]
