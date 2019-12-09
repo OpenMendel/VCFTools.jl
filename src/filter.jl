@@ -138,6 +138,12 @@ is missing if `masks[i, j]` is true. `src` is unchanged.
 - '.': String([0x2e])
 - '|': String([0x7c])
 - '/': String([0x2f])
+
+- 'A': String([0x41])
+- 'T': String([0x54])
+- 'C': String([0x43])
+- 'G': String([0x47])
+- 'N': String([0x4e])
 """
 function mask_gt(
     src::AbstractString, 

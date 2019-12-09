@@ -110,12 +110,52 @@ function copy_gt!(
     A
 end
 
+function copy_gt_as_is!(
+    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
+    reader::VCF.Reader;
+    # model::Symbol = :additive,
+    # impute::Bool = false,
+    # center::Bool = false,
+    # scale::Bool = false
+    ) where T <: Real
+    for j in 1:size(A, 2)
+        if eof(reader)
+            @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
+            fill!(view(A, :, (j + 1):size(A, 2)), missing)
+            break
+        else
+            record = read(reader)
+        end
+        gtkey = VCF.findgenokey(record, "GT")
+        # if no GT field, fill by missing values
+        if gtkey == nothing
+            @inbounds @simd for i in 1:size(A, 1)
+                A[i, j] = missing
+            end
+        end
+        # second pass: convert
+        for i in 1:size(A, 1)
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or "." => 0x2e
+            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+                A[i, j] = missing
+            else # not missing
+                # "0" (ALT) => 0x30, "1" (REF) => 0x31
+                a1 = record.data[geno[gtkey][1]] == 0x31
+                a2 = record.data[geno[gtkey][3]] == 0x31
+                A[i, j] = convert(T, a1 + a2)
+            end
+        end
+    end
+    return A
+end
+
 """
     convert_gt!(t, vcffile; [impute=false], [center=false], [scale=false])
 
-Convert the GT data from a VCF file to a nullable matrix of type `t`. Each
-column of the matrix corresponds to one VCF record. Record without GT field
-is converted to equivalent of missing genotypes.
+Convert the GT data from a VCF file to a matrix of type `t`, allowing for 
+missing values. Each column of the matrix corresponds to one VCF record. 
+Record without GT field is converted to equivalent of missing genotypes.
 
 # Input
 - `t`: a type `t <: Real`
@@ -126,6 +166,7 @@ is converted to equivalent of missing genotypes.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+- `as_is`: convert VCF data (1 indicating ALT allele) to minor allele count or not, default `false`
 
 # Output
 - `A`: a nulalble matrix of type `NullableMatrix{T}`. `isnull(A[i, j]) == true`
@@ -138,12 +179,17 @@ function convert_gt(
     model::Symbol = :additive,
     impute::Bool = false,
     center::Bool = false,
-    scale::Bool = false
+    scale::Bool = false,
+    as_is::Bool = false
     ) where T <: Real
     out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_gt!(out, reader; model = model, impute = impute,
-        center = center, scale = scale)
+    if as_is
+        copy_gt_as_is!(out, reader)
+    else
+        copy_gt!(out, reader; model = model, impute = impute,
+            center = center, scale = scale)
+    end
     close(reader)
     out
 end
@@ -157,11 +203,16 @@ are not phased, monomorphic alleles will have a 1 on the left column.
 """
 function convert_ht(
     t::Type{T},
-    vcffile::AbstractString
+    vcffile::AbstractString;
+    as_is::Bool = false
     ) where T <: Real
     out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_ht!(out, reader)
+    if as_is
+        copy_ht_as_is!(out, reader)
+    else
+        copy_ht!(out, reader)
+    end
     close(reader)
     return out
 end
@@ -196,6 +247,7 @@ function copy_ht!(
         if eof(reader)
             @warn("Reached end! Check if output is correct!")
             A = A[:, 1:2j]
+            break
         else
             record = read(reader)
         end
@@ -224,6 +276,51 @@ function copy_ht!(
             end
         end
     end
+end
+
+function copy_ht_as_is!(
+    A::Union{AbstractMatrix{T}, AbstractVector{T}},
+    reader::VCF.Reader;
+    # model::Symbol = :additive,
+    # impute::Bool = false,
+    # center::Bool = false,
+    # scale::Bool = false
+    ) where T <: Real
+
+    n, p = size(A)
+    nn   = Int(n / 2)
+
+    for j in 1:size(A, 2)
+        if eof(reader)
+            @warn("Reached end! Check if output is correct!")
+            A = A[:, 1:2j]
+            break
+        else
+            record = read(reader)
+        end
+        gtkey = VCF.findgenokey(record, "GT")
+
+        # haplotype reference files must have GT field
+        if gtkey == nothing
+            error("Missing GT field for record $j. Reference panels cannot have missing data!")
+        end
+
+        # second pass: convert
+        for i in 1:nn
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or "." => 0x2e
+            if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+                error("Missing GT field for record $j entry $i. Reference panels cannot have missing data!")
+            else # not missing
+                # "0" (ALT) => 0x30, "1" (REF) => 0x31
+                a1 = record.data[geno[gtkey][1]] == 0x31
+                a2 = record.data[geno[gtkey][3]] == 0x31
+                A[2i - 1, j] = convert(T, a1)
+                A[2i    , j] = convert(T, a2)
+            end
+        end
+    end
+    return A
 end
 
 """

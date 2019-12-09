@@ -53,7 +53,7 @@ Random.seed!(123)
 record_mask = bitrand(records)
 # sample_mask = bitrand(samples)
 sample_mask = trues(samples)
-# sample_mask[1] = false
+sample_mask[1] = false
 sample_mask[end] = false
 
 des = "filtered.test.08Jun17.d8b.vcf.gz"
@@ -107,3 +107,43 @@ vcffile = "minimac4_result.dose.vcf"
 dosage = convert_ds(Float64, vcffile)
 
 
+
+
+
+
+# test overwrite_alt_ref_allele
+using Revise
+using GeneticVariation
+using Random
+using VCFTools
+using BenchmarkTools
+
+function overwrite_alt_ref_allele(
+    src::AbstractString,
+    des::AbstractString,
+    ref::String = "A",
+    alt::String = "T"
+    )
+
+    # create input and output VCF files
+    reader = VCF.Reader(openvcf(src, "r"))
+    writer = VCF.Writer(openvcf(des, "w"), VCF.header(reader))
+    
+    # define ref/alt allele
+    dict = Dict([("A", 0x41), ("T", 0x54), ("C", 0x43), ("G", 0x47), ("N", 0x4e)])
+    haskey(dict, ref) || error("ref allele must be A, T, C, G, or N.")
+    haskey(dict, alt) || error("ref allele must be A, T, C, G, or N.")
+    ref, alt = dict[ref], dict[alt]
+    for record in reader
+        record.data[record.alt[1]] .= alt
+        record.data[record.ref[1]] = ref
+        write(writer, record)
+    end
+    flush(writer); close(reader); close(writer)
+end
+
+src = "full_test.vcf"
+reader = VCF.Reader(openvcf(src, "r"))
+record = read(reader)
+# overwrite_alt_ref_allele("test.vcf")
+overwrite_alt_ref_allele("test.vcf", "test_result.vcf")
