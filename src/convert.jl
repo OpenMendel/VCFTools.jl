@@ -150,7 +150,7 @@ function copy_gt_as_is!(
     return A
 end
 
-function geno_ismissing(record::VCF.record, range::UnitRange{Int})
+function geno_ismissing(record::VCF.Record, range::UnitRange{Int})
     return record.data[first(range)] == UInt8('.') || record.data[last(range)] == UInt8('.')
 end
 
@@ -170,7 +170,7 @@ Record without GT field is converted to equivalent of missing genotypes.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `as_is`: convert VCF data (1 indicating ALT allele) to minor allele count or not, default `false`
+- `as_minorallele`: convert VCF data (1 indicating ALT allele) to minor allele count or not. If `false`, 0 and 1 will be read as-is. Default `true`. 
 
 # Output
 - `A`: a nulalble matrix of type `NullableMatrix{T}`. `isnull(A[i, j]) == true`
@@ -184,15 +184,15 @@ function convert_gt(
     impute::Bool = false,
     center::Bool = false,
     scale::Bool = false,
-    as_is::Bool = false
+    as_minorallele::Bool = true
     ) where T <: Real
     out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    if as_is
-        copy_gt_as_is!(out, reader)
-    else
+    if as_minorallele
         copy_gt!(out, reader; model = model, impute = impute,
             center = center, scale = scale)
+    else
+        copy_gt_as_is!(out, reader)
     end
     close(reader)
     out
@@ -208,14 +208,14 @@ are not phased, monomorphic alleles will have a 1 on the left column.
 function convert_ht(
     t::Type{T},
     vcffile::AbstractString;
-    as_is::Bool = false
+    as_minorallele::Bool = true
     ) where T <: Real
     out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    if as_is
-        copy_ht_as_is!(out, reader)
-    else
+    if as_minorallele
         copy_ht!(out, reader)
+    else
+        copy_ht_as_is!(out, reader)
     end
     close(reader)
     return out
