@@ -50,7 +50,7 @@ record = read(reader)
 
 # define masks
 Random.seed!(123)
-record_mask = bitrand(records)
+record_mask = trues(records)
 # sample_mask = bitrand(samples)
 sample_mask = trues(samples)
 sample_mask[1] = false
@@ -61,6 +61,8 @@ VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
 reader = VCF.Reader(openvcf(des, "r"))
 record = read(reader)
 record.genotype
+
+nsamples(des)
 
 X = convert_gt(Float32, vcffile)
 X_filter = convert_gt(Float32, "filtered." * vcffile)

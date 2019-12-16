@@ -39,7 +39,7 @@ function filter(
 
     # write to des
     for (i, record) in enumerate(reader)
-        if record_index[i] 
+        if record_mask[i] 
             filter_record!(record, sample_mask)
             VCF.write(writer, record)
         end
@@ -48,19 +48,25 @@ function filter(
     close(reader)
     flush(writer)
     close(VCF.BioCore.IO.stream(writer))
+    return nothing
 end
 
+"""
+TODO: decomentation
+TODO: Create VCFTool.jl signature in meta info. If filedate/signature exist already, delete them before writing new ones
+"""
 function filter_header(
     reader::VCF.Reader,
     sample_mask::BitVector
     )
     # save meta information
-    fileformat = VCF.header(reader).metainfo[1]
-    filedate   = VCF.MetaInfo("##filedate=" * string(Dates.today()))
-    signature  = VCF.MetaInfo("##source=VCFTools.jl")
-    metainfo = vcat(fileformat, filedate, signature, VCF.header(reader).metainfo[2:end])
+    # fileformat = VCF.header(reader).metainfo[1]
+    # filedate   = VCF.MetaInfo("##filedate=" * string(Dates.today()))
+    # signature  = VCF.MetaInfo("##source=VCFTools.jl")
+    # metainfo = vcat(fileformat, filedate, signature, VCF.header(reader).metainfo[2:end])
 
     # filter sampleID
+    metainfo = VCF.header(reader).metainfo
     sampleID = VCF.header(reader).sampleID[sample_mask]
     return VCF.Header(metainfo, sampleID)
 end
@@ -116,6 +122,7 @@ function filter_record!(
     record.data = new_data
     record.genotype = new_genotype
     record.filled = 1:length(new_data)
+    return nothing
 end
 
 """
@@ -186,4 +193,5 @@ function mask_gt(
         write(writer, record)
     end
     flush(writer); close(reader); close(writer)
+    return nothing
 end
