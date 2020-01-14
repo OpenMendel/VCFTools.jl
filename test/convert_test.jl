@@ -42,20 +42,68 @@ end
     @test size(A) == (191, 1356)
     @test eltype(A) == Union{UInt8, Missing}
     # convert to a matrix of Float64, impute = center = scale = true
-    @time B = convert_gt(Float64, vcffile; impute = true, center = true, scale = true)
+    @time B = convert_gt(Float64, vcffile; as_minorallele = true, impute = true, center = true, scale = true)
     @test size(B) == (191, 1356)
     @test eltype(B) == Union{Float64, Missing}
-    # read the first record to a nullable UInt8 vector, no impute/center/scale (default)
+    # convert to a matrix of Float32 without checking minor alleles (reading 0/1 as-is)
+    # @code_warntype convert_gt(Float32, vcffile; as_minorallele = false)
+    @time C = convert_gt(Float32, vcffile; as_minorallele = false)
+    @test size(C) == (191, 1356)
+    @test eltype(C) == Union{Float32, Missing}
+    # read the first record to a UInt8 vector, no impute/center/scale (default)
     reader = VCF.Reader(openvcf(vcffile, "r"))
     A1 = Vector{Union{UInt8, Missing}}(undef, nsamples(vcffile))
     @time copy_gt!(A1, reader)
     @test all(A1[findall(!ismissing, A1)] .== A[findall(!ismissing, A[:, 1])])
     @test all(findall(ismissing, A1) .== findall(ismissing, A[:, 1]))
-    # convert next 5 records to a nullable Float64 matrix, impute = center = scale = true
+    # convert next 5 records to a Float64 matrix, impute = center = scale = true
     B5 = Matrix{Union{Float64, Missing}}(undef, nsamples(vcffile), 5)
     @time copy_gt!(B5, reader; impute = true, center = true, scale = true)
     B_copy = copy(B[:, 2:6])
     @test all(B5[findall(!ismissing, B5)] .== B_copy[findall(!ismissing, B[:, 2:6])])
     @test all(B5[findall(ismissing, B5)] .== B_copy[findall(ismissing, B_copy)])
+    # convert next 5 records to a Float32 matrix without checking which is minor alleles
+    C5 = Matrix{Union{Float64, Missing}}(undef, nsamples(vcffile), 5)
+    @time copy_gt_as_is!(C5, reader)
+    @test findall(x -> x === missing, C5) == []
     close(reader)
+end
+
+@testset "convert_ht" begin
+    # REF is the minor allele
+    @test convert_ht(Float64, true, true) == 1.0
+    @test convert_ht(Float64, false, true) == 0.0
+    # ALT is the minor allele
+    @test convert_ht(Float64, true, false) == 0.0
+    @test convert_ht(Float64, false, false) == 1.0
+end
+
+@testset "convert_ht(vcfile)" begin
+    vcffile = "test.08Jun17.d8b.vcf.gz"
+    # convert to a reference haplotype panel of Float32, no checking for minor allele
+    @time H1 = convert_ht(Float32, vcffile, as_minorallele = false)
+    @test size(H1) == (382, 1356)
+    @test typeof(H1) == Matrix{Float32}
+    # convert to a reference haplotype panel of Float64, checking for minor allele
+    @time H2 = convert_ht(Float64, vcffile, as_minorallele = true)
+    @test size(H2) == (382, 1356)
+    @test typeof(H2) == Matrix{Float64}
+    # convert first record into 2 haplotype vectors and check their sum is the genotype vector
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    h1h2 = Matrix{Float64}(undef, 2, nrecords(vcffile))
+    copy_ht_as_is!(h1h2, reader)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    g1   = Matrix{Union{Float64, Missing}}(undef, 1, nrecords(vcffile))
+    copy_gt_as_is!(g1, reader)
+    @test all(sum(h1h2, dims=1) .== g1)
+end
+
+@testset "convert_ds" begin
+    vcffile = "test.08Jun17.d8b.vcf.gz"
+    D = convert_ds(Float64, vcffile, key = "DS", impute=false, center=false, scale=false)
+    @test D[1, 5] == 1.0
+    @test D[1, 1345] == 0.05
+    @test D[2, 13] == 1.75
+    @test eltype(D) == Union{Missing, Float64}
+    @test size(D) == (191, 1356)
 end

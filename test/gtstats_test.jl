@@ -1,5 +1,3 @@
-using GeneticVariation, CodecZlib, DelimitedFiles
-
 @testset "H-W test" begin
     # <https://en.wikipedia.org/wiki/Hardy–Weinberg_principle#Example_.7F.27.22.60UNIQ--postMath-0000001E-QINU.60.22.27.7F_test_for_deviation>
     #@code_warntype hwe(1469, 138, 5)

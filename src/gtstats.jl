@@ -1,11 +1,11 @@
 """
-    gtstats(vcffile, [out=DevNull])
+    gtstats(vcffile, [out=devnull])
 
 Calculate genotype statistics for each marker with GT field in a VCF file.
 
 # Input
 - `vcffile`: VCF file, ending with .vcf or .vcf.gz
-- `out`: output file name or IOStream. Default is `out=DevNull` (no output).
+- `out`: output file name or IOStream. Default is `out=devnull` (no output).
 One line with 15 tab-delimited fiels is written per marker to `out`:
     - 1-8)  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)
     -   9)  Missing genotype count
@@ -29,7 +29,7 @@ One line with 15 tab-delimited fiels is written per marker to `out`:
     the REF allele for marker `i`; `minorallele_by_record[i]=false` means the
     minor allele is the ALT allele for marker `i`
 """
-function gtstats(vcffile::AbstractString, out::IO=DevNull)
+function gtstats(vcffile::AbstractString, out::IO=devnull)
     # open VCF file
     reader = VCF.Reader(openvcf(vcffile, "r"))
     # set up progress bar
@@ -49,7 +49,7 @@ function gtstats(vcffile::AbstractString, out::IO=DevNull)
     for record in reader
         records += 1
         # if no "GT" field, skip this record
-        VCF.findgenokey(record, "GT") == 0 && continue
+        VCF.findgenokey(record, "GT") == nothing && continue
         # calcuate summary statistics
         lines += 1
         n00, n01, n11, n0, n1, altfreq, reffreq, missings,
@@ -188,7 +188,7 @@ end
 """
     nrecords(vcffile)
 
-Number of records (markers) in a VCF file.
+Number of records (markers) in a VCF file. Each record is a row. 
 """
 function nrecords(vcffile::AbstractString)
     reader = VCF.Reader(openvcf(vcffile, "r"))
