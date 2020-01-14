@@ -8,11 +8,11 @@ makedocs(
     modules = [VCFTools],
     clean = true,
     pages = [
-        "Home" => "src/index.md",
+        "Home" => "index.md",
         "VCF Summary" => "src/summaryinfo.md",
         "Filter" => "src/filter.md",
         "Convert" => "src/convert.md",
-        "Match markers in two VCF" => "src/conformgt.md"
+        "Match markers in two VCF" => "src/conformgt.md",
         "API"  => "src/api.md"
     ]
 )
