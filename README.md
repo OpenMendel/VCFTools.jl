@@ -2,16 +2,15 @@
 
 | **Documentation** | **Build Status** | **Code Coverage**  |
 |-------------------|------------------|--------------------|
-| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://biona001.github.io/VCFTools.jl/latest) | [![Build Status](https://travis-ci.org/biona001/VCFTools.jl.svg?branch=master)](https://travis-ci.org/biona001/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/biona001/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/biona001/VCFTools.jl?branch=master) [![codecov](https://codecov.io/gh/biona001/VCFTools.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/OpenMendel/VCFTools.jl) |
+| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://biona001.github.io/VCFTools.jl/latest) | [![Build Status](https://travis-ci.org/biona001/VCFTools.jl.svg?branch=master)](https://travis-ci.org/biona001/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/biona001/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/biona001/VCFTools.jl?branch=master)|
 
 VCFTools provide utilities for handling VCF files.
 
 ## Installation
 
-Within Julia, use the package manager to install VCFTools:
+Within Julia, press `]` to use the package manager and type:
 
-    using Pkg
-    Pkg.add("https://github.com/biona001/VCFTools.jl")
+    (v1.3) pkg> add https://github.com/biona001/VCFTools.jl
 
 This package supports Julia v1.0+.
 
