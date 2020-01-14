@@ -140,7 +140,7 @@ function copy_gt_as_is!(
     scale::Bool = false
     ) where T <: Real
     for j in 1:size(A, 2)
-        if eof(readerreffreq)
+        if eof(reader)
             @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
             fill!(view(A, :, (j + 1):size(A, 2)), missing)
             break
@@ -417,6 +417,27 @@ function convert_ds(
     return out
 end
 
+"""
+    copy_ds!(A, reader; [key="DS"], [model=:additive], [impute=false], [center=false], [scale=false])
+
+Fill the columns of matrix `A` by the dosage data from VCF records in `reader`. Record without GT field 
+is converted to `missing`. 
+
+# Input
+- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`
+- `reader`: a VCF reader
+
+# Optional argument
+- `key`: The field key for accessing dosage values, default `"DS"`
+- `model`: genetic model `:additive` (default), `:dominant`, or `:recessive`
+- `impute`: impute missing genotype or not, default `false`
+- `center`: center gentoype by 2maf or not, default `false`
+- `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+
+# Output
+- `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
+    `ismissing(A[i, j]) == false` for all entries.
+"""
 function copy_ds!(
     A::Union{AbstractMatrix{T}, AbstractVector{T}},
     reader::VCF.Reader;

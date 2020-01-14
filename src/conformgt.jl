@@ -240,7 +240,6 @@ function conformgt_by_pos(
     return lines
 end
 
-
 """
     match_gt_allele(record1, record2)
 

@@ -1,3 +1,18 @@
+# Useful byte reprensetations
+# - '\t': String([0x09])
+# - ':': String([0x3a])
+# - '0': String([0x30])
+# - '1': String([0x31])
+# - '.': String([0x2e])
+# - '|': String([0x7c])
+# - '/': String([0x2f])
+
+# - 'A': String([0x41])
+# - 'T': String([0x54])
+# - 'C': String([0x43])
+# - 'G': String([0x47])
+# - 'N': String([0x4e])
+
 """
     filter(src, record_index, sample_index; des = "filtered." * src)
 
@@ -52,7 +67,14 @@ function filter(
 end
 
 """
-TODO: decomentation
+    filter_header(reader, sample_mask)
+
+Filters the header info of a VCF reader. Will not keep sample IDs for entry `i` if `sample_mask[i] = false`.
+
+# Inpute:
+- `reader`: a VCF reader object.
+- `sample_mask`: a BitVector. `sample_mask[i] = true` means keep sample `i`. 
+
 TODO: Create VCFTool.jl signature in meta info. If filedate/signature exist already, delete them before writing new ones
 """
 function filter_header(
@@ -73,6 +95,12 @@ end
 
 """
     filter_record!(record, sample_mask)
+
+Filters a VCF record by samples. 
+
+# Inputs:
+- `record`: a VCF record
+- `sample_mask`: a BitVector. `sample_mask[i] = true` means keep sample `i`. 
 """
 function filter_record!(
     record::VCF.Record,
@@ -136,21 +164,6 @@ is missing if `masks[i, j]` is true. `src` is unchanged.
 - `masks`: Bit matrix. `masks[i, j] = true` means mask entry (i, j).
 - `des`: output VCF file name.
 - `separator`: Separator of VCF genotypes. Can be '/' (default) or '|'.  
-
-# Useful byte reprensetations
-- '\t': String([0x09])
-- ':': String([0x3a])
-- '0': String([0x30])
-- '1': String([0x31])
-- '.': String([0x2e])
-- '|': String([0x7c])
-- '/': String([0x2f])
-
-- 'A': String([0x41])
-- 'T': String([0x54])
-- 'C': String([0x43])
-- 'G': String([0x47])
-- 'N': String([0x4e])
 """
 function mask_gt(
     src::AbstractString, 

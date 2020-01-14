@@ -7,7 +7,7 @@
     sample_mask = collect(2:(samples - 1))
     des = "filtered.test.08Jun17.d8b.vcf.gz"
     @time VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
-    @code_warntype VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
+    # @code_warntype VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
     @test nsamples(des) == samples - 2
     @test nrecords(des) == records
     X = convert_gt(Float32, vcffile, as_minorallele=false)
@@ -45,7 +45,8 @@ end
     outfile = "masked.test.08Jun17.d8b.vcf.gz"
     samples = nsamples(vcffile)
     records = nrecords(vcffile)
-    masks   = bitrand(records, samples)
+    masks   = falses(records, samples)
+    [masks[i, i] = true for i in 1:10]
     @time mask_gt(vcffile, masks, des = outfile)
     # @code_warntype mask_gt(vcffile, masks, des = outfile)
     @test nsamples(outfile) == samples

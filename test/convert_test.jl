@@ -42,7 +42,7 @@ end
     @test size(A) == (191, 1356)
     @test eltype(A) == Union{UInt8, Missing}
     # convert to a matrix of Float64, impute = center = scale = true
-    @time B = convert_gt(Float64, vcffile; impute = true, center = true, scale = true)
+    @time B = convert_gt(Float64, vcffile; as_minorallele = true, impute = true, center = true, scale = true)
     @test size(B) == (191, 1356)
     @test eltype(B) == Union{Float64, Missing}
     # convert to a matrix of Float32 without checking minor alleles (reading 0/1 as-is)
@@ -69,7 +69,7 @@ end
     close(reader)
 end
 
-@testest "convert_ht" begin
+@testset "convert_ht" begin
     # REF is the minor allele
     @test convert_ht(Float64, true, true) == 1.0
     @test convert_ht(Float64, false, true) == 0.0
@@ -90,8 +90,10 @@ end
     @test typeof(H2) == Matrix{Float64}
     # convert first record into 2 haplotype vectors and check their sum is the genotype vector
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    h1h2 = Matrix{UInt8}(undef, 2, nrecords(vcffile))
-    # g1   = Matrix{Union{UInt8, Missing}}(undef, 1, nrecords(vcffile))
-    # copy_ht_as_is!(h1h2, reader)
-    # copy_gt_as_is!(g1, reader)
+    h1h2 = Matrix{Float64}(undef, 2, nrecords(vcffile))
+    copy_ht_as_is!(h1h2, reader)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    g1   = Matrix{Union{Float64, Missing}}(undef, 1, nrecords(vcffile))
+    copy_gt_as_is!(g1, reader)
+    @test all(sum(h1h2, dims=1) .== g1)
 end

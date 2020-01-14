@@ -3,6 +3,7 @@ using Revise
 using GeneticVariation
 using Random
 using VCFTools
+using BenchmarkTools
 
 cd("/Users/biona001/.julia/dev/VCFTools/test")
 vcffile = "test.08Jun17.d8b.vcf"
