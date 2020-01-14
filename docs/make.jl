@@ -9,11 +9,11 @@ makedocs(
     clean = true,
     pages = [
         "Home" => "index.md",
-        "VCF Summary" => "src/summaryinfo.md",
-        "Filter" => "src/filter.md",
-        "Convert" => "src/convert.md",
-        "Match markers in two VCF" => "src/conformgt.md",
-        "API"  => "src/api.md"
+        "VCF Summary" => "man/summaryinfo.md",
+        "Filter" => "man/filter.md",
+        "Convert" => "man/convert.md",
+        "Match markers in two VCF" => "man/conformgt.md",
+        "API"  => "man/api.md"
     ]
 )
 
