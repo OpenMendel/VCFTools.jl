@@ -5,11 +5,11 @@ Most often we need to convert genetic data to numeric arrays (matrix of **minor 
 
 ## Example VCF file
 
-We need an example VCF file for demonstation. You can manually download it from [link](http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia,
+We need an example VCF file for demonstation. You can manually download it from [link](http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia,
 
 
 ```julia
-isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz", 
     joinpath(pwd(), "test.08Jun17.d8b.vcf.gz"))
 stat("test.08Jun17.d8b.vcf.gz")
 ```
@@ -73,9 +73,9 @@ close(fh)
 
 We'd like to convert the genotype data (GT field) into the matrix of minor alleles.
 
-## Genetic model 
+## Genetic model
 
-There are differnt SNP models. The *additive* SNP model essentially counts the number of **minor allele** (0, 1 or 2) per genotype. Other SNP models are *dominant* and *recessive*, both in terms of the **minor allele**. When `ALT` allele is the minor allele, genotypes are translated to real number according to
+There are differnt SNP models. The *additive* SNP model essentially counts the number of **minor allele** (0, 1 or 2) per genotype. Other SNP models are *dominant* and *recessive*, both in terms of the **minor allele**. `VCFTools.jl` allows users to optionally check whether the `ALT` allele is the minor allele on-the-fly. When `ALT` allele is the minor allele, genotypes are translated to real number according to
 
 | Genotype | VCF GT | `model=:additive` | `model=:dominant` | `model=:recessive` |    
 |:---:|:---:|:---:|:---:|:---:|  
@@ -93,82 +93,82 @@ When `REF` allele is the minor allele, genotypes are translated according to
 | REF,REF | 1/1, 1&#124;1 | 2 | 1 | 1 |  
 | missing | . | Null | Null | Null |
 
-To properly record the missing genotypes, VCFTools convert VCF GT data to `NullableArray`s. Each element of a nullable array `A` is of type `Nullable{T}`. `isnull(A[i, j]) == true` indicates that `A[i, j]` is a missing genotype. See the [NullableArrays.jl](https://github.com/JuliaStats/NullableArrays.jl) package for detailed documentation. 
+To properly record the missing genotypes, VCFTools convert VCF GT data to matrix `A` where element type of `A` is either a numeric number, or missing value. In Julia, this means `eltype(A) <: Union{Missing, Real}` where `<:` means "is a subtype".
 
 ## Convert GT data into a numeric matrix
 
-Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Nullable{Int8}` array.
+Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, Int8}}`. Here `as_minorallele = false` indicates that `VCFTools.jl` will copy the `0`s and `1`s of the file directly into `A`, without checking if ALT or REF is the minor allele. 
 
 
 ```julia
-@time A = convert_gt(Int8, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = false, center = false, scale = false)
+@time A = convert_gt(Int8, "test.08Jun17.d8b.vcf.gz"; as_minorallele = false, model = :additive, impute = false, center = false, scale = false)
 ```
 
-      0.164331 seconds (1.59 M allocations: 150.705 MiB, 17.38% gc time)
+      1.605007 seconds (6.51 M allocations: 373.169 MiB, 10.79% gc time)
 
 
 
 
 
-    191×1356 NullableArrays.NullableArray{Int8,2}:
-     0  0  0  0  1  0  0  0  0  0  0  0  0  …  0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0  …  0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  1  1  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0  …  0  0  1  0  1  0  0  0  0  1  1  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  1  1  0
+    191×1356 Array{Union{Missing, Int8},2}:
+     0  0  0  0  1  0  0  0  0  0  0  0  2  …  0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  1  0  0  0  0  0  0  0  2     0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  1  0  0  0  0  0  0  0  2  …  0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  1  1  0
+     0  0  0  0  1  0  0  0  0  0  0  0  2     0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  1  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2  …  0  0  1  0  1  0  0  0  0  1  1  0
+     0  0  0  0  1  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  1  1  0
      ⋮              ⋮              ⋮        ⋱     ⋮              ⋮              ⋮
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  1  0  0  0  0  0  0  1  1  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0  …  0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0  …  0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  1  0  0  …  0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  1  0  0  0  0  0  0  0  2     0  0  1  0  0  0  0  0  0  1  1  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2  …  0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2  …  0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  1  0  2  …  0  0  0  0  0  0  0  0  0  0  0  0
 
 
 
-Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Nullable{Float64}` array. Impute the missing genotypes according to allele frequency, center the dosages around 2MAF, and scale the dosages by `sqrt(2MAF*(1-MAF))`.
+Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Nullable{Float64}` array. Check which of `ALT/REF` is the minor allele, impute the missing genotypes according to allele frequency, center the dosages around 2MAF, and scale the dosages by `sqrt(2MAF*(1-MAF))`.
 
 
 ```julia
-@time A = convert_gt(Float64, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = true, center = true, scale = true)
+@time A = convert_gt(Float64, "test.08Jun17.d8b.vcf.gz"; as_minorallele = true, model = :additive, impute = true, center = true, scale = true)
 ```
 
-      0.150267 seconds (1.59 M allocations: 152.434 MiB, 14.09% gc time)
+      0.325079 seconds (1.54 M allocations: 127.557 MiB, 5.49% gc time)
 
 
 
 
 
-    191×1356 NullableArrays.NullableArray{Float64,2}:
-     0.0  0.0  0.0  0.0  1.41301    0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
+    191×1356 Array{Union{Missing, Float64},2}:
+     0.0  0.0  0.0  0.0   1.41301   0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
+     0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  2.36899    2.36899    0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
+     0.0  0.0  0.0  0.0   1.41301   0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
+     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0   2.36899    2.36899   0.0
+     0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0  -0.390016  -0.390016  0.0
+     0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0  2.36899    2.36899    0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  2.36899    2.36899    0.0
+     0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0   2.36899    2.36899   0.0
+     0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0  -0.390016  -0.390016  0.0
+     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0   2.36899    2.36899   0.0
      ⋮                              ⋮    ⋱                                  ⋮  
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  2.36899    2.36899    0.0
+     0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0   2.36899    2.36899   0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
@@ -191,13 +191,13 @@ Large VCF files easily generate numeric arrays that cannot fit into computer mem
 
 
 ```julia
-using GeneticVariation, NullableArrays, VCFTools
+using GeneticVariation
 
 # initialize VCF reader
 people, snps = nsamples("test.08Jun17.d8b.vcf.gz"), nrecords("test.08Jun17.d8b.vcf.gz")
 reader = VCF.Reader(openvcf("test.08Jun17.d8b.vcf.gz"))
 # pre-allocate vector for marker data
-g = NullableArray(zeros(people))
+g = zeros(Union{Missing, Float64}, people)
 for j = 1:snps
     copy_gt!(g, reader; model = :additive, impute = true, center = true, scale = true)
     # do statistical anlaysis
@@ -209,14 +209,12 @@ close(reader)
 
 
 ```julia
-using GeneticVariation, NullableArrays, VCFTools
-
 # initialize VCF reader
 people, snps = nsamples("test.08Jun17.d8b.vcf.gz"), nrecords("test.08Jun17.d8b.vcf.gz")
 reader = VCF.Reader(openvcf("test.08Jun17.d8b.vcf.gz"))
 # pre-allocate matrix for marker data
 windowsize = 25
-g = NullableArray(zeros(people, windowsize))
+g = zeros(Union{Missing, Float64}, people, windowsize)
 nwindows = ceil(Int, snps / windowsize)
 for j = 1:nwindows
     copy_gt!(g, reader; model = :additive, impute = true, center = true, scale = true)
@@ -225,7 +223,8 @@ end
 close(reader)
 ```
 
-    [1m[33mWARNING: [39m[22m[33mOnly 7 records left in reader; columns 8-25 are set to missing values[39m
+    ┌ Warning: Only 7 records left in reader; columns 8-25 are set to missing values
+    └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/convert.jl:67
 
 
 As the warning suggests, the last window has less than 25 markers. The remaining columns in the matrix `g` are set to missing values.
