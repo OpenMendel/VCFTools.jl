@@ -1,11 +1,11 @@
 """
-    gtstats(vcffile, [out=DevNull])
+    gtstats(vcffile, [out=devnull])
 
 Calculate genotype statistics for each marker with GT field in a VCF file.
 
 # Input
 - `vcffile`: VCF file, ending with .vcf or .vcf.gz
-- `out`: output file name or IOStream. Default is `out=DevNull` (no output).
+- `out`: output file name or IOStream. Default is `out=devnull` (no output).
 One line with 15 tab-delimited fiels is written per marker to `out`:
     - 1-8)  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)
     -   9)  Missing genotype count
@@ -29,7 +29,7 @@ One line with 15 tab-delimited fiels is written per marker to `out`:
     the REF allele for marker `i`; `minorallele_by_record[i]=false` means the
     minor allele is the ALT allele for marker `i`
 """
-function gtstats(vcffile::AbstractString, out::IO=DevNull)
+function gtstats(vcffile::AbstractString, out::IO=devnull)
     # open VCF file
     reader = VCF.Reader(openvcf(vcffile, "r"))
     # set up progress bar
