@@ -12,7 +12,6 @@
 # - 'C': String([0x43])
 # - 'G': String([0x47])
 # - 'N': String([0x4e])
-
 """
     filter(src, record_index, sample_index; des = "filtered." * src)
 
@@ -154,7 +153,7 @@ function filter_record!(
 end
 
 """
-    mask_gt(src, masks; des = "masked." * src, separator = '/')
+    mask_gt(src, masks; [des = "masked." * src], [separator = '/'])
 
 Creates a new VCF file `des` where genotype entry (i, j) of `src` 
 is missing if `masks[i, j]` is true. `src` is unchanged.

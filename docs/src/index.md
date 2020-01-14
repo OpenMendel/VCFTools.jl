@@ -13,9 +13,9 @@
 
 ## Installation
 
-Use the Julia package manager to install `VCFTools.jl`.
+Use the Julia package manager to install `VCFTools.jl`. Press `]` and type:
 ```julia
-]add https://github.com/biona001/VCFTools.jl
+(v1.3) pkg> add https://github.com/biona001/VCFTools.jl
 ```
 This package supports Julia `1.0`+.
 
@@ -23,11 +23,11 @@ This package supports Julia `1.0`+.
 
 ```@contents
 Pages = [
-    "summaryinfo.md",
-    "filter.md",
-    "convert.md",
-    "conformgt.md",
-    "api.md"
+    "man/summaryinfo.md",
+    "man/filter.md",
+    "man/convert.md",
+    "man/conformgt.md",
+    "man/api.md"
 ]
 Depth = 2
 ```
