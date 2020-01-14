@@ -439,7 +439,7 @@ is converted to `missing`.
     `ismissing(A[i, j]) == false` for all entries.
 """
 function copy_ds!(
-    A::Union{AbstractMatrix{T}, AbstractVector{T}},
+    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
     reader::VCF.Reader;
     key::String = "DS",
     model::Symbol = :additive,
@@ -447,7 +447,6 @@ function copy_ds!(
     center::Bool = false,
     scale::Bool = false
     ) where T <: Real
-    t = eltype(A)
     for j in 1:size(A, 2)
         if eof(reader)
             @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
@@ -475,7 +474,7 @@ function copy_ds!(
             if dskey > lastindex(geno) || record.data[geno[dskey]] == [0x2e]
                 A[i, j] = (impute ? ct : missing)
             else # not missing
-                A[i, j] = parse(t, String(record.data[geno[dskey]]))
+                A[i, j] = parse(T, String(record.data[geno[dskey]]))
             end
             # center and scale if asked
             center && !ismissing(A[i, j]) && (A[i, j] -= ct)

@@ -97,3 +97,13 @@ end
     copy_gt_as_is!(g1, reader)
     @test all(sum(h1h2, dims=1) .== g1)
 end
+
+@testset "convert_ds" begin
+    vcffile = "test.08Jun17.d8b.vcf.gz"
+    D = convert_ds(Float64, vcffile, key = "DS", impute=false, center=false, scale=false)
+    @test D[1, 5] == 1.0
+    @test D[1, 1345] == 0.05
+    @test D[2, 13] == 1.75
+    @test eltype(D) == Union{Missing, Float64}
+    @test size(D) == (191, 1356)
+end
