@@ -150,3 +150,28 @@ reader = VCF.Reader(openvcf(src, "r"))
 record = read(reader)
 # overwrite_alt_ref_allele("test.vcf")
 overwrite_alt_ref_allele("test.vcf", "test_result.vcf")
+
+
+
+# Simulate genotype matrix using real haplotypes 
+# 1000 Genomes Phase 1, chr 22 data downloaded from: https://genome.sph.umich.edu/wiki/Minimac4
+using Revise
+using MendelImpute
+using VCFTools
+using BenchmarkTools
+
+cd("/Users/biona001/.julia/dev/MendelImpute/simulation/compare4/VCF_Files")
+
+#2184 haplotypes each with 365644 SNPs -> 99MB of RAM
+@time H = convert_ht(Bool, "ALL.chr22.phase1_v3.snps_indels_svs.genotypes.all.noSingleton.vcf.gz")
+
+#simulate 100 samples each with 365644 SNPs
+X = simulate_genotypes(H', 100)
+
+
+
+
+
+
+
+

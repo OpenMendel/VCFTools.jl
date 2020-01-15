@@ -96,15 +96,15 @@ outvcf = "conformgt.matched"
 
     ┌ Info: Scan IDs in reference panel
     └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/conformgt.jl:42
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:24[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:25[39m
     ┌ Info: Match target IDs to reference IDs
     └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/conformgt.jl:75
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:26[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:25[39m
     ┌ Info: 823 records are matched
     └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/conformgt.jl:124
 
 
-     67.438239 seconds (697.25 M allocations: 65.232 GiB, 6.88% gc time)
+     71.045000 seconds (697.25 M allocations: 65.092 GiB, 6.85% gc time)
 
 
 
@@ -220,13 +220,13 @@ If we turn on testing allele frequencies at significance level 0.05, less matche
 
     ┌ Info: Scan IDs in reference panel
     └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/conformgt.jl:42
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:23[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:24[39m
     ┌ Info: Match target IDs to reference IDs
     └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/conformgt.jl:75
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:26[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:25[39m
 
 
-     63.985483 seconds (691.00 M allocations: 65.060 GiB, 7.43% gc time)
+     64.095969 seconds (691.00 M allocations: 64.993 GiB, 7.29% gc time)
 
 
     ┌ Info: 488 records are matched
@@ -260,10 +260,10 @@ outvcf = "conformgt.matched"
 
     ┌ Info: Match target POS to reference POS
     └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/conformgt.jl:172
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:26[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:25[39m
 
 
-     40.451102 seconds (355.95 M allocations: 33.478 GiB, 6.35% gc time)
+     39.203119 seconds (355.95 M allocations: 33.467 GiB, 6.01% gc time)
 
 
     ┌ Info: 833 records are matched
@@ -359,10 +359,10 @@ If we turn on testing allele frequencies at significance level 0.05, less matche
 
     ┌ Info: Match target POS to reference POS
     └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/conformgt.jl:172
-    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:26[39m
+    [32mProgress: 100%|█████████████████████████████████████████| Time: 0:00:25[39m
 
 
-     41.284590 seconds (360.50 M allocations: 33.902 GiB, 6.42% gc time)
+     39.299402 seconds (360.50 M allocations: 33.846 GiB, 6.04% gc time)
 
 
     ┌ Info: 493 records are matched
