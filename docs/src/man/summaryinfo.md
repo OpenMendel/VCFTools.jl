@@ -1,11 +1,9 @@
 
-# Convert GT to numeric arrays
-
-Most often we need to convert genetic data to numeric arrays (matrix of **minor allele counts**) for statistical analysis.
+# VCF summary information
 
 ## Example VCF file
 
-We need an example VCF file for demonstation. You can manually download it from [link](http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia,
+We need an example VCF file for demonstation. You can manually download it from [link](http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia, 
 
 
 ```julia
@@ -21,7 +19,7 @@ stat("test.08Jun17.d8b.vcf.gz")
 
 
 
-The first 5 markers in this VCF file are
+The first 35 lines of the VCF file are
 
 
 ```julia
@@ -71,161 +69,171 @@ close(fh)
     22	20000428	rs55902548	G	T	100	PASS	AC=323;AVGPOST=0.9983;AA=G;AN=2184;VT=SNP;RSQ=0.9949;LDAF=0.1473;SNPSOURCE=LOWCOV;ERATE=0.0003;THETA=0.0003;AF=0.15;ASN_AF=0.0017;AMR_AF=0.15;AFR_AF=0.31;EUR_AF=0.15	GT:DS:GL	1/0:1.000:-5.00,0.00,-5.00	0/0:0.000:-0.35,-0.43,-0.73	0/1:1.000:-1.81,-0.01,-2.95	0/0:0.000:-0.01,-1.79,-5.00	0/0:0.000:-0.06,-0.86,-5.00	1/0:1.000:-0.19,-0.46,-2.18	0/0:0.000:-0.10,-0.68,-5.00	0/1:1.000:-4.40,-0.03,-1.12	0/1:1.000:-5.00,-0.69,-0.10	0/0:0.000:-0.10,-0.69,-4.70	0/0:0.000:-0.48,-0.48,-0.48	0/1:1.000:-5.00,-0.01,-1.77	0/0:0.000:-0.18,-0.48,-2.57	0/0:0.000:-0.02,-1.31,-5.00	0/0:0.000:-0.11,-0.65,-4.70	0/0:0.000:-0.10,-0.68,-4.70	0/0:0.000:-0.01,-1.72,-5.00	1/0:1.000:-5.00,0.00,-5.00	1/0:1.000:-1.38,-0.02,-2.61	0/1:1.000:-5.00,-1.40,-0.02	0/0:0.000:-0.00,-2.97,-5.00	0/0:0.000:-0.19,-0.47,-2.15	0/0:0.000:-0.44,-0.46,-0.54	0/0:0.000:-0.00,-2.52,-5.00	0/0:0.000:-0.05,-0.93,-5.00	0/0:0.000:-0.01,-1.77,-5.00	0/1:0.750:-0.22,-0.46,-1.26	0/0:0.000:-0.03,-1.19,-5.00	0/0:0.000:-0.21,-0.46,-1.42	0/0:0.000:-0.19,-0.45,-2.20	0/0:0.000:-0.12,-0.63,-3.36	0/0:0.000:-0.00,-2.54,-5.00	0/0:0.000:-0.00,-2.88,-5.00	1/0:1.000:-2.10,-0.00,-4.00	1/0:1.250:-5.00,-1.62,-0.01	0/1:1.000:-3.06,-0.47,-0.18	0/1:1.000:-5.00,-0.87,-0.06	1/1:2.000:-5.00,-0.84,-0.07	0/0:0.000:-0.05,-0.95,-5.00	0/0:0.000:-0.02,-1.46,-5.00	0/0:0.000:-0.14,-0.58,-2.17	0/0:0.000:-0.01,-1.77,-5.00	0/0:0.000:-0.06,-0.91,-5.00	1/0:1.000:-5,0,-5	0/0:0.000:-0.05,-0.95,-5.00	1/0:1.000:-4.70,-0.70,-0.10	0/0:0.000:-0.09,-0.72,-4.70	0/0:0.000:-0.01,-1.54,-5.00	1/1:2.000:-5.00,-0.68,-0.10	0/0:0.000:-0.18,-0.48,-2.33	0/0:0.000:-0.00465443,-1.97224,-5	0/0:0.000:-0.48,-0.48,-0.48	1/0:1.000:-5.00,-0.93,-0.05	0/0:0.000:-0.00,-2.82,-5.00	1/1:2.000:-5.00,-1.67,-0.01	0/0:0.000:-0.05,-0.95,-5.00	1/0:1.000:-5.00,-0.87,-0.06	0/0:0.000:-0.01,-1.78,-5.00	0/0:0.000:-0.01,-1.83,-5.00	0/1:1.000:-5.00,-0.00,-3.70	0/1:0.950:-0.15,-0.53,-2.39	0/0:0.000:-0.09,-0.71,-4.70	0/0:0.000:-0.18,-0.48,-2.56	0/0:0.000:-0.00,-2.60,-5.00	0/0:0.000:-0.01,-1.49,-5.00	0/0:0.000:-0.48,-0.48,-0.48	0/0:0.000:-0.04,-1.09,-5.00	0/0:0.000:-0.00,-2.40,-5.00	0/0:0.000:-0.06,-0.92,-5.00	0/0:0.000:-0.01,-1.54,-5.00	0/0:0.000:-0.02,-1.45,-5.00	0/0:0.000:-0.01,-1.84,-5.00	0/1:1.000:-2.39,-0.30,-0.31	0/0:0.000:-0.03,-1.20,-5.00	0/0:0.000:-0.11,-0.64,-3.44	0/0:0.000:-0.02,-1.42,-5.00	0/0:0.000:-0.01,-1.76,-5.00	0/0:0.000:-0.03,-1.17,-5.00	0/1:1.000:-5.00,-0.03,-1.18	0/0:0.000:-0.03,-1.21,-5.00	0/0:0.000:-0.10,-0.70,-5.00	0/1:1.000:-5.00,0.00,-5.00	0/0:0.000:-0.01,-1.58,-5.00	0/1:1.000:-5.00,0.00,-5.00	1/0:1.000:-5,-5.21375e-05,-3.92082	0/0:0.000:-0.05,-0.92,-5.00	0/0:0.000:-0.02,-1.45,-5.00	0/1:1.000:-5.00,-0.00,-4.22	0/0:0.000:-0.09,-0.73,-4.22	0/0:0.000:-0.00,-2.03,-5.00	0/0:0.000:-0.03,-1.20,-5.00	0/0:0.000:-0.03,-1.19,-5.00	0/0:0.000:-0.18,-0.48,-2.03	0/0:0.000:-0.01,-1.59,-5.00	0/0:0.000:-0.37,-0.42,-0.71	0/0:0.000:-0.02,-1.45,-5.00	0/0:0.000:-0.00,-3.36,-5.00	1/0:1.000:-3.85,-0.05,-0.94	1/0:1.000:-5.00,-0.84,-0.07	1/0:1.000:-0.06,-0.90,-5.00	0/0:0.000:-0.00,-2.56,-5.00	0/0:0.000:-0.19,-0.47,-1.73	0/0:0.000:-0.06,-0.90,-5.00	0/0:0.000:-0.00,-3.74,-5.00	0/0:0.000:-0.22,-0.46,-1.26	1/0:1.000:-5.00,-0.00,-3.92	0/0:0.000:-0.10,-0.69,-3.85	0/0:0.000:-0.00,-2.76,-5.00	0/0:0.000:-0.01,-1.70,-5.00	0/0:0.000:-0.02,-1.46,-5.00	0/0:0.000:-0.06,-0.92,-5.00	0/0:0.000:-0.01,-1.73,-5.00	0/0:0.000:-0.05,-1.00,-5.00	1/0:1.000:-2.32,-0.01,-1.58	0/1:0.950:-0.09,-0.73,-4.70	0/1:1.000:-2.25,-0.02,-1.52	0/0:0.000:-0.01,-1.50,-5.00	0/0:0.000:-0.10,-0.70,-4.40	0/0:0.000:-0.05,-0.99,-5.00	0/0:0.000:-0.03,-1.19,-5.00	0/0:0.000:-0.03,-1.25,-5.00	0/0:0.000:-0.10,-0.67,-4.10	0/1:1.000:-5.00,-0.00,-4.22	0/0:0.000:-0.18,-0.48,-2.02	0/0:0.000:-0.05,-0.94,-5.00	0/0:0.000:-0.00,-4.70,-5.00	0/0:0.000:-0.03,-1.23,-5.00	0/0:0.000:-0.05,-0.93,-5.00	0/0:0.000:-0.03,-1.20,-5.00	1/0:1.000:-0.37,-0.24,-2.87	0/0:0.000:-0.05,-0.94,-5.00	0/0:0.000:-0.18,-0.48,-2.36	0/0:0.000:-0.18,-0.48,-1.83	0/0:0.000:-0.18,-0.48,-2.23	0/0:0.000:-0.01,-1.78,-5.00	0/0:0.000:-0.06,-0.90,-5.00	0/0:0.000:-0.07,-0.82,-5.00	0/0:0.000:-0.10,-0.70,-4.70	0/0:0.000:-0.01,-1.48,-5.00	0/0:0.000:-0.02,-1.46,-5.00	0/0:0.000:-0.18,-0.48,-2.11	0/0:0.000:-0.10,-0.69,-4.70	0/0:0.000:-0.18,-0.47,-2.84	0/0:0.000:-0.03,-1.21,-5.00	1/0:1.000:-4.40,-0.00,-4.70	0/1:0.800:-0.03,-1.20,-5.00	0/0:0.000:-0.05,-0.98,-5.00	0/0:0.000:-0.10,-0.68,-3.70	0/0:0.000:-0.10,-0.67,-5.00	0/0:0.000:-0.48,-0.48,-0.48	0/0:0.000:-0.10,-0.68,-3.59	0/0:0.000:-0.02,-1.26,-5.00	0/0:0.000:-0.48,-0.48,-0.48	0/0:0.000:-0.01,-1.80,-5.00	1/0:1.000:-5.00,-0.66,-0.11	0/0:0.000:-0.12,-0.61,-2.49	1/1:2.000:-5.00,-1.30,-0.02	0/0:0.000:-0.04,-1.07,-5.00	0/0:0.000:-0.18,-0.48,-2.19	0/0:0.000:-0.07,-0.85,-5.00	1/0:1.000:-2.07,-0.04,-1.10	0/1:1.000:-0.09,-0.74,-4.70	0/1:1.000:-5.00,-0.00,-2.47	0/0:0.000:-0.02,-1.26,-5.00	1/0:1.000:-2.25,-0.01,-1.55	0/0:0.000:-0.00,-3.17,-5.00	0/0:0.000:-0.203967,-0.438136,-1.99396	0/0:0.000:-0.12,-0.62,-3.18	0/0:0.000:-0.03,-1.19,-5.00	0/0:0.000:-0.01,-1.66,-5.00	1/0:1.000:-5.00,-0.00,-3.74	1/0:1.000:-1.43,-0.02,-4.70	0/0:0.000:-0.05,-0.96,-5.00	0/0:0.000:-0.09,-0.74,-4.70	0/0:0.000:-0.48,-0.48,-0.48	1/0:1.000:-5.00,-0.18,-0.47	0/0:0.000:-0.17,-0.50,-2.70	0/1:1.000:-5.00,-0.00,-3.80	0/1:1.000:-2.22,-0.01,-1.97	0/1:1.000:-5.00,-0.67,-0.10	0/0:0.000:-0.21,-0.43,-2.01	0/0:0.000:-0.19,-0.47,-1.83	0/0:0.000:-0.10,-0.69,-4.40	0/0:0.000:-0.11,-0.64,-4.10	0/0:0.000:-0.18,-0.47,-2.80	0/0:0.000:-0.01,-1.47,-5.00	0/0:0.000:-0.22,-0.43,-1.61	0/0:0.000:-0.02,-1.47,-5.00	0/0:0.000:-0.01,-1.70,-5.00	0/0:0.000:-0.05,-0.97,-5.00	0/0:0.000:-0.02,-1.28,-5.00
 
 
-We'd like to convert the genotype data (GT field) into the matrix of minor alleles.
+As in typical VCF files, it has a bunch of meta-information lines, one header line, and then one line for each each marker. In this VCF, genetic data has fields GT (genotype), DS (dosage), and GL (genotype likelihood).
 
-## Genetic model 
+## Summary statistics
 
-There are differnt SNP models. The *additive* SNP model essentially counts the number of **minor allele** (0, 1 or 2) per genotype. Other SNP models are *dominant* and *recessive*, both in terms of the **minor allele**. When `ALT` allele is the minor allele, genotypes are translated to real number according to
-
-| Genotype | VCF GT | `model=:additive` | `model=:dominant` | `model=:recessive` |    
-|:---:|:---:|:---:|:---:|:---:|  
-| ALT,ALT | 0/0, 0&#124;0 | 2 | 1 | 1 |  
-| REF,ALT | 0/1, 0&#124;1 | 1 | 1 | 0 |  
-| REF,REF | 1/1, 1&#124;1 | 0 | 0 | 0 |  
-| missing | . | Null | Null | Null | 
-
-When `REF` allele is the minor allele, genotypes are translated according to
-
-| Genotype | VCF GT | `model=:additive` | `model=:dominant` | `model=:recessive` |    
-|:---:|:---:|:---:|:---:|:---:|  
-| ALT,ALT | 0/0, 0&#124;0 | 0 | 0 | 0 |  
-| REF,ALT | 0/1, 0&#124;1, 1/0, 1&#124;0 | 1 | 1 | 0 |  
-| REF,REF | 1/1, 1&#124;1 | 2 | 1 | 1 |  
-| missing | . | Null | Null | Null |
-
-To properly record the missing genotypes, VCFTools convert VCF GT data to `NullableArray`s. Each element of a nullable array `A` is of type `Nullable{T}`. `isnull(A[i, j]) == true` indicates that `A[i, j]` is a missing genotype. See the [NullableArrays.jl](https://github.com/JuliaStats/NullableArrays.jl) package for detailed documentation. 
-
-## Convert GT data into a numeric matrix
-
-Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Nullable{Int8}` array.
+* Number of records (markers) in a VCF file.
 
 
 ```julia
-@time A = convert_gt(Int8, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = false, center = false, scale = false)
+records = nrecords("test.08Jun17.d8b.vcf.gz")
 ```
 
-      0.164331 seconds (1.59 M allocations: 150.705 MiB, 17.38% gc time)
+
+
+
+    1356
+
+
+
+* Number of samples (individuals) in a VCF file.
+
+
+```julia
+samples = nsamples("test.08Jun17.d8b.vcf.gz")
+```
 
 
 
 
+    191
 
-    191×1356 NullableArrays.NullableArray{Int8,2}:
-     0  0  0  0  1  0  0  0  0  0  0  0  0  …  0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0  …  0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  1  1  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  1  0  0  0  0  0  0  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0  …  0  0  1  0  1  0  0  0  0  1  1  0
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  1  1  0
-     ⋮              ⋮              ⋮        ⋱     ⋮              ⋮              ⋮
-     0  0  0  0  1  0  0  0  0  0  0  0  0     0  0  1  0  0  0  0  0  0  1  1  0
+
+
+* `gtstats` function calculates genotype statistics for each marker with GT field.
+
+
+```julia
+@time records, samples, lines, missings_by_sample, missings_by_record, 
+    maf_by_record, minorallele_by_record = gtstats("test.08Jun17.d8b.vcf.gz");
+```
+
+      1.472118 seconds (6.10 M allocations: 395.267 MiB, 6.10% gc time)
+
+
+
+```julia
+# number of markers
+records
+```
+
+
+
+
+    1356
+
+
+
+
+```julia
+# number of samples (individuals)
+samples
+```
+
+
+
+
+    191
+
+
+
+
+```julia
+# number of markers with GT field
+lines
+```
+
+
+
+
+    1356
+
+
+
+
+```julia
+# number of missing genotypes in each sample (individual)
+missings_by_sample'
+```
+
+
+
+
+    1×191 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
      0  0  0  0  0  0  0  0  0  0  0  0  0  …  0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
+
+
+
+
+```julia
+# number of missing genotypes in each marker with GT field
+missings_by_record'
+```
+
+
+
+
+    1×1356 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
      0  0  0  0  0  0  0  0  0  0  0  0  0  …  0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  0  0  0     0  0  0  0  0  0  0  0  0  0  0  0
-     0  0  0  0  0  0  0  0  0  0  1  0  0  …  0  0  0  0  0  0  0  0  0  0  0  0
 
 
-
-Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Nullable{Float64}` array. Impute the missing genotypes according to allele frequency, center the dosages around 2MAF, and scale the dosages by `sqrt(2MAF*(1-MAF))`.
 
 
 ```julia
-@time A = convert_gt(Float64, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = true, center = true, scale = true)
+# minor allele frequency of each marker with GT field
+maf_by_record'
 ```
 
-      0.150267 seconds (1.59 M allocations: 152.434 MiB, 14.09% gc time)
 
 
 
+    1×1356 LinearAlgebra.Adjoint{Float64,Array{Float64,1}}:
+     0.0  0.0  0.0  0.0  0.146597  0.0  …  0.0  0.0  0.0706806  0.0706806  0.0
 
 
-    191×1356 NullableArrays.NullableArray{Float64,2}:
-     0.0  0.0  0.0  0.0  1.41301    0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  2.36899    2.36899    0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0  2.36899    2.36899    0.0
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  2.36899    2.36899    0.0
-     ⋮                              ⋮    ⋱                                  ⋮  
-     0.0  0.0  0.0  0.0  1.41301    0.0     0.0  0.0  2.36899    2.36899    0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
-     0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
-
-
-
-## Extract GT data marker-by-maker or window-by-window
-
-Large VCF files easily generate numeric arrays that cannot fit into computer memory. Many analyses only need to loop over markers or sets of markers. This can be achieved by the `copy_gt!` function.
-
-* To loop over all markers in the VCF file test.08Jun17.d8b.vcf.gz:
 
 
 ```julia
-using GeneticVariation, NullableArrays, VCFTools
-
-# initialize VCF reader
-people, snps = nsamples("test.08Jun17.d8b.vcf.gz"), nrecords("test.08Jun17.d8b.vcf.gz")
-reader = VCF.Reader(openvcf("test.08Jun17.d8b.vcf.gz"))
-# pre-allocate vector for marker data
-g = NullableArray(zeros(people))
-for j = 1:snps
-    copy_gt!(g, reader; model = :additive, impute = true, center = true, scale = true)
-    # do statistical anlaysis
-end
-close(reader)
+# minor allele of each marker (with GT field): true (REF) or false (ALT)
+minorallele_by_record'
 ```
 
-* To loop over markers in windows of size 25:
+
+
+
+    1×1356 LinearAlgebra.Adjoint{Bool,Array{Bool,1}}:
+     1  1  1  1  1  1  1  1  1  1  1  1  0  …  1  1  1  1  1  1  1  1  1  1  1  1
+
+
+
+The optional second argument of `gtstats` function specifies an output file or IO stream for genotype statistics per marker. Each line has fields:  
+- 1-8:  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)
+-   9:  Missing genotype count
+-  10:  Missing genotype frequency
+-  11:  ALT allele count
+-  12:  ALT allele frequency
+-  13:  Minor allele count             (REF allele vs ALT alleles)
+-  14:  Minor allele frequency         (REF allele vs ALT alleles)
+-  15:  HWE P-value                    (REF allele vs ALT alleles)
 
 
 ```julia
-using GeneticVariation, NullableArrays, VCFTools
-
-# initialize VCF reader
-people, snps = nsamples("test.08Jun17.d8b.vcf.gz"), nrecords("test.08Jun17.d8b.vcf.gz")
-reader = VCF.Reader(openvcf("test.08Jun17.d8b.vcf.gz"))
-# pre-allocate matrix for marker data
-windowsize = 25
-g = NullableArray(zeros(people, windowsize))
-nwindows = ceil(Int, snps / windowsize)
-for j = 1:nwindows
-    copy_gt!(g, reader; model = :additive, impute = true, center = true, scale = true)
-    # do statistical anlaysis
-end
-close(reader)
+# write genotype statistics in file gtstats.out.txt
+@time gtstats("test.08Jun17.d8b.vcf.gz", "gtstats.out.txt");
 ```
 
-    [1m[33mWARNING: [39m[22m[33mOnly 7 records left in reader; columns 8-25 are set to missing values[39m
+      0.436800 seconds (1.82 M allocations: 179.963 MiB, 5.13% gc time)
 
 
-As the warning suggests, the last window has less than 25 markers. The remaining columns in the matrix `g` are set to missing values.
+The output file can be read as a `DataFrame` for further analysis.
+
+
+```julia
+using CSV
+
+gstat = CSV.read("gtstats.out.txt"; 
+    header = [:chr, :pos, :id, :ref, :alt, :qual, :filt, :info, :missings, :missfreq, :nalt, :altfreq, :nminor, :maf, :hwe],
+    delim = '\t',
+);
+```

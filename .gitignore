@@ -1,6 +1,10 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+*.vcf
+*.vcf.gz
+*.out*
 
 .DS_Store
 .ipynb_checkpoints
+docs/build/

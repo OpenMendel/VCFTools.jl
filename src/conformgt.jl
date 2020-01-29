@@ -26,7 +26,7 @@ function conformgt_by_id(
     tgtfile::AbstractString,
     outfile::AbstractString,
     chrom::AbstractString,
-    posrange::Range,
+    posrange::AbstractRange,
     checkfreq::Number = false
     )
     # open reference and target VCF files
@@ -39,7 +39,7 @@ function conformgt_by_id(
     writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
         VCF.header(reader_tgt))
     # collect IDs in the reference panel
-    info("Scan IDs in reference panel"; prefix = "conformgt_by_id: ")
+    @info("Scan IDs in reference panel")
     pbar = ProgressMeter.Progress(records_ref, 1)
     id_list_ref = Vector{String}[]
     record_counter = 0
@@ -58,7 +58,7 @@ function conformgt_by_id(
         # if not in search range, skip this record
         pos_ref < first(posrange) && continue
         # if no "GT" field, skip this record
-        VCF.findgenokey(record_ref, "GT") == 0 && continue
+        VCF.findgenokey(record_ref, "GT") == nothing && continue
         # if no ID, skip this record
         VCF.hasid(record_ref) || continue
         # add ID to list
@@ -72,11 +72,11 @@ function conformgt_by_id(
     end
     close(reader_ref)
     # match target IDs to reference IDs
-    info("Match target IDs to reference IDs"; prefix = "conformgt_by_id: ")
+    @info("Match target IDs to reference IDs")
     # re-set reference reader
     reader_ref = VCF.Reader(openvcf(reffile, "r"))
     record_ref = VCF.Record()
-    state_ref = start(reader_ref)
+    iter_state_ref = iterate(reader_ref)
     # loop over target records
     pbar = ProgressMeter.Progress(records_tgt, 1)
     lines = record_counter = 0
@@ -85,7 +85,7 @@ function conformgt_by_id(
         record_counter += 1
         ProgressMeter.update!(pbar, record_counter)
         # if no "GT" field, skip this record
-        VCF.findgenokey(record_tgt, "GT") == 0 && continue
+        VCF.findgenokey(record_tgt, "GT") == nothing && continue
         # if no ID, skip
         VCF.hasid(record_tgt) || continue
         # if not in reference panel, skip
@@ -93,9 +93,10 @@ function conformgt_by_id(
         id_tgt = VCF.id(record_tgt)
         id_tgt ∈ id_list_ref || continue
         # search for matching reference record
-        while !done(reader_ref, state_ref)
-            record_ref, state_ref = next(reader_ref, state_ref)
+        while iter_state_ref !== nothing
+            record_ref, state_ref = iter_state_ref
             VCF.hasid(record_ref) && VCF.id(record_ref) == id_tgt && break
+            iter_state_ref = iterate(reader_ref, state_ref)
         end
         # check REF/ALT label match
         reflabel_tgt = VCF.ref(record_tgt)
@@ -120,7 +121,7 @@ function conformgt_by_id(
     close(VCF.BioCore.IO.stream(writer_ref))
     close(VCF.BioCore.IO.stream(writer_tgt))
     # return
-    info("$(lines) records are matched"; prefix = "conformgt_by_id: ")
+    @info("$(lines) records are matched")
     return lines
 end
 
@@ -153,22 +154,22 @@ function conformgt_by_pos(
     tgtfile::AbstractString,
     outfile::AbstractString,
     chrom::AbstractString,
-    posrange::Range,
+    posrange::AbstractRange,
     checkfreq::Number = false
     )
     # open reference and target VCF files
     reader_ref = VCF.Reader(openvcf(reffile, "r"))
     reader_tgt = VCF.Reader(openvcf(tgtfile, "r"))
     records_ref, records_tgt = nrecords(reffile), nrecords(tgtfile)
-    # create output files
+    # create output files (.gz currently throws error)
     writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
         VCF.header(reader_ref))
     writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
         VCF.header(reader_tgt))
     # initialize reference reader
-    record_ref, state_ref, pos_ref = VCF.Record(), start(reader_ref), 0
+    record_ref, iter_state_ref, pos_ref = VCF.Record(), iterate(reader_ref), 0
     # loop over target records
-    info("Match target POS to reference POS"; prefix = "conformgt_by_pos: ")
+    @info("Match target POS to reference POS")
     pbar = ProgressMeter.Progress(records_tgt, 1)
     lines = record_counter = 0
     for record_tgt in reader_tgt
@@ -176,7 +177,7 @@ function conformgt_by_pos(
         record_counter += 1
         ProgressMeter.update!(pbar, record_counter)
         # if no "GT" field, skip this record
-        VCF.findgenokey(record_tgt, "GT") == 0 && continue
+        VCF.findgenokey(record_tgt, "GT") == nothing && continue
         # chromosome not matched, skip this record
         VCF.chrom(record_tgt) == chrom || continue
         # if past search range, break
@@ -194,15 +195,15 @@ function conformgt_by_pos(
         elseif pos_tgt > pos_ref
             matched = false
             # search for matching reference record
-            while !done(reader_ref, state_ref)
-                record_ref, state_ref = next(reader_ref, state_ref)
+            while iter_state_ref !== nothing
+                record_ref, state_ref = iter_state_ref
                 # if no "GT" field, skip this record
-                VCF.findgenokey(record_tgt, "GT") == 0 && continue
+                VCF.findgenokey(record_tgt, "GT") == nothing && continue
                 # if chromosome not matched, skip this record
                 VCF.chrom(record_ref) == chrom || continue
                 pos_ref = VCF.pos(record_ref)
                 if pos_ref < pos_tgt
-                    continue
+                    iter_state_ref = iterate(reader_ref, state_ref)
                 elseif pos_ref == pos_tgt
                     matched = true; break
                 elseif pos_ref > pos_tgt
@@ -235,10 +236,9 @@ function conformgt_by_pos(
     close(VCF.BioCore.IO.stream(writer_ref))
     close(VCF.BioCore.IO.stream(writer_tgt))
     # return
-    info("$(lines) records are matched"; prefix = "conformgt_by_pos: ")
+    @info("$(lines) records are matched")
     return lines
 end
-
 
 """
     match_gt_allele(record1, record2)
@@ -247,8 +247,8 @@ Match the REF allele label of record 2 to that of record 1. Return the possibly
 REF/ALT flipped record 2 with only "GT" genotype data.
 """
 function match_gt_allele(record1::VCF.Record, record2::VCF.Record)
-    @assert VCF.findgenokey(record1, "GT") > 0 "record1 has no GT field"
-    @assert VCF.findgenokey(record2, "GT") > 0 "record2 has no GT field"
+    VCF.findgenokey(record1, "GT") == nothing && error("record1 has no GT field")
+    VCF.findgenokey(record2, "GT") == nothing && error("record2 has no GT field")
     ref1 = VCF.ref(record1)
     ref2 = VCF.ref(record2)
     alt2 = VCF.alt(record2)
@@ -278,6 +278,7 @@ function filter_genotype(
     format_out = genokey ∩ VCF.format(record)
     gt_out = [Dict(gk => VCF.genotype(record, i, gk) for gk in format_out)
         for i in 1:length(record.genotype)]
+
     return VCF.Record(record; genotype = gt_out)
 end
 
@@ -311,7 +312,7 @@ REF label in the flipped record.
 """
 function flip_gt_allele(record::VCF.Record, altlabel::String = VCF.alt(record)[1])
     altlabel ∈ VCF.alt(record) || throw(ArgumentError("ALT label not found"))
-    VCF.findgenokey(record, "GT") == 0 && throw(ArgumentError("GT format not found"))
+    VCF.findgenokey(record, "GT") == nothing && throw(ArgumentError("GT format not found"))
     gt_out = [Dict("GT" => VCF.genotype(record, i, "GT"))
         for i in 1:length(record.genotype)]
     record_out = VCF.Record(record; ref = VCF.alt(record)[1],
@@ -324,7 +325,7 @@ end
     flip_01!(s[, r])
 Flip the digits 0 and 1 in a UInt8 vector `s` in range `r`.
 """
-function flip_01!(s::Vector{UInt8}, r::Range = 1:length(s))
+function flip_01!(s::Vector{UInt8}, r::AbstractRange = 1:length(s))
     for i in r
         if s[i] == 0x30
             s[i] = 0x31
