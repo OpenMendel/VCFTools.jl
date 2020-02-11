@@ -247,10 +247,20 @@ are not phased, 1 will be on the left column (i.e. `1/0`).
 function convert_ht(
     t::Type{T},
     vcffile::AbstractString;
-    as_minorallele::Bool = false
+    as_minorallele::Bool = false,
+    has_missing::Bool = false
     ) where T <: Real
-    out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
+
+    if has_missing
+        out = Matrix{Union{t, Missing}}(undef, 2nsamples(vcffile), nrecords(vcffile))
+    elseif t == Bool
+        out = BitArray{2}(undef, 2nsamples(vcffile), nrecords(vcffile))
+    else
+        out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
+    end
+
     reader = VCF.Reader(openvcf(vcffile, "r"))
+
     if as_minorallele
         copy_ht!(out, reader)
     else
@@ -344,9 +354,9 @@ without GT field is converted to `missing`. Missing GT field is NOT allowed.
 - `reader`: a VCF reader
 """
 function copy_ht_as_is!(
-    A::Union{AbstractMatrix{T}, AbstractVector{T}},
+    A::Union{AbstractMatrix{U}, AbstractMatrix{T}, AbstractVector{U}, AbstractVector{T}},
     reader::VCF.Reader;
-    ) where T <: Real
+    ) where U <: Union{Missing, T} where T <: Real
 
     n, p = size(A)
     nn   = Int(n / 2)
@@ -371,7 +381,9 @@ function copy_ht_as_is!(
             geno = record.genotype[i]
             # Missing genotype: dropped field or when either haplotype contains "."
             if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
-                error("Missing GT field for record $j entry $i. Reference panels cannot have missing data!")
+                # error("Missing GT field for record $j entry $i. Reference panels cannot have missing data!")
+                A[2i - 1, j] = missing
+                A[2i    , j] = missing
             else # not missing
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31

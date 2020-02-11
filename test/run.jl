@@ -22,7 +22,7 @@ using VCFTools
 
 cd("/Users/biona001/.julia/dev/VCFTools/test")
 vcffile = "test.08Jun17.d8b.vcf"
-H = convert_ht(Float32, vcffile)
+H = convert_ht(Float32, vcffile, has_missing=true)
 
 # byte representation mapping
 String([0x09]) # '\t'
