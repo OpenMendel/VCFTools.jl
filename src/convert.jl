@@ -393,8 +393,10 @@ we fill missing entries with 2 times the ALT allele frequency.
 
 # Arguments
 - `t`: type of output matrix. 
+- `vcffile`: VCF file path
 
 # Optional argument
+- `key`: The FIELD name if the VCF file that encodes dosages, defaults to `"DS"`
 - `as_minorallele`: convert VCF data (1 indicating ALT allele) to minor allele count or not. If `false`, 0 and 1 will be read as stored in VCF file, default `false`. 
 - `model`: genetic model `:additive` (default), `:dominant`, or `:recessive`
 - `impute`: impute missing genotype or not, default `false`

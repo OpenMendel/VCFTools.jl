@@ -1,15 +1,15 @@
 
-# Convert GT to numeric arrays
+# Convert genotype/haplotype/dosage to numeric arrays
 
-Most often we need to convert genetic data to numeric arrays (matrix of **minor allele counts**) for statistical analysis.
+Most often we need to convert genetic data to numeric arrays for statistical analysis.
 
 ## Example VCF file
 
-We need an example VCF file for demonstation. You can manually download it from [link](http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia,
+We need an example VCF file for demonstation. You can manually download it from [link](http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz) (877KB) and put the file in your current working directory. Or, within Julia,
 
 
 ```julia
-isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz", 
+isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
     joinpath(pwd(), "test.08Jun17.d8b.vcf.gz"))
 stat("test.08Jun17.d8b.vcf.gz")
 ```
@@ -95,7 +95,7 @@ When `REF` allele is the minor allele, genotypes are translated according to
 
 To properly record the missing genotypes, VCFTools convert VCF GT data to matrix `A` where element type of `A` is either a numeric number, or missing value. In Julia, this means `eltype(A) <: Union{Missing, Real}` where `<:` means "is a subtype".
 
-## Convert GT data into a numeric matrix
+## Convert GT data into a numeric genotype matrix
 
 Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, Int8}}`. Here `as_minorallele = false` indicates that `VCFTools.jl` will copy the `0`s and `1`s of the file directly into `A`, without checking if ALT or REF is the minor allele. 
 
@@ -104,7 +104,7 @@ Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, 
 @time A = convert_gt(Int8, "test.08Jun17.d8b.vcf.gz"; as_minorallele = false, model = :additive, impute = false, center = false, scale = false)
 ```
 
-      1.605007 seconds (6.51 M allocations: 373.169 MiB, 10.79% gc time)
+      1.524313 seconds (6.51 M allocations: 373.169 MiB, 5.03% gc time)
 
 
 
@@ -140,14 +140,14 @@ Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, 
 
 
 
-Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Nullable{Float64}` array. Check which of `ALT/REF` is the minor allele, impute the missing genotypes according to allele frequency, center the dosages around 2MAF, and scale the dosages by `sqrt(2MAF*(1-MAF))`.
+Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a numeric array. This checks which of `ALT/REF` is the minor allele, imputes the missing genotypes according to allele frequency, centers the dosages around 2MAF, and scales the dosages by `sqrt(2MAF*(1-MAF))`.
 
 
 ```julia
 @time A = convert_gt(Float64, "test.08Jun17.d8b.vcf.gz"; as_minorallele = true, model = :additive, impute = true, center = true, scale = true)
 ```
 
-      0.325079 seconds (1.54 M allocations: 127.557 MiB, 5.49% gc time)
+      0.331800 seconds (1.54 M allocations: 127.557 MiB, 7.04% gc time)
 
 
 
@@ -183,11 +183,111 @@ Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Nullable{Float64}` arr
 
 
 
-## Extract GT data marker-by-maker or window-by-window
+## Convert GT data into haplotypes panels
 
-Large VCF files easily generate numeric arrays that cannot fit into computer memory. Many analyses only need to loop over markers or sets of markers. This can be achieved by the `copy_gt!` function.
+In certain applications such as genotype imputation, the genotypes are *phased*. In this case, the alleles are separated by a `'|'` (e.g. `0|0`). We can import these individual haplotypes into a numeric matrix via `convert_ht`
 
-* To loop over all markers in the VCF file test.08Jun17.d8b.vcf.gz:
+
+```julia
+@time H = convert_ht(Int8, "test.08Jun17.d8b.vcf.gz"; as_minorallele = false)
+```
+
+      0.262581 seconds (795.37 k allocations: 67.710 MiB, 5.38% gc time)
+
+
+
+
+
+    382×1356 Array{Int8,2}:
+     0  0  0  0  1  0  0  0  0  0  0  0  1  …  0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  1  0  0  0  0  0  0  0  1  …  0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  1  0  0  0  0  0  0  0  1  …  0  0  0  0  1  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     ⋮              ⋮              ⋮        ⋱     ⋮              ⋮              ⋮
+     0  0  0  0  0  0  0  0  0  0  0  0  1  …  0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1  …  0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  0  0  1  …  0  0  0  0  0  0  0  0  0  0  0  0
+     0  0  0  0  0  0  0  0  0  0  1  0  1     0  0  0  0  0  0  0  0  0  0  0  0
+
+
+
+Note there are 382 rows to represent the haplotypes of 191 samples. 
+
+!!! note
+
+    `VCFTools.jl` does not check if the allele separators are `'|'` when you call `convert_ht`. One must be cautious to run this function only on *phased* data. 
+    
+## Convert DS data into dosages
+
+Often data contains dosage information. One can similarly import dosage into a numeric matrix. In this case, matrix values can be any number between 0 and 2. 
+
+
+```julia
+@time D = convert_ds(Float64, "test.08Jun17.d8b.vcf.gz"; key="DS", impute=false, center=false, scale=false)
+```
+
+      0.286851 seconds (2.34 M allocations: 195.497 MiB, 7.33% gc time)
+
+
+
+
+
+    191×1356 Array{Union{Missing, Float64},2}:
+     0.0   0.0  0.0  0.0   1.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  0.05  0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   1.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  1.0   1.0  0.0
+     0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  1.0   1.0  0.0
+     0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  1.0   1.0  0.0
+     ⋮                          ⋮         ⋱       ⋮                         ⋮  
+     0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  1.0   1.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.05  0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.05  0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.05  0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
+     0.0   0.0  0.0  0.0   0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0   0.0  0.0
+
+
+
+## Extract data marker-by-maker or window-by-window
+
+Large VCF files easily generate numeric arrays that cannot fit into computer memory. Many analyses only need to loop over markers or sets of markers. Previous functions for importing genotypes/haplotypes/dosages have equivalent functions to achieve this:
+
++ **`copy_gt!`** loops over genotypes
++ **`copy_ht!`** loops over haplotypes
++ **`copy_ds!`** loops over dosages
+
+For example, to loop over all genotype markers in the VCF file test.08Jun17.d8b.vcf.gz:
 
 
 ```julia
@@ -205,7 +305,7 @@ end
 close(reader)
 ```
 
-* To loop over markers in windows of size 25:
+To loop over markers in windows of size 25:
 
 
 ```julia
