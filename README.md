@@ -2,30 +2,27 @@
 
 | **Documentation** | **Build Status** | **Code Coverage**  |
 |-------------------|------------------|--------------------|
-| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://biona001.github.io/VCFTools.jl/dev/) | [![Build Status](https://travis-ci.org/biona001/VCFTools.jl.svg?branch=master)](https://travis-ci.org/biona001/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/biona001/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/biona001/VCFTools.jl?branch=master)|
+| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://github.com/OpenMendel/VCFTools.jl/dev/) | [![Build Status](https://travis-ci.org/OpenMendel/VCFTools.jl.svg?branch=master)](https://travis-ci.org/OpenMendel/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/OpenMendel/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/OpenMendel/VCFTools.jl?branch=master)|
 
-VCFTools provide utilities for handling VCF files.
+VCFTools.jl provide Julia utilities for handling VCF files.
 
 ## Installation
 
 Within Julia, press `]` to use the package manager and type:
 
-    (v1.3) pkg> add https://github.com/biona001/VCFTools.jl
+    (v1.3) pkg> add https://github.com/OpenMendel/VCFTools.jl
 
 This package supports Julia v1.0+.
 
 ## Documentation
 
-+[**Latest**](https://biona001.github.io/VCFTools.jl/dev/)
++[**Latest**](https://github.com/OpenMendel/VCFTools.jl/dev/)
 
 ## Citation
 
 If you use [OpenMendel](https://openmendel.github.io) analysis packages in your research, please cite the following reference in the resulting publications:
 
-*OPENMENDEL: a cooperative programming project for statistical genetics. Zhou H, Sinsheimer JS, Bates DM, Chu BB, German CA, Ji SS, Keys KL, Kim J, Ko S, Mosher GD, Papp JC, Sobel EM, Zhai J, Zhou JJ, Lange K. Hum Genet. 2019 Mar 26. doi: 10.1007/s00439-019-02001-z. [Epub ahead of print] PMID: 30915546.*
-
-<!--- ## Contributing
-We welcome contributions to this Open Source project. To contribute, follow this procedure ... --->
+Zhou H, Sinsheimer JS, Bates DM, Chu BB, German CA, Ji SS, Keys KL, Kim J, Ko S, Mosher GD, Papp JC, Sobel EM, Zhai J, Zhou JJ, Lange K. (2020) OPENMENDEL: a cooperative programming project for statistical genetics,  _Hum Genet_, 139:61-71. [doi: 10.1007/s00439-019-02001-z](https://doi.org/10.1007/s00439-019-02001-z).
 
 ## Acknowledgments
 
