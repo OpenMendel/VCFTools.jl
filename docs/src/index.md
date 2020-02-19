@@ -15,9 +15,9 @@
 
 Use the Julia package manager to install `VCFTools.jl`. Press `]` and type:
 ```julia
-(v1.3) pkg> add https://github.com/biona001/VCFTools.jl
+(v1.3) pkg> add https://github.com/OpenMendel/VCFTools.jl
 ```
-This package supports Julia `1.0`+.
+This package supports Julia `v1.0`+.
 
 ## Manual Outline
 
