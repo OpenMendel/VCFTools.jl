@@ -3,7 +3,7 @@ uuid = "a620830f-fdd7-5ebc-8d26-3621ab35fbfe"
 
 keywords = ["Variant call format", "VCF"]
 authors = ["Hua Zhou <hwachou@gmail.com>", "OpenMendel Team"]
-version = "0.0.0"
+version = "0.1.1"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
