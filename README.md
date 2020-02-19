@@ -16,7 +16,7 @@ This package supports Julia v1.0+.
 
 ## Documentation
 
-+[**Latest**](https://github.com/OpenMendel/VCFTools.jl/dev/)
++ [**Latest**](https://github.com/OpenMendel/VCFTools.jl/dev/)
 
 ## Citation
 
