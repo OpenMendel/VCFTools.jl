@@ -18,6 +18,6 @@ makedocs(
 )
 
 deploydocs(
-    repo   = "github.com/biona001/VCFTools.jl.git",
+    repo   = "github.com/OpenMendel/VCFTools.jl.git",
     target = "build"
 )
