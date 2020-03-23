@@ -55,7 +55,7 @@ function gtstats(vcffile::AbstractString, out::IO=devnull)
         n00, n01, n11, n0, n1, altfreq, reffreq, missings,
             minorallele, maf, hwepval = gtstats(record, missings_by_sample)
         missfreq = missings / (n0 + n1)
-        altfreq  = n0 / (n0 + n1)
+        altfreq  = n1 / (n0 + n1)
         minoralleles = minorallele ? n0 : n1
         push!(missings_by_record, missings)
         push!(maf_by_record, maf)
