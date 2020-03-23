@@ -130,7 +130,7 @@ function gtstats(
     altfreq     = n1 / (n0 + n1)
     reffreq     = n0 / (n0 + n1)
     minorallele = n0 < n1 # true if REF is minor 
-    maf         = n0 < n1 ? altfreq : reffreq
+    maf         = minorallele ? reffreq : altfreq
     hwepval     = hwe(n00, n01, n11)
     return n00, n01, n11, n0, n1, altfreq, reffreq, missings,
         minorallele, maf, hwepval
