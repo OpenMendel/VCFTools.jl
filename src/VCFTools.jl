@@ -15,7 +15,7 @@ export conformgt_by_id, conformgt_by_pos,
     convert_ht, copy_ht!,
     filter, filter_header, convert_ds,
     mask_gt, geno_ismissing,
-    copy_gt_as_is!, copy_ht_as_is!
+    copy_gt_trans!
 
 # package code goes here
 include("gtstats.jl")

@@ -170,8 +170,52 @@ X = simulate_genotypes(H', 100)
 
 
 
+# test convert transpose function
+
+using Revise
+using GeneticVariation
+using Random
+using VCFTools
+using BenchmarkTools
+using Test
+
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+vcffile = "test.08Jun17.d8b.vcf"
+
+A  = convert_gt(Float64, vcffile)
+At = convert_gt(Float64, vcffile, trans=true)
+@test all(At .== A')
+# size(A) = (191, 1356)
+
+@benchmark convert_gt(Float64, vcffile) # 63.926 ms, 104.59 MiB, 1070395 alloc
+@benchmark convert_gt(Float64, vcffile, trans=true)# 65.772 ms, 104.59 MiB, 1070396 alloc
+
+# test if eof(reader) is working
+out = Matrix{Union{Float64, Missing}}(undef, 191, 1400)
+reader = VCF.Reader(openvcf(vcffile, "r"))
+# copy_gt!(out, reader)
+copy_gt!(out, reader, impute=true, center=true, scale=true)
+@test all(ismissing.(out[:, 1357:end]))
+
+out = Matrix{Union{Float64, Missing}}(undef, 1400, 191)
+reader = VCF.Reader(openvcf(vcffile, "r"))
+# copy_gt_trans!(out, reader)
+copy_gt_trans!(out, reader, impute=true, center=true, scale=true)
+@test all(ismissing.(out[1357:end, :]))
 
 
+# test impute, center, scale
+A = Matrix{Union{Float64, Missing}}(undef, 191, 1400)
+reader = VCF.Reader(openvcf(vcffile, "r"))
+copy_gt!(A, reader, impute=true, center=true, scale=true)
+@test isapprox(mean(A[:, 5]), 0, atol=10)
+@test isapprox(var(A[:, 5]), 1, atol=10)
+
+At = Matrix{Union{Float64, Missing}}(undef, 1400, 191)
+reader = VCF.Reader(openvcf(vcffile, "r"))
+copy_gt_trans!(At, reader, impute=true, center=true, scale=true)
+@test isapprox(mean(At[5, :]), 0, atol=10)
+@test isapprox(var(At[5, :]), 1, atol=10)
 
 
 

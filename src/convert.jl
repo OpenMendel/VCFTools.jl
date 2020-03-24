@@ -1,12 +1,31 @@
+""" 
+Convert a two-bit genotype (of ALT alleles) to a real number 
+of type `t` according to specified SNP model. 
+""" 
+function convert_gt(
+    t::Type{T},
+    a::NTuple{2, Bool},
+    model::Symbol = :additive
+    ) where T <: Real
+    if model == :additive
+        return convert(T, a[1] + a[2])
+    elseif model == :dominant
+        return convert(T, a[1] | a[2])
+    elseif model == :recessive
+        return convert(T, a[1] & a[2])
+    else
+        throw(ArgumentError("un-recognized SNP model: $model"))
+    end
+end
+
 """
-    copy_gt_as_is!(A, reader; [model=:additive], [impute=false], [center=false], [scale=false])
+    copy_gt!(A, reader; [model=:additive], [impute=false], [center=false], [scale=false])
 
 Fill the columns of matrix `A` by the GT data from VCF records in `reader` where the ALT allele
-in each record is interpreted as a `1`. Each column of `A` corresponds to one record. 
-Record without GT field is converted to `missing`.
+in each record is interpreted as a `1`. Record without GT field is converted to `missing`.
 
 # Input
-- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`
+- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each row is a person's genotype. 
 - `reader`: a VCF reader
 
 # Optional argument
@@ -52,7 +71,7 @@ function copy_gt!(
             if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
                 if impute
                     a1, a2 = rand() ≤ alt_freq, rand() ≤ alt_freq
-                    A[i, j] = convert_gt(T, (a1, a2), true, model)
+                    A[i, j] = convert_gt(T, (a1, a2), model)
                 else
                     A[i, j] = missing
                 end
@@ -65,6 +84,75 @@ function copy_gt!(
             # center and scale if asked
             center && !ismissing(A[i, j]) && (A[i, j] -= ct)
             scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
+        end
+    end
+    return A
+end
+
+"""
+    copy_gt_trans!(A, reader; [model=:additive], [impute=false], [center=false], [scale=false])
+
+Fill the columns of matrix `A` by the GT data from VCF records in `reader` where the ALT allele
+in each record is interpreted as a `1`. Record without GT field is converted to `missing`.
+
+# Input
+- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each column is one person's genotype. 
+- `reader`: a VCF reader
+
+# Optional argument
+- `model`: genetic model `:additive` (default), `:dominant`, or `:recessive`
+- `impute`: impute missing genotype or not, default `false`
+- `center`: center gentoype by 2maf or not, default `false`
+- `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+
+# Output
+- `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
+    `ismissing(A[i, j]) == false` for all entries.
+"""
+function copy_gt_trans!(
+    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
+    reader::VCF.Reader;
+    model::Symbol = :additive,
+    impute::Bool = false,
+    center::Bool = false,
+    scale::Bool = false
+    ) where T <: Real
+    for j in 1:size(A, 1)
+        if eof(reader)
+            @warn("Only $j records left in reader; rows $(j+1)-$(size(A, 1)) are set to missing values")
+            fill!(view(A, (j + 1):size(A, 1), :), missing)
+            break
+        else
+            record = read(reader)
+        end
+        gtkey = VCF.findgenokey(record, "GT")
+        # if no GT field, fill by missing values
+        if gtkey == nothing
+            fill!(view(A, j, :), missing)
+        end
+        # second pass: impute, convert, center, scale
+        _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
+        ct = 2alt_freq
+        wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
+        for i in 1:size(A, 2)
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
+                if impute
+                    a1, a2 = rand() ≤ alt_freq, rand() ≤ alt_freq
+                    A[j, i] = convert_gt(T, (a1, a2), model)
+                else
+                    A[j, i] = missing
+                end
+            else # not missing
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
+                a1 = record.data[geno[gtkey][1]] == 0x31
+                a2 = record.data[geno[gtkey][3]] == 0x31
+                A[j, i] = convert(T, a1 + a2)
+            end
+            # center and scale if asked
+            center && !ismissing(A[j, i]) && (A[j, i] -= ct)
+            scale && !ismissing(A[j, i]) && (A[j, i] *= wt)
         end
     end
     return A
@@ -86,11 +174,11 @@ Record without GT field is converted to equivalent of missing genotypes.
 - `vcffile`: VCF file path
 
 # Optional argument
-- `as_minorallele`: convert VCF data (1 indicating ALT allele) to minor allele count or not. If `false`, 0 and 1 will be read as stored in VCF file, default `false`. 
 - `model`: genetic model `:additive` (default), `:dominant`, or `:recessive`
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+- `trans`: whether to import data transposed so that each column is 1 genotype
 
 # Output
 - `A`: matrix where `eltype(A) <: Union{missing, Real}`. `ismissing(A[i, j]) == true`
@@ -103,17 +191,24 @@ function convert_gt(
     impute::Bool = false,
     center::Bool = false,
     scale::Bool = false,
+    trans::Bool = false
     ) where T <: Real
-    out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_gt!(out, reader; model = model, impute = impute,
-        center = center, scale = scale)
+    if trans
+        out = Matrix{Union{t, Missing}}(undef, nrecords(vcffile), nsamples(vcffile))
+        copy_gt_trans!(out, reader; model = model, impute = impute,
+            center = center, scale = scale)
+    else
+        out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), nrecords(vcffile))
+        copy_gt!(out, reader; model = model, impute = impute,
+            center = center, scale = scale)
+    end
     close(reader)
     out
 end
 
 """
-    convert_ht(t, vcffile; [as_minorallele=false])
+    convert_ht(t, vcffile)
 
 Converts the GT data from a VCF file to a haplotype matrix of type `t`. One 
 column of the VCF record will become 2 column in the resulting matrix. If haplotypes
@@ -122,9 +217,6 @@ are not phased, 1 will be on the left column (i.e. `1/0`).
 # Input
 - `t`: a type `t <: Real`
 - `vcffile`: VCF file path
-
-# Optional argument
-- `as_minorallele`: convert VCF data (1 indicating ALT allele) to minor allele count or not. If `false`, 0 and 1 will be read as stored in VCF file, default `false`. 
 """
 function convert_ht(
     t::Type{T},
@@ -202,7 +294,6 @@ we fill missing entries with 2 times the ALT allele frequency.
 
 # Optional argument
 - `key`: The FIELD name if the VCF file that encodes dosages, defaults to `"DS"`
-- `as_minorallele`: convert VCF data (1 indicating ALT allele) to minor allele count or not. If `false`, 0 and 1 will be read as stored in VCF file, default `false`. 
 - `model`: genetic model `:additive` (default), `:dominant`, or `:recessive`
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
