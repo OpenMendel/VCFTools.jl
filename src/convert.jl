@@ -178,7 +178,7 @@ Record without GT field is converted to equivalent of missing genotypes.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `trans`: whether to import data transposed so that each column is 1 genotype
+- `trans`: whether to import data transposed so that each column is 1 genotype, default `false`
 
 # Output
 - `A`: matrix where `eltype(A) <: Union{missing, Real}`. `ismissing(A[i, j]) == true`
@@ -217,14 +217,21 @@ are not phased, 1 will be on the left column (i.e. `1/0`).
 # Input
 - `t`: a type `t <: Real`
 - `vcffile`: VCF file path
+- `trans`: whether to import data transposed so that each column is 1 a haplotype, default `false`
 """
 function convert_ht(
     t::Type{T},
-    vcffile::AbstractString
+    vcffile::AbstractString;
+    trans::Bool = false
     ) where T <: Real
-    out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_ht!(out, reader)
+    if trans
+        out = Matrix{t}(undef, nrecords(vcffile), 2nsamples(vcffile))
+        copy_ht_trans!(out, reader)
+    else
+        out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
+        copy_ht!(out, reader)
+    end
     close(reader)
     return out
 end
@@ -232,12 +239,13 @@ end
 """
     copy_ht!(A, reader)
 
-Fill 2 columns of BitArray `A` by the GT data from VCF records in `reader`, each record filling 2 columns.
-The minor allele rfor each ecord is the ALT allele (i.e. will read 0s and 1s of the vcffile as-is). Record 
-without GT field is converted to `missing`. Missing GT field is NOT allowed. 
+Fill 2 columns of `A` by the GT data from VCF records in `reader`, 
+each record filling 2 columns.The minor allele for each record is 
+the ALT allele (i.e. will read 0s and 1s of the vcffile as-is). 
+Missing GT field is NOT allowed. 
 
 # Input
-- `A`: a BitArray{2} or BitArray{1}. 
+- `A`: matrix where rows are haplotypes. Person `i`'s haplotype are filled in rows 2i - 1 and 2i. 
 - `reader`: a VCF reader
 """
 function copy_ht!(
@@ -248,10 +256,10 @@ function copy_ht!(
     n, p = size(A)
     nn   = Int(n / 2)
 
-    for j in 1:size(A, 2)
+    for j in 1:p
         if eof(reader)
-            @warn("Reached end! Check if output is correct!")
-            A = A[:, 1:2j]
+            @warn("Reached end of record! Since matrix not allowed to have missing, we subsetted the result to exclude columns of missing. ")
+            A = A[:, 1:j]
             break
         else
             record = read(reader)
@@ -268,13 +276,66 @@ function copy_ht!(
             geno = record.genotype[i]
             # Missing genotype: dropped field or when either haplotype contains "."
             if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
-                error("Missing GT field for record $j entry $i. Reference panels cannot have missing data!")
+                error("Missing GT field for record $j entry $(2i - 1). Reference panels cannot have missing data!")
             else # not missing
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
                 A[2i - 1, j] = convert(T, a1)
                 A[2i    , j] = convert(T, a2)
+            end
+        end
+    end
+    return A
+end
+
+"""
+    copy_ht_trans!(A, reader)
+
+Fill 2 columns of `A` by the GT data from VCF records in `reader`, 
+each record filling 2 columns.The minor allele for each record is 
+the ALT allele (i.e. will read 0s and 1s of the vcffile as-is). 
+Missing GT field is NOT allowed. 
+
+# Input
+- `A`: matrix where columns are haplotypes. Person `i`'s haplotype are filled in columns 2i - 1 and 2i. 
+- `reader`: a VCF reader
+"""
+function copy_ht_trans!(
+    A::Union{AbstractMatrix{T}, AbstractVector{T}},
+    reader::VCF.Reader;
+    ) where T <: Real
+
+    n, p = size(A)
+    pp   = Int(p / 2)
+
+    for j in 1:n
+        if eof(reader)
+            @warn("Reached end of record! Since matrix not allowed to have missing, we subsetted the result to exclude rows of missing. ")
+            A = A[1:j, :]
+            break
+        else
+            record = read(reader)
+        end
+        gtkey = VCF.findgenokey(record, "GT")
+
+        # haplotype reference files must have GT field
+        if gtkey == nothing
+            error("Missing GT field for record $j. Reference panels cannot have missing data!")
+        end
+
+        # second pass: convert
+        for i in 1:pp
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
+                error("Missing GT field for record $j entry $(2i - 1). Reference panels cannot have missing data!")
+            else # not missing
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
+                a1 = record.data[geno[gtkey][1]] == 0x31
+                a2 = record.data[geno[gtkey][3]] == 0x31
+                A[j, 2i - 1] = convert(T, a1)
+                A[j, 2i] = convert(T, a2)
             end
         end
     end
@@ -298,6 +359,7 @@ we fill missing entries with 2 times the ALT allele frequency.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+- `trans`: whether to import data transposed so that each column is 1 genotype, default `false`
 """
 function convert_ds(
     t::Type{T},
@@ -306,11 +368,17 @@ function convert_ds(
     model::Symbol = :additive,
     impute::Bool = false,
     center::Bool = false,
-    scale::Bool = false
+    scale::Bool = false,
+    trans::Bool = false
     ) where T <: Real
-    out = Matrix{Union{Missing, t}}(undef, nsamples(vcffile), nrecords(vcffile))
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_ds!(out, reader, key = key, impute = impute, center = center, scale = scale)
+    if trans
+        out = Matrix{Union{Missing, t}}(undef, nrecords(vcffile), nsamples(vcffile))
+        copy_ds_trans!(out, reader, key = key, impute = impute, center = center, scale = scale)
+    else
+        out = Matrix{Union{Missing, t}}(undef, nsamples(vcffile), nrecords(vcffile))
+        copy_ds!(out, reader, key = key, impute = impute, center = center, scale = scale)
+    end
     close(reader)
     return out
 end
@@ -322,7 +390,7 @@ Fill the columns of matrix `A` by the dosage data from VCF records in `reader`. 
 is converted to `missing`. 
 
 # Input
-- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`
+- `A`: matrix where rows are dosages. 
 - `reader`: a VCF reader
 
 # Optional argument
@@ -377,6 +445,72 @@ function copy_ds!(
             # center and scale if asked
             center && !ismissing(A[i, j]) && (A[i, j] -= ct)
             scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
+        end
+    end
+end
+
+"""
+    copy_ds_trans!(A, reader; [key="DS"], [model=:additive], [impute=false], [center=false], [scale=false])
+
+Fill the columns of matrix `A` by the dosage data from VCF records in `reader`. Record without GT field 
+is converted to `missing`. 
+
+# Input
+- `A`: matrix where columns are dosages. 
+- `reader`: a VCF reader
+
+# Optional argument
+- `key`: The field key for accessing dosage values, default `"DS"`
+- `model`: genetic model `:additive` (default), `:dominant`, or `:recessive`
+- `impute`: impute missing genotype or not, default `false`
+- `center`: center gentoype by 2maf or not, default `false`
+- `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+
+# Output
+- `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
+    `ismissing(A[i, j]) == false` for all entries.
+"""
+function copy_ds_trans!(
+    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
+    reader::VCF.Reader;
+    key::String = "DS",
+    model::Symbol = :additive,
+    impute::Bool = false,
+    center::Bool = false,
+    scale::Bool = false
+    ) where T <: Real
+    for j in 1:size(A, 1)
+        if eof(reader)
+            @warn("Only $j records left in reader; rows $(j+1)-$(size(A, 1)) are set to missing values")
+            fill!(view(A, (j + 1):size(A, 2), :), missing)
+            break
+        else
+            record = read(reader)
+        end
+        dskey = VCF.findgenokey(record, key)
+
+        # if no dosage field, fill by missing values
+        if dskey == nothing
+            @inbounds @simd for i in 1:size(A, 2)
+                A[j, i] = missing
+            end
+        end
+
+        # loop over every marker in record
+        _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing) 
+        ct = 2alt_freq
+        wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
+        for i in 1:size(A, 2)
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or "." => 0x2e
+            if dskey > lastindex(geno) || record.data[geno[dskey]] == [0x2e]
+                A[j, i] = (impute ? ct : missing)
+            else # not missing
+                A[j, i] = parse(T, String(record.data[geno[dskey]]))
+            end
+            # center and scale if asked
+            center && !ismissing(A[j, i]) && (A[j, i] -= ct)
+            scale && !ismissing(A[j, i]) && (A[j, i] *= wt)
         end
     end
 end
