@@ -237,38 +237,54 @@ Ht = convert_ht(Float64, vcffile, trans=true)
 @test all(Ht .== H')
 # size(H) = (382, 1356)
 
-@benchmark convert_ht(Float64, vcffile) # 40.711 ms, 58.89 MiB, 552403 alloc
-@benchmark convert_ht(Float64, vcffile, trans=true) # 43.491 ms, 58.89 MiB, 552404 alloc
-
-# BELOW NOT DONE YET!!
+@benchmark convert_ht(Float64, vcffile) # 44.523 ms, 58.89 MiB, 552403 alloc
+@benchmark convert_ht(Float64, vcffile, trans=true) # 44.900 ms, 58.89 MiB, 552404 alloc
 
 # test if eof(reader) is working
 out = Matrix{Float64}(undef, 382, 1400)
 reader = VCF.Reader(openvcf(vcffile, "r"))
 copy_ht!(out, reader)
 @test size(out) == (382, 1357)
+@test all(out[:, 1358:end] .== 0.0)
 
 out = Matrix{Float64}(undef, 1400, 382)
 reader = VCF.Reader(openvcf(vcffile, "r"))
-copy_gt_trans!(out, reader)
-@test size(out) == (382, 1357)
+copy_ht_trans!(out, reader)
+@test size(out) == (1400, 382)
+@test all(out[1358:end, :] .== 0.0)
 
 
 
+# test convert_ds transpose
 
+using Revise
+using GeneticVariation
+using Random
+using VCFTools
+using BenchmarkTools
+using Test
 
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+vcffile = "test.08Jun17.d8b.vcf"
 
+D  = convert_ds(Float64, vcffile)
+Dt = convert_ds(Float64, vcffile, trans=true)
+@test all(Dt .== D')
+# size(D) = (191, 1356)
 
-# test impute, center, scale
-A = Matrix{Union{Float64, Missing}}(undef, 191, 1400)
+@benchmark convert_ds(Float64, vcffile) # 102.551 ms, 183.63 MiB, 2106379 alloc
+@benchmark convert_ds(Float64, vcffile, trans=true) # 114.470 ms ms, 183.63 MiB, 2106380 alloc
+
+# test if eof(reader) is working
+out = Matrix{Union{Missing, Float64}}(undef, 191, 1400)
 reader = VCF.Reader(openvcf(vcffile, "r"))
-copy_gt!(A, reader, impute=true, center=true, scale=true)
-@test isapprox(mean(A[:, 5]), 0, atol=10)
-@test isapprox(var(A[:, 5]), 1, atol=10)
+copy_ds!(out, reader)
+@test size(out) == (191, 1400)
+@test all(ismissing.(out[:, 1358:end]))
 
-At = Matrix{Union{Float64, Missing}}(undef, 1400, 191)
+out = Matrix{Union{Missing, Float64}}(undef, 1400, 191)
 reader = VCF.Reader(openvcf(vcffile, "r"))
-copy_gt_trans!(At, reader, impute=true, center=true, scale=true)
-@test isapprox(mean(At[5, :]), 0, atol=10)
-@test isapprox(var(At[5, :]), 1, atol=10)
+copy_ds_trans!(out, reader)
+@test size(out) == (1400, 191)
+@test all(ismissing.(out[1358:end, :]))
 

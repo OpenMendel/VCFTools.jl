@@ -67,3 +67,75 @@ end
     @test eltype(D) == Union{Missing, Float64}
     @test size(D) == (191, 1356)
 end
+
+@testset "convert to transpose functions" begin
+    vcffile = "test.08Jun17.d8b.vcf"
+
+    # convert_gt_trans!
+    @time A  = convert_gt(Float64, vcffile)
+    @time At = convert_gt(Float64, vcffile, trans=true)
+    @test all(At .== A')
+
+    # test if eof(reader) is working
+    out = Matrix{Union{Float64, Missing}}(undef, 191, 1400)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_gt!(out, reader)
+    @test all(ismissing.(out[:, 1357:end]))
+
+    out = Matrix{Union{Float64, Missing}}(undef, 1400, 191)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_gt_trans!(out, reader)
+    @test all(ismissing.(out[1357:end, :]))
+
+    # test impute, center, scale (these use mean and var functions, currently not imported)
+    # A = Matrix{Union{Float64, Missing}}(undef, 191, 1400)
+    # reader = VCF.Reader(openvcf(vcffile, "r"))
+    # copy_gt!(A, reader, impute=true, center=true, scale=true)
+    # @test isapprox(mean(A[:, 5]), 0, atol=10)
+    # @test isapprox(var(A[:, 5]), 1, atol=10)
+    # At = Matrix{Union{Float64, Missing}}(undef, 1400, 191)
+    # reader = VCF.Reader(openvcf(vcffile, "r"))
+    # copy_gt_trans!(At, reader, impute=true, center=true, scale=true)
+    # @test isapprox(mean(At[5, :]), 0, atol=10)
+    # @test isapprox(var(At[5, :]), 1, atol=10)
+
+
+
+    # convert_ht_trans!
+    @time H  = convert_ht(Float64, vcffile)
+    @time Ht = convert_ht(Float64, vcffile, trans=true)
+    @test all(Ht .== H')
+
+    # test if eof(reader) is working
+    out = Matrix{Float64}(undef, 382, 1400)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_ht!(out, reader)
+    @test size(out) == (382, 1400)
+    @test all(out[:, 1358:end] .== 0.0)
+
+    out = Matrix{Float64}(undef, 1400, 382)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_ht_trans!(out, reader)
+    @test size(out) == (1400, 382)
+    @test all(out[1358:end, :] .== 0.0)
+
+
+
+    # convert_ds_trans!
+    @time D  = convert_ds(Float64, vcffile)
+    @time Dt = convert_ds(Float64, vcffile, trans=true)
+    @test all(Dt .== D')
+
+    # test if eof(reader) is working
+    out = Matrix{Union{Missing, Float64}}(undef, 191, 1400)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_ds!(out, reader)
+    @test size(out) == (191, 1400)
+    @test all(ismissing.(out[:, 1358:end]))
+
+    out = Matrix{Union{Missing, Float64}}(undef, 1400, 191)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    copy_ds_trans!(out, reader)
+    @test size(out) == (1400, 191)
+    @test all(ismissing.(out[1358:end, :]))
+end
