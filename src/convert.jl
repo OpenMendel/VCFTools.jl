@@ -258,8 +258,7 @@ function copy_ht!(
 
     for j in 1:p
         if eof(reader)
-            @warn("Reached end of record! Since matrix not allowed to have missing, we subsetted the result to exclude columns of missing. ")
-            A = A[:, 1:j]
+            @warn("Reached end of record! Columns $(j + 1) through $p are filled with 0s and are NOT haplotypes!")
             break
         else
             record = read(reader)
@@ -311,8 +310,7 @@ function copy_ht_trans!(
 
     for j in 1:n
         if eof(reader)
-            @warn("Reached end of record! Since matrix not allowed to have missing, we subsetted the result to exclude rows of missing. ")
-            A = A[1:j, :]
+            @warn("Reached end of record! Rows $(j + 1) through $p are filled with 0s and are NOT haplotypes!")
             break
         else
             record = read(reader)
