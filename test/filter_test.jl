@@ -10,8 +10,8 @@
     # @code_warntype VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
     @test nsamples(des) == samples - 2
     @test nrecords(des) == records
-    X = convert_gt(Float32, vcffile, as_minorallele=false)
-    X_filter = convert_gt(Float32, des, as_minorallele=false)
+    X = convert_gt(Float32, vcffile)
+    X_filter = convert_gt(Float32, des)
     @test all(X[sample_mask, :] .== X_filter)
 
     # filter records only specified by bitmasks
@@ -22,8 +22,8 @@
     @time VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
     @test nsamples(des) == samples
     @test nrecords(des) == records - 2
-    X = convert_gt(Float32, vcffile, as_minorallele=false)
-    X_filter = convert_gt(Float32, des, as_minorallele=false)
+    X = convert_gt(Float32, vcffile)
+    X_filter = convert_gt(Float32, des)
     @test all(X[:, record_mask] .== X_filter)
 
     # filter record and samples together
@@ -35,8 +35,8 @@
     @time VCFTools.filter(vcffile, record_mask, sample_mask, des=des)
     @test nsamples(des) == sum(sample_mask)
     @test nrecords(des) == sum(record_mask)
-    X = convert_gt(Float32, vcffile, as_minorallele=false)
-    X_filter = convert_gt(Float32, des, as_minorallele=false)
+    X = convert_gt(Float32, vcffile)
+    X_filter = convert_gt(Float32, des)
     @test all(X[sample_mask, record_mask] .== X_filter)
 end
 
@@ -51,9 +51,9 @@ end
     # @code_warntype mask_gt(vcffile, masks, des = outfile)
     @test nsamples(outfile) == samples
     @test nrecords(outfile) == records
-    X = convert_gt(Float32, vcffile, as_minorallele=false)
+    X = convert_gt(Float32, vcffile)
     X = copy(X') # need to transpose back to dimension in VCF file
-    Xmasked = convert_gt(Float32, outfile, as_minorallele=false)
+    Xmasked = convert_gt(Float32, outfile)
     Xmasked = copy(Xmasked') 
     @test eltype(Xmasked) == Union{Missing, eltype(X)}
     @test all(Xmasked[.!masks] .== X[.!masks])

@@ -55,7 +55,7 @@ function gtstats(vcffile::AbstractString, out::IO=devnull)
         n00, n01, n11, n0, n1, altfreq, reffreq, missings,
             minorallele, maf, hwepval = gtstats(record, missings_by_sample)
         missfreq = missings / (n0 + n1)
-        altfreq  = n0 / (n0 + n1)
+        altfreq  = n1 / (n0 + n1)
         minoralleles = minorallele ? n0 : n1
         push!(missings_by_record, missings)
         push!(maf_by_record, maf)
@@ -88,15 +88,15 @@ Calculate genotype statistics for a VCF record with GT field.
 - `missings_by_sample`: accumulator of missings by sample, `missings_by_sample[i]` is incremented by 1 if `i`-th individual has missing genotype in this record
 
 # Output
-- `n00`: number of homozygote ALT/ALT or ALT|ALT
+- `n00`: number of homozygote REF/REF or REF|REF
 - `n01`: number of heterozygote REF/ALT or REF|ALT
-- `n11`: number of homozygote REF/REF or REF|REF
-- `n0`: number of ALT alleles
-- `n1`: number of REF alleles
+- `n11`: number of homozygote ALT/ALT or ALT|ALT
+- `n0`: number of REF alleles
+- `n1`: number of ALT alleles
 - `altfreq`: proportion of ALT alleles
 - `reffreq`: proportion of REF alleles
 - `missings`: number of missing genotypes
-- `minorallele`: minor allele: `false` (ALT allele) or `true` (REF allele)
+- `minorallele`: minor allele: `false` (ALT is minor allele) or `true` (REF is minor allele)
 - `maf`: minor allele frequency
 - `hwepval`: Hardy-Weinberg p-value
 """
@@ -104,8 +104,8 @@ function gtstats(
     record::VCF.Record,
     missings_by_sample::Union{Vector,Nothing}=nothing
     )
-    # n11: number of homozygote REF/REF or REF|REF
-    # n00: number of homozygote ALT/ALT or ALT|ALT
+    # n11: number of homozygote ALT/ALT or ALT|ALT
+    # n00: number of homozygote REF/REF or REF|REF
     # n01: number of heterozygote REF/ALT or REF|ALT
     missings = n00 = n10 = n11 = 0
     gtkey = VCF.findgenokey(record, "GT")
@@ -127,10 +127,10 @@ function gtstats(
     n01         = length(record.genotype) - missings - n00 - n11
     n0          = n01 + 2n00
     n1          = n01 + 2n11
-    altfreq     = n0 / (n0 + n1)
-    reffreq     = n1 / (n0 + n1)
-    minorallele = n1 < n0
-    maf         = n0 < n1 ? altfreq : reffreq
+    altfreq     = n1 / (n0 + n1)
+    reffreq     = n0 / (n0 + n1)
+    minorallele = n0 < n1 # true if REF is minor 
+    maf         = minorallele ? reffreq : altfreq
     hwepval     = hwe(n00, n01, n11)
     return n00, n01, n11, n0, n1, altfreq, reffreq, missings,
         minorallele, maf, hwepval

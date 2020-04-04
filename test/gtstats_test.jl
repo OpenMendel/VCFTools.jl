@@ -32,7 +32,7 @@ end
 @testset "gtstats(record)" begin
     record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
     #@code_warntype gtstats(record)
-    @test gtstats(record)[1:end-1] == (1, 1, 0, 3, 1, 0.75, 0.25, 0, true, 0.25)
+    @test gtstats(record)[1:end-1] == (1, 1, 0, 3, 1, 0.25, 0.75, 0, false, 0.25)
     @test gtstats(record)[end] ≈ 0.82414089574
     # with missing data
     record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t.\t1|0:48:8:51,51")

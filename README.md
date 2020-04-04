@@ -2,7 +2,7 @@
 
 | **Documentation** | **Build Status** | **Code Coverage**  | **Citation**  |  
 |-------------------|------------------|--------------------|--------------------|  
-| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://github.com/OpenMendel/VCFTools.jl/dev/) | [![Build Status](https://travis-ci.org/OpenMendel/VCFTools.jl.svg?branch=master)](https://travis-ci.org/OpenMendel/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/OpenMendel/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/OpenMendel/VCFTools.jl?branch=master)| [![DOI](https://zenodo.org/badge/100287089.svg)](https://zenodo.org/badge/latestdoi/100287089) |
+| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://biona001.github.io/VCFTools.jl/dev/) | [![Build Status](https://travis-ci.org/OpenMendel/VCFTools.jl.svg?branch=master)](https://travis-ci.org/OpenMendel/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/OpenMendel/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/OpenMendel/VCFTools.jl?branch=master)| [![DOI](https://zenodo.org/badge/100287089.svg)](https://zenodo.org/badge/latestdoi/100287089) |
 
 VCFTools.jl provide Julia utilities for handling VCF files.
 
@@ -16,7 +16,7 @@ This package supports Julia v1.0+.
 
 ## Documentation
 
-+[**Latest**](https://github.com/OpenMendel/VCFTools.jl/dev/)
++ [**Latest**](https://biona001.github.io/VCFTools.jl/dev/)
 
 ## Citation
 

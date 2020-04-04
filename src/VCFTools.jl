@@ -9,13 +9,17 @@ using Dates
 import GeneticVariation.VCF
 
 export conformgt_by_id, conformgt_by_pos,
-    convert_gt, copy_gt!,
-    filter_genotype, gtstats,
+    gtstats, geno_ismissing,
     nrecords, nsamples, openvcf,
+    # convert functions
+    convert_gt, copy_gt!,
     convert_ht, copy_ht!,
-    filter, filter_header, convert_ds,
-    mask_gt, geno_ismissing,
-    copy_gt_as_is!, copy_ht_as_is!
+    convert_ds, copy_ds!, 
+    copy_gt_trans!, copy_ht_trans!, copy_ds_trans!,
+    # filter functions
+    filter_genotype, 
+    filter, filter_header, 
+    mask_gt
 
 # package code goes here
 include("gtstats.jl")
