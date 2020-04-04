@@ -2,7 +2,7 @@
 
 | **Documentation** | **Build Status** | **Code Coverage**  | **Citation**  |  
 |-------------------|------------------|--------------------|--------------------|  
-| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://biona001.github.io/VCFTools.jl/dev/) | [![Build Status](https://travis-ci.org/OpenMendel/VCFTools.jl.svg?branch=master)](https://travis-ci.org/OpenMendel/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/OpenMendel/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/OpenMendel/VCFTools.jl?branch=master)| [![DOI](https://zenodo.org/badge/100287089.svg)](https://zenodo.org/badge/latestdoi/100287089) |
+| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/VCFTools.jl/dev/) [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/VCFTools.jl/stable) | [![Build Status](https://travis-ci.org/OpenMendel/VCFTools.jl.svg?branch=master)](https://travis-ci.org/OpenMendel/VCFTools.jl) | [![Coverage Status](https://coveralls.io/repos/github/OpenMendel/VCFTools.jl/badge.svg?branch=master)](https://coveralls.io/github/OpenMendel/VCFTools.jl?branch=master)| [![DOI](https://zenodo.org/badge/100287089.svg)](https://zenodo.org/badge/latestdoi/100287089) |
 
 VCFTools.jl provide Julia utilities for handling VCF files.
 
@@ -13,10 +13,6 @@ Within Julia, press `]` to use the package manager and type:
     (v1.3) pkg> add https://github.com/OpenMendel/VCFTools.jl
 
 This package supports Julia v1.0+.
-
-## Documentation
-
-+ [**Latest**](https://biona001.github.io/VCFTools.jl/dev/)
 
 ## Citation
 
