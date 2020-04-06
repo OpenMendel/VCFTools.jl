@@ -207,3 +207,24 @@ function mask_gt(
     flush(writer); close(reader); close(writer)
     return nothing
 end
+
+"""
+    find_duplicate(vcffile::String)
+
+Loops over a vcf file and outputs a `BitVector` indicating duplicate records (SNPs). 
+The first occurance will be false and any subsequent occurance will be true. 
+"""
+function find_duplicate(vcffile::String)
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    duplicates = falses(nrecords(vcffile))
+    curr, prev = 0, 0
+    for (i, record) in enumerate(reader)
+        curr = VCF.pos(record)
+        if curr == prev
+            duplicates[i] = true
+        end
+        prev = curr
+    end
+    close(reader)
+    return duplicates
+end

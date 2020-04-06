@@ -305,10 +305,10 @@ function copy_ht_trans!(
     reader::VCF.Reader;
     ) where T <: Real
 
-    n, p = size(A)
-    pp   = Int(p / 2)
+    p, n = size(A)
+    nn   = Int(n / 2)
 
-    for j in 1:n
+    for j in 1:p
         if eof(reader)
             @warn("Reached end of record! Rows $(j + 1) through $p are filled with 0s and are NOT haplotypes!")
             break
@@ -323,7 +323,7 @@ function copy_ht_trans!(
         end
 
         # second pass: convert
-        for i in 1:pp
+        for i in 1:nn
             geno = record.genotype[i]
             # Missing genotype: dropped field or when either haplotype contains "."
             if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
