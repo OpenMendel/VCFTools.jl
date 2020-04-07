@@ -229,8 +229,9 @@ using VCFTools
 using BenchmarkTools
 using Test
 
-cd("/Users/biona001/.julia/dev/VCFTools/test")
-vcffile = "test.08Jun17.d8b.vcf"
+# cd("/Users/biona001/.julia/dev/VCFTools/test")
+# vcffile = "test.08Jun17.d8b.vcf"
+vcffile = "target.vcf"
 
 H  = convert_ht(Float64, vcffile)
 Ht = convert_ht(Float64, vcffile, trans=true)
