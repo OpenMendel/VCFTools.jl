@@ -48,6 +48,9 @@ end
     @time H2 = convert_ht(Float64, vcffile)
     @test size(H2) == (382, 1356)
     @test typeof(H2) == Matrix{Float64}
+    # convert to bitarray
+    Hb = convert_ht(Bool, vcffile, trans=true)
+    @test all(H1 .== convert(Matrix{Float32}, Hb))
     # convert first record into 2 haplotype vectors and check their sum is the genotype vector
     reader = VCF.Reader(openvcf(vcffile, "r"))
     h1h2 = Matrix{Float64}(undef, 2, nrecords(vcffile))

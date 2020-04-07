@@ -289,3 +289,27 @@ copy_ds_trans!(out, reader)
 @test size(out) == (1400, 191)
 @test all(ismissing.(out[1358:end, :]))
 
+
+
+
+
+
+using Revise
+using VCFTools
+using MendelImpute
+using GeneticVariation
+using Random
+cd("/Users/biona001/.julia/dev/MendelImpute/simulation")
+
+# impute 
+tgtfile = "./compare6/target_masked.vcf.gz"
+reffile = "./compare6/haplo_ref.vcf"
+outfile = "./compare6/imputed_target.vcf.gz"
+width   = 800
+
+H  = convert_ht(Float64, reffile, trans=true)
+Hb = convert_ht(Bool, reffile, trans=true)
+
+Hb_c = convert(Matrix{Float64}, Hb)
+all(Hb_c .== Hb)
+
