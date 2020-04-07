@@ -33,6 +33,7 @@ in each record is interpreted as a `1`. Record without GT field is converted to 
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 
 # Output
 - `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
@@ -44,8 +45,10 @@ function copy_gt!(
     model::Symbol = :additive,
     impute::Bool = false,
     center::Bool = false,
-    scale::Bool = false
+    scale::Bool = false,
+    msg::String = ""
     ) where T <: Real
+    msg != "" && (pmeter = Progress(size(A, 2), 5, msg))
     for j in 1:size(A, 2)
         if eof(reader)
             @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
@@ -85,6 +88,9 @@ function copy_gt!(
             center && !ismissing(A[i, j]) && (A[i, j] -= ct)
             scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
         end
+
+        # update progress
+        msg != "" && next!(pmeter)
     end
     return A
 end
@@ -104,6 +110,7 @@ in each record is interpreted as a `1`. Record without GT field is converted to 
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 
 # Output
 - `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
@@ -115,8 +122,10 @@ function copy_gt_trans!(
     model::Symbol = :additive,
     impute::Bool = false,
     center::Bool = false,
-    scale::Bool = false
+    scale::Bool = false,
+    msg::String = ""
     ) where T <: Real
+    msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
     for j in 1:size(A, 1)
         if eof(reader)
             @warn("Only $j records left in reader; rows $(j+1)-$(size(A, 1)) are set to missing values")
@@ -154,6 +163,8 @@ function copy_gt_trans!(
             center && !ismissing(A[j, i]) && (A[j, i] -= ct)
             scale && !ismissing(A[j, i]) && (A[j, i] *= wt)
         end
+
+        msg != "" && next!(pmeter)
     end
     return A
 end
@@ -179,6 +190,7 @@ Record without GT field is converted to equivalent of missing genotypes.
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
 - `trans`: whether to import data transposed so that each column is 1 genotype, default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 
 # Output
 - `A`: matrix where `eltype(A) <: Union{missing, Real}`. `ismissing(A[i, j]) == true`
@@ -191,17 +203,18 @@ function convert_gt(
     impute::Bool = false,
     center::Bool = false,
     scale::Bool = false,
-    trans::Bool = false
+    trans::Bool = false,
+    msg::String = ""
     ) where T <: Real
     reader = VCF.Reader(openvcf(vcffile, "r"))
     if trans
         out = Matrix{Union{t, Missing}}(undef, nrecords(vcffile), nsamples(vcffile))
         copy_gt_trans!(out, reader; model = model, impute = impute,
-            center = center, scale = scale)
+            center = center, scale = scale, msg = msg)
     else
         out = Matrix{Union{t, Missing}}(undef, nsamples(vcffile), nrecords(vcffile))
         copy_gt!(out, reader; model = model, impute = impute,
-            center = center, scale = scale)
+            center = center, scale = scale, msg = msg)
     end
     close(reader)
     out
@@ -215,22 +228,25 @@ column of the VCF record will become 2 column in the resulting matrix. If haplot
 are not phased, 1 will be on the left column (i.e. `1/0`).
 
 # Input
-- `t`: a type `t <: Real`
+- `t`: a type `t <: Real`. If `t` is `Bool`, output will be a BitMatrix.
 - `vcffile`: VCF file path
-- `trans`: whether to import data transposed so that each column is 1 a haplotype, default `false`
+- `trans`: whether to import data transposed so that each column is 1 a haplotype, default `false`.
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 """
 function convert_ht(
     t::Type{T},
     vcffile::AbstractString;
-    trans::Bool = false
+    trans::Bool = false,
+    msg::String = ""
     ) where T <: Real
     reader = VCF.Reader(openvcf(vcffile, "r"))
+    M = (t == Bool ? BitArray{2} : Matrix{t})
     if trans
-        out = Matrix{t}(undef, nrecords(vcffile), 2nsamples(vcffile))
-        copy_ht_trans!(out, reader)
+        out = M(undef, nrecords(vcffile), 2nsamples(vcffile))
+        copy_ht_trans!(out, reader, msg = msg)
     else
-        out = Matrix{t}(undef, 2nsamples(vcffile), nrecords(vcffile))
-        copy_ht!(out, reader)
+        out = M(undef, 2nsamples(vcffile), nrecords(vcffile))
+        copy_ht!(out, reader, msg = msg)
     end
     close(reader)
     return out
@@ -247,14 +263,17 @@ Missing GT field is NOT allowed.
 # Input
 - `A`: matrix where rows are haplotypes. Person `i`'s haplotype are filled in rows 2i - 1 and 2i. 
 - `reader`: a VCF reader
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 """
 function copy_ht!(
     A::Union{AbstractMatrix{T}, AbstractVector{T}},
     reader::VCF.Reader;
+    msg::String = ""
     ) where T <: Real
 
     n, p = size(A)
     nn   = Int(n / 2)
+    msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
 
     for j in 1:p
         if eof(reader)
@@ -284,6 +303,9 @@ function copy_ht!(
                 A[2i    , j] = convert(T, a2)
             end
         end
+
+        # update progress
+        msg != "" && next!(pmeter)
     end
     return A
 end
@@ -299,14 +321,17 @@ Missing GT field is NOT allowed.
 # Input
 - `A`: matrix where columns are haplotypes. Person `i`'s haplotype are filled in columns 2i - 1 and 2i. 
 - `reader`: a VCF reader
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 """
 function copy_ht_trans!(
     A::Union{AbstractMatrix{T}, AbstractVector{T}},
     reader::VCF.Reader;
+    msg::String = ""
     ) where T <: Real
 
     p, n = size(A)
     nn   = Int(n / 2)
+    msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
 
     for j in 1:p
         if eof(reader)
@@ -336,6 +361,9 @@ function copy_ht_trans!(
                 A[j, 2i] = convert(T, a2)
             end
         end
+
+        # update progress
+        msg != "" && next!(pmeter)
     end
     return A
 end
@@ -358,6 +386,7 @@ we fill missing entries with 2 times the ALT allele frequency.
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
 - `trans`: whether to import data transposed so that each column is 1 genotype, default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 """
 function convert_ds(
     t::Type{T},
@@ -367,15 +396,18 @@ function convert_ds(
     impute::Bool = false,
     center::Bool = false,
     scale::Bool = false,
-    trans::Bool = false
+    trans::Bool = false,
+    msg::String = ""
     ) where T <: Real
     reader = VCF.Reader(openvcf(vcffile, "r"))
     if trans
         out = Matrix{Union{Missing, t}}(undef, nrecords(vcffile), nsamples(vcffile))
-        copy_ds_trans!(out, reader, key = key, impute = impute, center = center, scale = scale)
+        copy_ds_trans!(out, reader, key = key, impute = impute, center = center, 
+            scale = scale, msg = msg)
     else
         out = Matrix{Union{Missing, t}}(undef, nsamples(vcffile), nrecords(vcffile))
-        copy_ds!(out, reader, key = key, impute = impute, center = center, scale = scale)
+        copy_ds!(out, reader, key = key, impute = impute, center = center, 
+            scale = scale, msg = msg)
     end
     close(reader)
     return out
@@ -397,6 +429,7 @@ is converted to `missing`.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 
 # Output
 - `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
@@ -409,8 +442,10 @@ function copy_ds!(
     model::Symbol = :additive,
     impute::Bool = false,
     center::Bool = false,
-    scale::Bool = false
+    scale::Bool = false,
+    msg::String = ""
     ) where T <: Real
+    msg != "" && (pmeter = Progress(size(A, 2), 5, msg)) # update every 5 seconds
     for j in 1:size(A, 2)
         if eof(reader)
             @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
@@ -444,6 +479,9 @@ function copy_ds!(
             center && !ismissing(A[i, j]) && (A[i, j] -= ct)
             scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
         end
+
+        # update progress
+        msg != "" && next!(pmeter)
     end
 end
 
@@ -463,6 +501,7 @@ is converted to `missing`.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
 
 # Output
 - `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
@@ -475,8 +514,10 @@ function copy_ds_trans!(
     model::Symbol = :additive,
     impute::Bool = false,
     center::Bool = false,
-    scale::Bool = false
+    scale::Bool = false,
+    msg::String = ""
     ) where T <: Real
+    msg != "" && (pmeter = Progress(size(A, 1), 5, msg)) # update every 5 seconds
     for j in 1:size(A, 1)
         if eof(reader)
             @warn("Only $j records left in reader; rows $(j+1)-$(size(A, 1)) are set to missing values")
@@ -510,5 +551,8 @@ function copy_ds_trans!(
             center && !ismissing(A[j, i]) && (A[j, i] -= ct)
             scale && !ismissing(A[j, i]) && (A[j, i] *= wt)
         end
+
+        #update progress
+        msg != "" && next!(pmeter)
     end
 end
