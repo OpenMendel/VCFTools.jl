@@ -51,8 +51,8 @@ function copy_gt!(
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg))
     for j in 1:size(A, 2)
         if eof(reader)
-            @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
-            fill!(view(A, :, (j + 1):size(A, 2)), missing)
+            @warn("Reached end of reader; columns $j-$(size(A, 2)) are set to missing values")
+            fill!(view(A, :, j:size(A, 2)), missing)
             break
         else
             record = read(reader)
@@ -128,8 +128,8 @@ function copy_gt_trans!(
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
     for j in 1:size(A, 1)
         if eof(reader)
-            @warn("Only $j records left in reader; rows $(j+1)-$(size(A, 1)) are set to missing values")
-            fill!(view(A, (j + 1):size(A, 1), :), missing)
+            @warn("Reached end of reader; rows $j-$(size(A, 1)) are set to missing values")
+            fill!(view(A, j:size(A, 1), :), missing)
             break
         else
             record = read(reader)
@@ -163,7 +163,7 @@ function copy_gt_trans!(
             center && !ismissing(A[j, i]) && (A[j, i] -= ct)
             scale && !ismissing(A[j, i]) && (A[j, i] *= wt)
         end
-
+        # update progress
         msg != "" && next!(pmeter)
     end
     return A
@@ -277,7 +277,8 @@ function copy_ht!(
 
     for j in 1:p
         if eof(reader)
-            @warn("Reached end of record! Columns $(j + 1) through $p are filled with 0s and are NOT haplotypes!")
+            @warn("Reached end of record! Columns $j-$p are filled with $(typemax(T))s and are NOT haplotypes!")
+            fill!(view(A, :, j:size(A, 2)), typemax(T))
             break
         else
             record = read(reader)
@@ -335,7 +336,8 @@ function copy_ht_trans!(
 
     for j in 1:p
         if eof(reader)
-            @warn("Reached end of record! Rows $(j + 1) through $p are filled with 0s and are NOT haplotypes!")
+            @warn("Reached end of record! Rows $j-$p are filled with $(typemax(T))s and are NOT haplotypes!")
+            fill!(view(A, j:size(A, 2)), typemax(T))
             break
         else
             record = read(reader)
@@ -448,8 +450,8 @@ function copy_ds!(
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg)) # update every 5 seconds
     for j in 1:size(A, 2)
         if eof(reader)
-            @warn("Only $j records left in reader; columns $(j+1)-$(size(A, 2)) are set to missing values")
-            fill!(view(A, :, (j + 1):size(A, 2)), missing)
+            @warn("Reached end of reader; columns $j-$(size(A, 2)) are set to missing values")
+            fill!(view(A, :, j:size(A, 2)), missing)
             break
         else
             record = read(reader)
@@ -520,8 +522,8 @@ function copy_ds_trans!(
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg)) # update every 5 seconds
     for j in 1:size(A, 1)
         if eof(reader)
-            @warn("Only $j records left in reader; rows $(j+1)-$(size(A, 1)) are set to missing values")
-            fill!(view(A, (j + 1):size(A, 2), :), missing)
+            @warn("Reached end of reader; rows $j-$(size(A, 1)) are set to missing values")
+            fill!(view(A, j:size(A, 2), :), missing)
             break
         else
             record = read(reader)
