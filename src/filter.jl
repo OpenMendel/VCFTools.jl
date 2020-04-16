@@ -209,21 +209,24 @@ function mask_gt(
 end
 
 """
-    find_duplicate(vcffile::String)
+    find_duplicate_marker(vcffile::String)
 
-Loops over a vcf file and outputs a `BitVector` indicating duplicate records (SNPs). 
+Loops over a vcf file and outputs a `BitVector` indicating duplicate records (SNPs)
+by checking marker positions. `true` means the marker has been seen before. 
+
 The first occurance will be false and any subsequent occurance will be true. 
 """
-function find_duplicate(vcffile::String)
+function find_duplicate_marker(vcffile::String)
     reader = VCF.Reader(openvcf(vcffile, "r"))
     duplicates = falses(nrecords(vcffile))
-    curr, prev = 0, 0
-    for (i, record) in enumerate(reader)
+    seen = Set{Int}()
+    @inbounds for (i, record) in enumerate(reader)
         curr = VCF.pos(record)
-        if curr == prev
+        if curr in seen
             duplicates[i] = true
+        else
+            push!(seen, curr)
         end
-        prev = curr
     end
     close(reader)
     return duplicates

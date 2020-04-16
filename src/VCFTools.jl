@@ -19,7 +19,7 @@ export conformgt_by_id, conformgt_by_pos,
     # filter functions
     filter_genotype, 
     filter, filter_header, 
-    mask_gt, find_duplicate
+    mask_gt, find_duplicate_marker
 
 # package code goes here
 include("gtstats.jl")
