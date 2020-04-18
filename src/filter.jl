@@ -162,13 +162,13 @@ is missing if `masks[i, j]` is true. `src` is unchanged.
 - `src`: Input VCF file name.
 - `masks`: Bit matrix. `masks[i, j] = true` means mask entry (i, j).
 - `des`: output VCF file name.
-- `separator`: Separator of VCF genotypes. Can be '/' (default) or '|'.  
+- `unphase`: If `true`, all heterozygous genotypes will be `1/0` and homozygous separator will be `/`. If `false`, all unmasked genotypes will be retained.  
 """
 function mask_gt(
     src::AbstractString, 
     masks::BitArray{2}; 
     des::AbstractString = "masked." * src,
-    separator::Char = '/'
+    unphase::Bool = false
     )
     records, samples = nrecords(src), nsamples(src)
     p, n = size(masks)
@@ -177,13 +177,7 @@ function mask_gt(
     end
 
     # define byte representation of separator
-    if separator == '/' 
-        separator = 0x2f
-    elseif separator == '|'
-        separator = 0x7c
-    else
-        throw(ArgumentError("separator must be / or | but got $separator."))
-    end
+    separator = (unphase ? 0x2f : 0x7c) # '/' or '|'
 
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
@@ -196,9 +190,19 @@ function mask_gt(
             # loop over genotypes
             for (j, geno) in enumerate(record.genotype)
                 if masks[i, j]
-                    record.data[geno[gtkey][1]] = 0x2e
+                    # change entry to "./." or ".|."
+                    record.data[geno[gtkey][1]] = 0x2e 
                     record.data[geno[gtkey][2]] = separator
                     record.data[geno[gtkey][3]] = 0x2e
+                end
+                if unphase
+                    a1 = record.data[geno[gtkey][1]] == 0x31 # "1" (ALT) => 0x31
+                    a2 = record.data[geno[gtkey][3]] == 0x31
+                    if a1 + a2 == 1
+                        record.data[geno[gtkey][1]] = 0x31
+                        record.data[geno[gtkey][2]] = separator
+                        record.data[geno[gtkey][3]] = 0x30
+                    end
                 end
             end
         end

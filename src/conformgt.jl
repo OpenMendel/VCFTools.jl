@@ -161,7 +161,7 @@ function conformgt_by_pos(
     reader_ref = VCF.Reader(openvcf(reffile, "r"))
     reader_tgt = VCF.Reader(openvcf(tgtfile, "r"))
     records_ref, records_tgt = nrecords(reffile), nrecords(tgtfile)
-    # create output files (.gz currently throws error)
+    # create output files 
     writer_ref = VCF.Writer(openvcf(join([outfile, ".ref.vcf.gz"]), "w"),
         VCF.header(reader_ref))
     writer_tgt = VCF.Writer(openvcf(join([outfile, ".tgt.vcf.gz"]), "w"),
