@@ -82,7 +82,7 @@ function copy_gt!(
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
-                A[i, j] = convert(T, a1 + a2)
+                A[i, j] = convert_gt(T, (a1, a2), model)
             end
             # center and scale if asked
             center && !ismissing(A[i, j]) && (A[i, j] -= ct)
@@ -157,7 +157,7 @@ function copy_gt_trans!(
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
-                A[j, i] = convert(T, a1 + a2)
+                A[j, i] = convert_gt(T, (a1, a2), model)
             end
             # center and scale if asked
             center && !ismissing(A[j, i]) && (A[j, i] -= ct)
