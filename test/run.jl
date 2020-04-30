@@ -8,6 +8,7 @@ using BenchmarkTools
 cd("/Users/biona001/.julia/dev/VCFTools/test")
 vcffile = "test.08Jun17.d8b.vcf"
 reader = VCF.Reader(openvcf(vcffile, "r"))
+sampleID = VCF.header(reader).sampleID
 record = read(reader)
 
 record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
@@ -493,3 +494,25 @@ end
 
 
 
+using Revise
+using GeneticVariation
+using Random
+using VCFTools
+using BenchmarkTools
+
+#import data
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+vcffile = "test.08Jun17.d8b.vcf.gz"
+
+H, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt = convert_ht(Float32, vcffile, save_snpinfo(), trans=true)
+@code_warntype convert_ht(Float32, vcffile, save_snpinfo(), trans=true)
+H2 = convert_ht(Float32, vcffile, trans=true)
+all(H .== H2)
+@code_warntype convert_ht(Float32, vcffile, trans=true)
+
+
+X, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt = convert_gt(Float32, vcffile, save_snpinfo(), trans=true)
+@code_warntype convert_gt(Float32, vcffile, save_snpinfo(), trans=true)
+X2 = convert_gt(Float32, vcffile, trans=true)
+all(X .== X2)
+@code_warntype convert_gt(Float32, vcffile, trans=true)

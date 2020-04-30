@@ -220,6 +220,115 @@ function convert_gt(
     out
 end
 
+struct save_snpinfo end
+
+function convert_gt(
+    t::Type{T},
+    vcffile::AbstractString,
+    ::save_snpinfo;
+    model::Symbol = :additive,
+    impute::Bool = false,
+    center::Bool = false,
+    scale::Bool = false,
+    trans::Bool = false,
+    msg::String = ""
+    ) where T <: Real
+    records = nrecords(vcffile)
+    samples = nsamples(vcffile)
+
+    sampleID   = Vector{String}(undef, samples)
+    record_chr = Vector{String}(undef, records)
+    record_pos = zeros(Int, records)
+    record_ids = Vector{Vector{String}}(undef, records)
+    record_ref = Vector{String}(undef, records)
+    record_alt = Vector{Vector{String}}(undef, records)
+
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    if trans
+        out = Matrix{Union{t, Missing}}(undef, records, samples)
+        copy_gt_trans!(out, reader, sampleID, record_chr, record_pos, 
+            record_ids, record_ref, record_alt; model = model, 
+            impute = impute, center = center, scale = scale, msg = msg)
+    else
+        out = Matrix{Union{t, Missing}}(undef, samples, records)
+        copy_gt!(out, reader; model = model, impute = impute,
+            center = center, scale = scale, msg = msg)
+    end
+    close(reader)
+
+    return out, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt
+end
+
+function copy_gt_trans!(
+    A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
+    reader::VCF.Reader,
+    sampleID::AbstractVector,
+    record_chr::AbstractVector,
+    record_pos::AbstractVector,
+    record_ids::AbstractVector,
+    record_ref::AbstractVector,
+    record_alt::AbstractVector;
+    model::Symbol = :additive,
+    impute::Bool = false,
+    center::Bool = false,
+    scale::Bool = false,
+    msg::String = "",
+    ) where T <: Real
+    msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
+    sampleID .= VCF.header(reader).sampleID
+
+    for j in 1:size(A, 1)
+        if eof(reader)
+            @warn("Reached end of reader; rows $j-$(size(A, 1)) are set to missing values")
+            fill!(view(A, j:size(A, 1), :), missing)
+            break
+        else
+            record = read(reader)
+        end
+        gtkey = VCF.findgenokey(record, "GT")
+        # if no GT field, fill by missing values
+        if gtkey == nothing
+            fill!(view(A, j, :), missing)
+        end
+
+        # save record's information 
+        # TODO: catch error for chr/pos/ref/alt and what if reached end of reader?
+        record_chr[j] = VCF.chrom(record)
+        record_pos[j] = VCF.pos(record)
+        record_ids[j] = try VCF.id(record) catch; ["."] end
+        record_ref[j] = VCF.ref(record)
+        record_alt[j] = VCF.alt(record)
+
+        # second pass: impute, convert, center, scale
+        _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
+        ct = 2alt_freq
+        wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
+        for i in 1:size(A, 2)
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
+                if impute
+                    a1, a2 = rand() ≤ alt_freq, rand() ≤ alt_freq
+                    A[j, i] = convert_gt(T, (a1, a2), model)
+                else
+                    A[j, i] = missing
+                end
+            else # not missing
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
+                a1 = record.data[geno[gtkey][1]] == 0x31
+                a2 = record.data[geno[gtkey][3]] == 0x31
+                A[j, i] = convert_gt(T, (a1, a2), model)
+            end
+            # center and scale if asked
+            center && !ismissing(A[j, i]) && (A[j, i] -= ct)
+            scale && !ismissing(A[j, i]) && (A[j, i] *= wt)
+        end
+        # update progress
+        msg != "" && next!(pmeter)
+    end
+    return A
+end
+
 """
     convert_ht(t, vcffile)
 
@@ -250,6 +359,57 @@ function convert_ht(
     end
     close(reader)
     return out
+end
+
+"""
+    convert_ht(t, vcffile, save_snpinfo())
+
+Same as `convert_ht(t, vcffile)` but additionally outputs each record's information.
+
+# Input
+- `t`: a type `t <: Real`. If `t` is `Bool`, output will be a BitMatrix.
+- `vcffile`: VCF file path
+- `trans`: whether to import data transposed so that each column is 1 a haplotype, default `false`.
+- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
+
+# Output
+- `out`: A matrix of haplotypes. Each column is a haplotype, where the first 2 are from sample 1...etc
+- `sampleID`: Each sample's name in the `vcffile`
+- `record_chr`: Each record's chromosome
+- `record_pos`: Each record's basepair position
+- `record_ids`: Each record's identifier (may have > 1 per record)
+- `record_ref`: Each record's reference allele 
+- `record_alt`: Each record's alternative allele (may have > 1 per record)
+"""
+function convert_ht(
+    t::Type{T},
+    vcffile::AbstractString,
+    ::save_snpinfo;
+    trans::Bool = false,
+    msg::String = ""
+    ) where T <: Real
+    records = nrecords(vcffile)
+    samples = nsamples(vcffile)
+
+    sampleID   = Vector{String}(undef, samples)
+    record_chr = Vector{String}(undef, records)
+    record_pos = zeros(Int, records)
+    record_ids = Vector{Vector{String}}(undef, records)
+    record_ref = Vector{String}(undef, records)
+    record_alt = Vector{Vector{String}}(undef, records)
+
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    M = (t == Bool ? BitArray{2} : Matrix{t})
+    if trans
+        out = M(undef, records, 2samples)
+        copy_ht_trans!(out, reader, sampleID, record_chr, record_pos, 
+            record_ids, record_ref, record_alt; msg = msg)
+    else
+        out = M(undef, 2samples, records)
+        copy_ht!(out, reader; msg = msg)
+    end
+    close(reader)
+    out, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt
 end
 
 """
@@ -343,6 +503,67 @@ function copy_ht_trans!(
             record = read(reader)
         end
         gtkey = VCF.findgenokey(record, "GT")
+
+        # haplotype reference files must have GT field
+        if gtkey == nothing
+            error("Missing GT field for record $j. Reference panels cannot have missing data!")
+        end
+
+        # second pass: convert
+        for i in 1:nn
+            geno = record.genotype[i]
+            # Missing genotype: dropped field or when either haplotype contains "."
+            if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
+                error("Missing GT field for record $j entry $(2i - 1). Reference panels cannot have missing data!")
+            else # not missing
+                # "0" (REF) => 0x30, "1" (ALT) => 0x31
+                a1 = record.data[geno[gtkey][1]] == 0x31
+                a2 = record.data[geno[gtkey][3]] == 0x31
+                A[j, 2i - 1] = convert(T, a1)
+                A[j, 2i] = convert(T, a2)
+            end
+        end
+
+        # update progress
+        msg != "" && next!(pmeter)
+    end
+    return A
+end
+
+function copy_ht_trans!(
+    A::Union{AbstractMatrix{T}, AbstractVector{T}},
+    reader::VCF.Reader,
+    sampleID::AbstractVector,
+    record_chr::AbstractVector,
+    record_pos::AbstractVector,
+    record_ids::AbstractVector,
+    record_ref::AbstractVector,
+    record_alt::AbstractVector;
+    msg::String = "",
+    ) where T <: Real
+
+    p, n = size(A)
+    nn   = Int(n / 2)
+    msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
+    sampleID .= VCF.header(reader).sampleID
+
+    for j in 1:p
+        if eof(reader)
+            @warn("Reached end of record! Rows $j-$p are filled with $(typemax(T))s and are NOT haplotypes!")
+            fill!(view(A, j:size(A, 2)), typemax(T))
+            break
+        else
+            record = read(reader)
+        end
+        gtkey = VCF.findgenokey(record, "GT")
+
+        # save record's information
+        # TODO: catch error for chr/pos/ref/alt and what if reached end of reader?
+        record_chr[j] = VCF.chrom(record)
+        record_pos[j] = VCF.pos(record)
+        record_ids[j] = try VCF.id(record) catch; ["."] end
+        record_ref[j] = VCF.ref(record)
+        record_alt[j] = VCF.alt(record)
 
         # haplotype reference files must have GT field
         if gtkey == nothing

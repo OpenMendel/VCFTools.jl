@@ -12,6 +12,7 @@ export conformgt_by_id, conformgt_by_pos,
     gtstats, geno_ismissing,
     nrecords, nsamples, openvcf,
     # convert functions
+    save_snpinfo,
     convert_gt, copy_gt!,
     convert_ht, copy_ht!,
     convert_ds, copy_ds!, 
