@@ -67,7 +67,7 @@ function copy_gt!(
             end
         end
         # save record's position
-        isnothing(record_positions) || (record_positions[j] = VCF.pos(record))
+        record_positions == nothing || (record_positions[j] = VCF.pos(record))
         # second pass: impute, convert, center, scale
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
         ct = 2alt_freq
@@ -138,7 +138,7 @@ function copy_gt_trans!(
     record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
-    isnothing(sampleID) || (sampleID .= VCF.header(reader).sampleID)
+    sampleID == nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:size(A, 1)
@@ -155,11 +155,11 @@ function copy_gt_trans!(
             fill!(view(A, j, :), missing)
         end
         # save record's information
-        isnothing(record_chr) || (record_chr[j] = VCF.chrom(record))
-        isnothing(record_pos) || (record_pos[j] = VCF.pos(record))
-        isnothing(record_ids) || (record_ids[j] = try VCF.id(record) catch; ["."] end)
-        isnothing(record_ref) || (record_ref[j] = VCF.ref(record))
-        isnothing(record_alt) || (record_alt[j] = VCF.alt(record))
+        record_chr == nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos == nothing || (record_pos[j] = VCF.pos(record))
+        record_ids == nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref == nothing || (record_ref[j] = VCF.ref(record))
+        record_alt == nothing || (record_alt[j] = VCF.alt(record))
         # second pass: impute, convert, center, scale
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
         ct = 2alt_freq
@@ -398,7 +398,7 @@ function copy_ht_trans!(
     p, n = size(A)
     nn   = Int(n / 2)
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
-    isnothing(sampleID) || (sampleID .= VCF.header(reader).sampleID)
+    sampleID == nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:p
@@ -412,11 +412,11 @@ function copy_ht_trans!(
         gtkey = VCF.findgenokey(record, "GT")
 
         # save record's information
-        isnothing(record_chr) || (record_chr[j] = VCF.chrom(record))
-        isnothing(record_pos) || (record_pos[j] = VCF.pos(record))
-        isnothing(record_ids) || (record_ids[j] = try VCF.id(record) catch; ["."] end)
-        isnothing(record_ref) || (record_ref[j] = VCF.ref(record))
-        isnothing(record_alt) || (record_alt[j] = VCF.alt(record))
+        record_chr == nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos == nothing || (record_pos[j] = VCF.pos(record))
+        record_ids == nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref == nothing || (record_ref[j] = VCF.ref(record))
+        record_alt == nothing || (record_alt[j] = VCF.alt(record))
 
         # haplotype reference files must have GT field
         if gtkey == nothing
