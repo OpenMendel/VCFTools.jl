@@ -50,13 +50,14 @@ function copy_gt!(
     record_positions::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg))
+    record = VCF.Record()
     for j in 1:size(A, 2)
         if eof(reader)
             @warn("Reached end of reader; columns $j-$(size(A, 2)) are set to missing values")
             fill!(view(A, :, j:size(A, 2)), missing)
             break
         else
-            record = read(reader)
+            read!(reader, record)
         end
         gtkey = VCF.findgenokey(record, "GT")
         # if no GT field, fill by missing values
@@ -138,6 +139,7 @@ function copy_gt_trans!(
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
     isnothing(sampleID) || (sampleID .= VCF.header(reader).sampleID)
+    record = VCF.Record()
 
     for j in 1:size(A, 1)
         if eof(reader)
@@ -145,7 +147,7 @@ function copy_gt_trans!(
             fill!(view(A, j:size(A, 1), :), missing)
             break
         else
-            record = read(reader)
+            read!(reader, record)
         end
         gtkey = VCF.findgenokey(record, "GT")
         # if no GT field, fill by missing values
@@ -295,6 +297,7 @@ function convert_ht(
             record_alt=record_alt)
     else
         out = M(undef, 2samples, records)
+        # out = Mmap.mmap(Matrix{t}, 2samples, records)
         copy_ht!(out, reader, msg = msg)
     end
     close(reader)
@@ -327,14 +330,15 @@ function copy_ht!(
     n, p = size(A)
     nn   = Int(n / 2)
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
+    record = VCF.Record()
 
     for j in 1:p
         if eof(reader)
-            @warn("Reached end of record! Columns $j-$p are filled with $(typemax(T))s and are NOT haplotypes!")
-            fill!(view(A, :, j:size(A, 2)), typemax(T))
+            @warn("Reached end of record! Columns $j-$p are filled with $(zero(T))s and are NOT haplotypes!")
+            fill!(view(A, :, j:size(A, 2)), zero(T))
             break
         else
-            record = read(reader)
+            read!(reader, record)
         end
         gtkey = VCF.findgenokey(record, "GT")
 
@@ -395,14 +399,15 @@ function copy_ht_trans!(
     nn   = Int(n / 2)
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
     isnothing(sampleID) || (sampleID .= VCF.header(reader).sampleID)
+    record = VCF.Record()
 
     for j in 1:p
         if eof(reader)
-            @warn("Reached end of record! Rows $j-$p are filled with $(typemax(T))s and are NOT haplotypes!")
-            fill!(view(A, j:size(A, 2)), typemax(T))
+            @warn("Reached end of record! Rows $j-$p are filled with $(zero(T))s and are NOT haplotypes!")
+            fill!(view(A, j:size(A, 2)), zero(T))
             break
         else
-            record = read(reader)
+            read!(reader, record)
         end
         gtkey = VCF.findgenokey(record, "GT")
 
@@ -517,13 +522,14 @@ function copy_ds!(
     msg::String = ""
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg)) # update every 5 seconds
+    record = VCF.Record()
     for j in 1:size(A, 2)
         if eof(reader)
             @warn("Reached end of reader; columns $j-$(size(A, 2)) are set to missing values")
             fill!(view(A, :, j:size(A, 2)), missing)
             break
         else
-            record = read(reader)
+            read!(reader, record)
         end
         dskey = VCF.findgenokey(record, key)
 
@@ -589,13 +595,14 @@ function copy_ds_trans!(
     msg::String = ""
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg)) # update every 5 seconds
+    record = VCF.Record()
     for j in 1:size(A, 1)
         if eof(reader)
             @warn("Reached end of reader; rows $j-$(size(A, 1)) are set to missing values")
             fill!(view(A, j:size(A, 2), :), missing)
             break
         else
-            record = read(reader)
+            read!(reader, record)
         end
         dskey = VCF.findgenokey(record, key)
 

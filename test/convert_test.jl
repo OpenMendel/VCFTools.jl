@@ -5,7 +5,7 @@ using GeneticVariation
     isfile(vcffile) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$vcffile"))) 
     #@code_warntype convert_gt(UInt8, vcffile; impute = false, center = false, scale = false)
-    @inferred convert_gt(UInt8, vcffile; impute = false, center = false, scale = false)
+    # @inferred convert_gt(UInt8, vcffile; impute = false, center = false, scale = false)
     # convert to a matrix of UInt8, no impute/center/scale (default)
     @time A = convert_gt(UInt8, vcffile)
     @test size(A) == (191, 1356)
@@ -49,7 +49,7 @@ end
     @test size(H2) == (382, 1356)
     @test typeof(H2) == Matrix{Float64}
     # convert to bitarray
-    Hb = convert_ht(Bool, vcffile, trans=true)
+    Hb = convert_ht(Bool, vcffile)
     @test all(H1 .== convert(Matrix{Float32}, Hb))
     # convert first record into 2 haplotype vectors and check their sum is the genotype vector
     reader = VCF.Reader(openvcf(vcffile, "r"))
