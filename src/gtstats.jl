@@ -112,7 +112,7 @@ function gtstats(
     for i in 1:lastindex(record.genotype)
         geno = record.genotype[i]
         # dropped field or "." => 0x2e
-        if gtkey > lastindex(geno) || record.data[geno[gtkey]] == [0x2e]
+        if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
             missings += 1
             missings_by_sample == nothing || (missings_by_sample[i] += 1)
         else
