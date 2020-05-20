@@ -232,3 +232,53 @@ function Base.parse(::Type{T}, s::AbstractArray{UInt8}) where T<:Integer
     end
     n
 end
+
+"""
+Naive convert function that splits a vcf file line by line, assuming data only contains GT field. 
+"""
+function unsafe_convert_gt2(vcffile::String)
+    stream = if endswith(vcffile, ".gz")
+        GzipDecompressorStream(open(vcffile))
+    else
+        IOBuffer(Mmap.mmap(vcffile))
+    end
+
+    p, n = nrecords(vcffile), nsamples(vcffile)
+    out = Matrix{Union{Missing, UInt8}}(undef, p, n)
+    datas = Vector{String}(undef, n + 9)
+
+    l = 1
+    for line in eachline(stream)
+        if !startswith(line, "#")
+            datas .= split(line, "\t")
+
+            # split by field
+            # split_words = map(x -> split(x, ":"), datas[10:end])
+
+            # Assume GT field comes before all other field
+            @inbounds for (i, word) in enumerate(datas)
+                i < 10 && continue
+                idx = i - 9
+
+                if ishomozygous_zero(word)
+                    out[l, idx] = 0x00
+                elseif isheterozygous(word)
+                    out[l, idx] = 0x01
+                elseif ishomozygous_one(word)
+                    out[l, idx] = 0x02
+                else
+                    out[l, idx] = missing
+                end
+            end
+
+            l += 1
+        end
+    end
+
+    return out
+end
+
+ishomozygous_zero(vcfentry::AbstractString) = vcfentry == "0/0" || vcfentry == "0|0"
+isheterozygous(vcfentry::AbstractString) = vcfentry == "1/0" || vcfentry == "0/1" || vcfentry == "0|1" || vcfentry == "1|0"
+ishomozygous_one(vcfentry::AbstractString) = vcfentry == "1/1" || vcfentry == "1|1"
+Base.ismissing(vcfentry::AbstractString) = vcfentry == "./." || vcfentry == ".|."

@@ -10,7 +10,7 @@ vcffile = "test.08Jun17.d8b.vcf"
 reader = VCF.Reader(openvcf(vcffile, "r"))
 record = read(reader)
 
-record = VCF.Record("20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
+record = VCF.Record("20\t14370\trs6054257\tG\tAAAA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
 record = VCF.Record("20\t14370\t.\tG\tA\t29\tPASS;fdsa\t.\tDS\t1.99\t1.01")
 record = VCF.Record("20\t14370\t.\tG\tA\t29\tPASS\t.\tGT\t1/0\t0/0")
 record.genotype
@@ -491,5 +491,76 @@ end
 
 
 
+# try data import strategy outlined in https://github.com/JuliaLang/julia/issues/34195#issuecomment-569343440
 
+using Mmap
+using VCFTools
+using CodecZlib
+
+cd("/Users/biona001/.julia/dev/MendelImpute/simulation")
+tgtfile = "unphase.target_masked.vcf"
+
+Xmm = Mmap.mmap(open(tgtfile, "r"))
+String(Xmm[1:10]) # this is ##fileform
+
+
+
+
+
+
+
+
+
+# try jiahao's convert function
+
+using Revise
+using VCFTools
+using MendelImpute
+using GeneticVariation
+using Random
+using StatsBase
+using CodecZlib
+using ProgressMeter
+using BenchmarkTools
+
+vcffile = "target.chr18.typedOnly.maf0.1.masked.vcf.gz"
+Is, Js, Vs = unsafe_convert_gt(vcffile)
+
+
+# try naive convert based on splitting
+vcffile = "target.chr18.typedOnly.maf0.1.masked.vcf.gz"
+X_true = convert_gt(UInt8, vcffile, trans=true)
+X = unsafe_convert_gt2(vcffile)
+all(skipmissing(X_true .== X))
+
+@btime unsafe_convert_gt2(vcffile); #2.302 s (39525918 allocations: 1.70 GiB)
+@btime convert_gt(UInt8, vcffile, trans=true); #2.188 s (34668736 allocations: 2.62 GiB)
+
+
+
+vcffile = "target.chr18.typedOnly.maf0.001.masked.vcf.gz"
+@time unsafe_convert_gt2(vcffile); #12.681037 seconds (184.13 M allocations: 7.895 GiB, 9.15% gc time)
+@time convert_gt(UInt8, vcffile, trans=true); #11.560873 seconds (161.50 M allocations: 12.183 GiB, 15.14% gc time)
+
+
+
+stream = GzipDecompressorStream(open(vcffile))
+line = readline(stream)
+line = readline(stream)
+line = readline(stream)
+line = readline(stream)
+line = readline(stream)
+line = readline(stream)
+
+
+datas = split(line, "\t")
+
+# split by field. Assume GT field comes before all other field
+fn1 = x -> split(x, ":")
+split_words = map(fn1, datas[10:end])
+
+fn2 = strs-> begin 
+    println(strs)
+end
+map(fn2, split_words)
 
