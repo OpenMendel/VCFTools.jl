@@ -527,14 +527,52 @@ vcffile = "target.chr18.typedOnly.maf0.1.masked.vcf.gz"
 Is, Js, Vs = unsafe_convert_gt(vcffile)
 
 
-# try naive convert based on splitting
-vcffile = "target.chr18.typedOnly.maf0.1.masked.vcf.gz"
-X_true = convert_gt(UInt8, vcffile, trans=true)
-X = unsafe_convert_gt2(vcffile)
-all(skipmissing(X_true .== X))
 
-@btime unsafe_convert_gt2(vcffile); #2.302 s (39525918 allocations: 1.70 GiB)
-@btime convert_gt(UInt8, vcffile, trans=true); #2.188 s (34668736 allocations: 2.62 GiB)
+
+# try convert based on splitting
+using Revise
+using VCFTools
+using MendelImpute
+using GeneticVariation
+using Random
+using StatsBase
+using CodecZlib
+using ProgressMeter
+using BenchmarkTools
+
+# check answer 
+vcffile = "target.chr18.typedOnly.maf0.1.masked.vcf.gz"
+@time X_true = convert_gt(UInt8, vcffile, trans=true); # 4.669417 seconds (42.34 M allocations: 2.970 GiB, 8.78% gc time)
+@time X = unsafe_convert_gt2(vcffile);                 # 2.756179 seconds (39.72 M allocations: 1.707 GiB, 9.44% gc time)
+@time X2 = unsafe_convert_gt3(vcffile);                # 2.737134 seconds (40.43 M allocations: 1.722 GiB, 4.26% gc time)
+all(skipmissing(X_true .== X))
+all(skipmissing(X_true .== X2))
+
+
+# 1 thread
+@btime unsafe_convert_gt2(vcffile); #2.369 s (39085435 allocations: 1.68 GiB)
+@btime unsafe_convert_gt3(vcffile); #2.445 s (39680389 allocations: 1.69 GiB)
+@btime convert_gt(UInt8, vcffile, trans=true); #2.150 s (33984323 allocations: 2.56 GiB)
+
+
+# 4 threads
+@btime unsafe_convert_gt2(vcffile); # 2.289 s (39085435 allocations: 1.68 GiB)
+@btime unsafe_convert_gt3(vcffile); # 1.313 s (39684259 allocations: 1.69 GiB)
+@btime convert_gt(UInt8, vcffile, trans=true); # 2.142 s (33984323 allocations: 2.56 GiB)
+
+
+# 8 threads
+@btime unsafe_convert_gt2(vcffile); # 2.327 s (39085435 allocations: 1.68 GiB)
+@btime unsafe_convert_gt3(vcffile); # 1.103 s (39689223 allocations: 1.69 GiB)
+@btime convert_gt(UInt8, vcffile, trans=true); # 2.234 s (33984323 allocations: 2.56 GiB)
+
+
+
+
+using ProfileView
+@profview unsafe_convert_gt3(vcffile)
+@profview unsafe_convert_gt3(vcffile)
+
 
 
 
@@ -553,7 +591,7 @@ line = readline(stream)
 line = readline(stream)
 
 
-datas = split(line, "\t")
+sample_data .= split(line, "\t")
 
 # split by field. Assume GT field comes before all other field
 fn1 = x -> split(x, ":")

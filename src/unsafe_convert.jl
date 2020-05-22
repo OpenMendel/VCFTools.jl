@@ -245,32 +245,21 @@ function unsafe_convert_gt2(vcffile::String)
 
     p, n = nrecords(vcffile), nsamples(vcffile)
     out = Matrix{Union{Missing, UInt8}}(undef, p, n)
-    datas = Vector{String}(undef, n + 9)
+    sample_data = Vector{String}(undef, n + 9)
+    GT = Vector{Union{Missing, UInt8}}(undef, n)
 
     l = 1
     for line in eachline(stream)
         if !startswith(line, "#")
-            datas .= split(line, "\t")
+            # split by sample
+            sample_data .= split(line, "\t")
 
             # split by field
-            # split_words = map(x -> split(x, ":"), datas[10:end])
+            # split_words = map(x -> split(x, ":"), sample_data[10:end])
 
             # Assume GT field comes before all other field
-            @inbounds for (i, word) in enumerate(datas)
-                i < 10 && continue
-                idx = i - 9
-
-                if ishomozygous_zero(word)
-                    out[l, idx] = 0x00
-                elseif isheterozygous(word)
-                    out[l, idx] = 0x01
-                elseif ishomozygous_one(word)
-                    out[l, idx] = 0x02
-                else
-                    out[l, idx] = missing
-                end
-            end
-
+            map!(parse_gt, GT, @view(sample_data[10:end]))
+            copyto!(@view(out[l, :]), GT)
             l += 1
         end
     end
@@ -278,6 +267,93 @@ function unsafe_convert_gt2(vcffile::String)
     return out
 end
 
+"""
+Same as unsafe_convert_gt2 but tries to read lines in bulk and process them in parallel
+"""
+function unsafe_convert_gt3(vcffile::String)
+    vcf_buffer_records = 1024
+
+    stream = if endswith(vcffile, ".gz")
+        GzipDecompressorStream(open(vcffile))
+    else
+        IOBuffer(Mmap.mmap(vcffile))
+    end
+
+    p, n = nrecords(vcffile), nsamples(vcffile)
+    out = Matrix{Union{Missing, UInt8}}(undef, p, n)
+    sample_data = [Vector{String}(undef, n + 9) for i in 1:Threads.nthreads()]
+    GT = [Vector{Union{Missing, UInt8}}(undef, n) for i in 1:Threads.nthreads()]
+
+    chunks = floor(Int, p / vcf_buffer_records)
+    remaining_records = p - vcf_buffer_records * chunks
+    records = Vector{String}(undef, vcf_buffer_records)
+
+    # process header
+    headerlines = 0
+    while Base.peek(stream) == 0x23 # starts with '#'
+        headerlines += 1
+        records[headerlines] = readline(stream)
+        # TODO process header line
+    end
+
+    # process chunk by chunk
+    for c in 1:chunks
+        # load a bunch of records
+        for i in 1:vcf_buffer_records
+            records[i] = readline(stream)
+        end
+
+        # process records in parallel
+        l = (c - 1) * vcf_buffer_records # beginning of current chunk
+        Threads.@threads for i in 1:length(records)
+            id = Threads.threadid()
+
+            # split by sample
+            sample_data[id] .= split(records[i], "\t")
+
+            # split by field
+            # split_words = map(x -> split(x, ":"), sample_data[10:end])
+
+            # Assume GT field comes before all other field
+            map!(parse_gt, GT[id], @view(sample_data[id][10:end]))
+            copyto!(@view(out[l + i, :]), GT[id])
+        end
+    end
+
+    # process remaining records
+    resize!(records, remaining_records)
+    for i in 1:remaining_records
+        records[i] = readline(stream)
+    end
+    l = chunks * vcf_buffer_records # beginning of last chunk
+    Threads.@threads for i in 1:length(records)
+        id = Threads.threadid()
+
+        # split by sample
+        sample_data[id] .= split(records[i], "\t")
+
+        # split by field
+        # split_words = map(x -> split(x, ":"), sample_data[10:end])
+
+        # Assume GT field comes before all other field
+        map!(parse_gt, GT[id], @view(sample_data[id][10:end]))
+        copyto!(@view(out[l + i, :]), GT[id])
+    end
+
+    return out
+end
+
+function parse_gt(GT::AbstractString)
+    if ishomozygous_zero(GT)
+        return 0x00
+    elseif isheterozygous(GT)
+        return 0x01
+    elseif ishomozygous_one(GT)
+        return 0x02
+    else
+        return missing
+    end
+end
 ishomozygous_zero(vcfentry::AbstractString) = vcfentry == "0/0" || vcfentry == "0|0"
 isheterozygous(vcfentry::AbstractString) = vcfentry == "1/0" || vcfentry == "0/1" || vcfentry == "0|1" || vcfentry == "1|0"
 ishomozygous_one(vcfentry::AbstractString) = vcfentry == "1/1" || vcfentry == "1|1"
