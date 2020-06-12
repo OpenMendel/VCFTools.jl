@@ -55,12 +55,20 @@ function filter(
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
     writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
+    record = read(reader)
 
     # write to des
-    for (i, record) in enumerate(reader)
+    i = 1
+    while true
         if record_mask[i] 
             filter_record!(record, sample_mask)
             VCF.write(writer, record)
+        end
+        if eof(reader) 
+            break
+        else
+            read!(reader, record)
+            i += 1
         end
     end
 
@@ -187,9 +195,11 @@ function mask_gt(
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
     writer = VCF.Writer(openvcf(des, "w"), VCF.header(reader))
+    record = read(reader)
 
     # loop over each record
-    for (i, record) in enumerate(reader)
+    i = 1 # record (row) counter
+    while true
         gtkey = VCF.findgenokey(record, "GT")
         if gtkey != nothing 
             # loop over genotypes
@@ -211,7 +221,15 @@ function mask_gt(
                 end
             end
         end
+
         write(writer, record)
+
+        if eof(reader) 
+            break
+        else
+            read!(reader, record)
+            i += 1
+        end
     end
     flush(writer); close(reader); close(writer)
     return nothing

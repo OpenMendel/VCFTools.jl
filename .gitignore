@@ -4,6 +4,7 @@
 *.vcf
 *.vcf.gz
 *.out*
+*.csv.gz
 
 .DS_Store
 .ipynb_checkpoints

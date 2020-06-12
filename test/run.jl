@@ -69,8 +69,8 @@ X = convert_gt(Float32, vcffile)
 X_filter = convert_gt(Float32, "filtered." * vcffile)
 
 @benchmark VCFTools.filter(vcffile, record_mask, sample_mask)
-#new: 149.763 ms, 214.48 MiB
-#old: 134.655 ms, 177.42 MiB
+# old = 671.380 ms, 326.66 MiB, 3631762 alloc
+# new = 573.432 ms, 257.75 MiB, 3352787 alloc
 
 des = "filter." * vcffile
 reader = VCF.Reader(openvcf(vcffile, "r"))
@@ -94,7 +94,7 @@ samples = nsamples(vcffile)
 records = nrecords(vcffile)
 masks = bitrand(records, samples)
 mask_gt(vcffile, masks)
-@benchmark mask_gt(vcffile, masks) #82.221 ms, 108.69 MiB, 800187 alloc
+@benchmark mask_gt(vcffile, masks) #40.840 ms, 40.09 MiB, 521257 alloc
 
 
 # test convert_ds
@@ -574,11 +574,19 @@ using ProfileView
 @profview unsafe_convert_gt3(vcffile)
 
 
+#test on data with large p
+vcffile = "target.chr18.typedOnly.maf0.0005.masked.vcf.gz"
+@time unsafe_convert_gt2(vcffile); #11.903016 seconds (196.12 M allocations: 8.412 GiB, 9.62% gc time)
+@time unsafe_convert_gt3(vcffile); #6.058362 seconds (199.16 M allocations: 8.461 GiB, 18.60% gc time)
+@time convert_gt(UInt8, vcffile, trans=true); #12.555977 seconds (170.52 M allocations: 12.864 GiB, 15.13% gc time)
 
 
-vcffile = "target.chr18.typedOnly.maf0.001.masked.vcf.gz"
-@time unsafe_convert_gt2(vcffile); #12.681037 seconds (184.13 M allocations: 7.895 GiB, 9.15% gc time)
-@time convert_gt(UInt8, vcffile, trans=true); #11.560873 seconds (161.50 M allocations: 12.183 GiB, 15.14% gc time)
+#test on data with large n
+vcffile = "ref.chr18.excludeTarget.vcf.gz"
+@time unsafe_convert_gt2(vcffile); #282.177077 seconds (4.13 G allocations: 197.932 GiB, 5.47% gc time)
+@time unsafe_convert_gt3(vcffile); #115.613233 seconds (4.13 G allocations: 197.981 GiB, 16.93% gc time)
+@time convert_gt(UInt8, vcffile, trans=true); #249.568465 seconds (4.10 G allocations: 309.245 GiB, 4.93% gc time)
+
 
 
 

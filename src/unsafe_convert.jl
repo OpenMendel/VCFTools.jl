@@ -271,7 +271,7 @@ end
 Same as unsafe_convert_gt2 but tries to read lines in bulk and process them in parallel
 """
 function unsafe_convert_gt3(vcffile::String)
-    vcf_buffer_records = 1024
+    vcf_buffer_records = 4096
 
     stream = if endswith(vcffile, ".gz")
         GzipDecompressorStream(open(vcffile))
