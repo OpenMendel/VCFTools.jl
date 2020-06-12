@@ -29,13 +29,15 @@ and column indices `sample_index` and write to a new set of vcf files `des`.
 - `sample_index`: column indices to keep.
 
 # Optional arguments:
-- `des`: output vcf file name; default it `"filtered." * src`.
+- `des`: output vcf file name; default `"filtered." * src`.
+- `allow_multiallelic`: If `false`, multi-allelic SNPs will be filtered out. default `false` 
 """
 function filter(
     src::AbstractString, 
     record_index::AbstractVector{<:Integer}, 
     sample_index::AbstractVector{<:Integer}; 
-    des::AbstractString = "filtered." * src 
+    des::AbstractString = "filtered." * src,
+    allow_multiallelic::Bool = false
     )
     # create record (row) and sample (column) masks
     records, samples = nrecords(src), nsamples(src)
@@ -61,6 +63,7 @@ function filter(
     i = 1
     while true
         if record_mask[i] 
+            !allow_multiallelic && length(VCF.alt(record)) > 1 && continue # screen for multi-allelic sites
             filter_record!(record, sample_mask)
             VCF.write(writer, record)
         end
