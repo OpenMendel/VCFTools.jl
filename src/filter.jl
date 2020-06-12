@@ -1,8 +1,13 @@
 # Useful byte reprensetations
 # - '\t': String([0x09])
+# - '\n': String([0x0a])
+# - '#': String([0x23])
+# - '\\': String([0x5c])
+# - '\r' String([0x0d])
 # - ':': String([0x3a])
 # - '0': String([0x30])
 # - '1': String([0x31])
+# - '9': String([0x39])
 # - '.': String([0x2e])
 # - '|': String([0x7c])
 # - '/': String([0x2f])
@@ -25,7 +30,7 @@ and column indices `sample_index` and write to a new set of vcf files `des`.
 
 # Optional arguments:
 - `des`: output vcf file name; default `"filtered." * src`.
-- `allow_multiallelic`: If `true`, multi-allelic SNPs will not be filtered out. default `false` 
+- `allow_multiallelic`: If `false`, multi-allelic SNPs will be filtered out. default `false` 
 """
 function filter(
     src::AbstractString, 
@@ -52,13 +57,21 @@ function filter(
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
     writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
+    record = read(reader)
 
     # write to des
-    for (i, record) in enumerate(reader)
-        if record_mask[i]
+    i = 1
+    while true
+        if record_mask[i] 
             !allow_multiallelic && length(VCF.alt(record)) > 1 && continue # screen for multi-allelic sites
             filter_record!(record, sample_mask)
             VCF.write(writer, record)
+        end
+        if eof(reader) 
+            break
+        else
+            read!(reader, record)
+            i += 1
         end
     end
 
@@ -185,9 +198,11 @@ function mask_gt(
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
     writer = VCF.Writer(openvcf(des, "w"), VCF.header(reader))
+    record = read(reader)
 
     # loop over each record
-    for (i, record) in enumerate(reader)
+    i = 1 # record (row) counter
+    while true
         gtkey = VCF.findgenokey(record, "GT")
         if gtkey != nothing 
             # loop over genotypes
@@ -211,7 +226,15 @@ function mask_gt(
                 end
             end
         end
+
         write(writer, record)
+
+        if eof(reader) 
+            break
+        else
+            read!(reader, record)
+            i += 1
+        end
     end
     flush(writer); close(reader); close(writer)
     return nothing

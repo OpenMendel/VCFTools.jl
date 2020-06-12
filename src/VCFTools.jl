@@ -19,12 +19,14 @@ export conformgt_by_id, conformgt_by_pos,
     # filter functions
     filter_genotype, 
     filter, filter_header, 
-    mask_gt, find_duplicate_marker
+    mask_gt, find_duplicate_marker,
+    unsafe_convert_gt, unsafe_convert_gt2, unsafe_convert_gt3
 
 # package code goes here
 include("gtstats.jl")
 include("conformgt.jl")
 include("convert.jl")
 include("filter.jl")
+include("unsafe_convert.jl")
 
 end # module
