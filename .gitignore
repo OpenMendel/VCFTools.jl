@@ -9,3 +9,5 @@
 .DS_Store
 .ipynb_checkpoints
 docs/build/
+
+Manifest.toml

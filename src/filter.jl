@@ -263,3 +263,63 @@ function find_duplicate_marker(vcffile::String)
     close(reader)
     return duplicates
 end
+
+"""
+    filter_chr(src, chr; des="filtered.(chr)." * src)
+
+Leave only the variants from the chromosome `chr`. Returns the number of records remaining.
+"""
+function filter_chr(
+    src::AbstractString, 
+    chr::Union{AbstractString, Int}; 
+    des::AbstractString = "filtered.chr$chr." * src
+    )
+
+    # create input and output VCF files
+    reader = VCF.Reader(openvcf(src, "r"))
+    metainfo = VCF.header(reader).metainfo
+    sampleID = VCF.header(reader).sampleID
+    writer = VCF.Writer(openvcf(des, "w"), VCF.Header(metainfo, sampleID))
+    cnt = 0
+    for record in reader
+        if VCF.chrom(record) == string(chr)
+            cnt += 1
+            VCF.write(writer, record)
+        end
+    end
+
+    close(reader)
+    flush(writer)
+    close(VCF.BioCore.IO.stream(writer))
+    return cnt
+end
+
+"""
+    filter_range(src, chr, from, to; des="filtered.chr(chr):(from)-(to)." * src)
+
+Leave only the variants from the range `chr:from-to`. Returns the number of records remaining.
+"""
+function filter_range(
+    src::AbstractString,
+    chr::Union{AbstractString, Int},
+    from::Int, to::Int;
+    des::AbstractString = "filtered.chr$chr:$from-$to." * src
+    )
+    reader = VCF.Reader(openvcf(src, "r"))
+    metainfo = VCF.header(reader).metainfo
+    sampleID = VCF.header(reader).sampleID
+    writer = VCF.Writer(openvcf(des, "w"), VCF.Header(metainfo, sampleID))
+    cnt = 0
+    for record in reader
+        if VCF.chrom(record) == string(chr)
+            if from <= VCF.pos(record) <= to
+                VCF.write(writer, record)
+                cnt += 1
+            end
+        end
+    end
+    close(reader)
+    flush(writer)
+    close(VCF.BioCore.IO.stream(writer))
+    return cnt
+end
