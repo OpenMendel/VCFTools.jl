@@ -59,3 +59,14 @@ end
     @test all(Xmasked[.!masks] .== X[.!masks])
     @test all(Xmasked[masks] .=== missing)
 end
+
+@testset "filter_chr" begin
+    vcffile = "test.08Jun17.d8b.vcf.gz"
+    outfile = "filtered.chr22.test.08Jun17.d8b.vcf.gz"
+    @test filter_chr(vcffile, 22) == 1356
+    @test nrecords(outfile) == 1356
+
+    outfile2 = "filtered.chr22:20000000-20020000.test.08Jun17.d8b.vcf.gz"
+    @test filter_range("test.08Jun17.d8b.vcf.gz", "22", 20000000, 20020000) == 261
+    @test nrecords(outfile2) == 261
+end
