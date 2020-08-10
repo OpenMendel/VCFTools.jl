@@ -58,6 +58,7 @@ function filter(
     reader = VCF.Reader(openvcf(src, "r"))
     writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
     record = read(reader)
+    pmeter = Progress(records, 5, "filtering vcf file...")
 
     # write to des
     i = 1
@@ -68,16 +69,17 @@ function filter(
             VCF.write(writer, record)
         end
         if eof(reader) 
-            break
+            next!(pmeter); break
         else
             read!(reader, record)
             i += 1
         end
+        next!(pmeter)
     end
 
     close(reader)
     flush(writer)
-    close(VCF.BioCore.IO.stream(writer))
+    close(writer)
     return nothing
 end
 
@@ -191,6 +193,7 @@ function mask_gt(
     if !(records == p && samples == n)
         throw(DimensionMismatch("size(src) = ($records, $samples) ≠ size(masks) = ($p, $n)."))
     end
+    pmeter = Progress(records, 5, "masking vcf file...")
 
     # define byte representation of separator
     separator = (unphase ? 0x2f : 0x7c) # '/' or '|'
@@ -230,11 +233,12 @@ function mask_gt(
         write(writer, record)
 
         if eof(reader) 
-            break
+            next!(pmeter); break
         else
             read!(reader, record)
             i += 1
         end
+        next!(pmeter)
     end
     flush(writer); close(reader); close(writer)
     return nothing
@@ -250,8 +254,10 @@ The first occurance will be false and any subsequent occurance will be true.
 """
 function find_duplicate_marker(vcffile::String)
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    duplicates = falses(nrecords(vcffile))
-    seen = Set{Int}()
+    records = nrecords(vcffile)
+    duplicates = falses(records)
+    seen = BitSet()
+    pmeter = Progress(records, 5, "finding duplicate markers...")
     @inbounds for (i, record) in enumerate(reader)
         curr = VCF.pos(record)
         if curr in seen
@@ -259,6 +265,7 @@ function find_duplicate_marker(vcffile::String)
         else
             push!(seen, curr)
         end
+        next!(pmeter)
     end
     close(reader)
     return duplicates
@@ -290,7 +297,7 @@ function filter_chr(
 
     close(reader)
     flush(writer)
-    close(VCF.BioCore.IO.stream(writer))
+    close(writer)
     return cnt
 end
 
@@ -320,6 +327,6 @@ function filter_range(
     end
     close(reader)
     flush(writer)
-    close(VCF.BioCore.IO.stream(writer))
+    close(writer)
     return cnt
 end
