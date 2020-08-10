@@ -8,6 +8,7 @@ using BenchmarkTools
 cd("/Users/biona001/.julia/dev/VCFTools/test")
 vcffile = "test.08Jun17.d8b.vcf"
 reader = VCF.Reader(openvcf(vcffile, "r"))
+sampleID = VCF.header(reader).sampleID
 record = read(reader)
 
 record = VCF.Record("20\t14370\trs6054257\tG\tAAAA\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:DP:HQ\t0|0:48:1:51,51\t1|0:48:8:51,51")
@@ -22,7 +23,7 @@ using VCFTools
 
 cd("/Users/biona001/.julia/dev/VCFTools/test")
 vcffile = "test.08Jun17.d8b.vcf"
-H = convert_ht(Float32, vcffile)
+H = convert_ht(Float32, vcffile, has_missing=true)
 
 # byte representation mapping
 String([0x09]) # '\t'
@@ -497,129 +498,25 @@ using Mmap
 using VCFTools
 using CodecZlib
 
-cd("/Users/biona001/.julia/dev/MendelImpute/simulation")
-tgtfile = "unphase.target_masked.vcf"
-
-Xmm = Mmap.mmap(open(tgtfile, "r"))
-String(Xmm[1:10]) # this is ##fileform
-
-
-
-
-
-
-
-
-
-# try jiahao's convert function
-
 using Revise
-using VCFTools
-using MendelImpute
 using GeneticVariation
 using Random
-using StatsBase
-using CodecZlib
-using ProgressMeter
-using BenchmarkTools
-
-vcffile = "target.chr18.typedOnly.maf0.1.masked.vcf.gz"
-Is, Js, Vs = unsafe_convert_gt(vcffile)
-
-
-
-
-# try convert based on splitting
-using Revise
 using VCFTools
-using MendelImpute
-using GeneticVariation
-using Random
-using StatsBase
-using CodecZlib
-using ProgressMeter
 using BenchmarkTools
 
-# check answer 
-vcffile = "target.chr18.typedOnly.maf0.1.masked.vcf.gz"
-@time X_true = convert_gt(UInt8, vcffile, trans=true); # 4.669417 seconds (42.34 M allocations: 2.970 GiB, 8.78% gc time)
-@time X = unsafe_convert_gt2(vcffile);                 # 2.756179 seconds (39.72 M allocations: 1.707 GiB, 9.44% gc time)
-@time X2 = unsafe_convert_gt3(vcffile);                # 2.737134 seconds (40.43 M allocations: 1.722 GiB, 4.26% gc time)
-all(skipmissing(X_true .== X))
-all(skipmissing(X_true .== X2))
-
-
-# 1 thread
-@btime unsafe_convert_gt2(vcffile); #2.369 s (39085435 allocations: 1.68 GiB)
-@btime unsafe_convert_gt3(vcffile); #2.445 s (39680389 allocations: 1.69 GiB)
-@btime convert_gt(UInt8, vcffile, trans=true); #2.150 s (33984323 allocations: 2.56 GiB)
-
-
-# 4 threads
-@btime unsafe_convert_gt2(vcffile); # 2.289 s (39085435 allocations: 1.68 GiB)
-@btime unsafe_convert_gt3(vcffile); # 1.313 s (39684259 allocations: 1.69 GiB)
-@btime convert_gt(UInt8, vcffile, trans=true); # 2.142 s (33984323 allocations: 2.56 GiB)
-
-
-# 8 threads
-@btime unsafe_convert_gt2(vcffile); # 2.327 s (39085435 allocations: 1.68 GiB)
-@btime unsafe_convert_gt3(vcffile); # 1.103 s (39689223 allocations: 1.69 GiB)
-@btime convert_gt(UInt8, vcffile, trans=true); # 2.234 s (33984323 allocations: 2.56 GiB)
-
-
-
-
-using ProfileView
-@profview unsafe_convert_gt3(vcffile)
-@profview unsafe_convert_gt3(vcffile)
-
-
-#test on data with large p
-vcffile = "target.chr18.typedOnly.maf0.0005.masked.vcf.gz"
-@time unsafe_convert_gt2(vcffile); #11.903016 seconds (196.12 M allocations: 8.412 GiB, 9.62% gc time)
-@time unsafe_convert_gt3(vcffile); #6.058362 seconds (199.16 M allocations: 8.461 GiB, 18.60% gc time)
-@time convert_gt(UInt8, vcffile, trans=true); #12.555977 seconds (170.52 M allocations: 12.864 GiB, 15.13% gc time)
-
-
-#test on data with large n
-vcffile = "ref.chr18.excludeTarget.vcf.gz"
-@time unsafe_convert_gt2(vcffile); #282.177077 seconds (4.13 G allocations: 197.932 GiB, 5.47% gc time)
-@time unsafe_convert_gt3(vcffile); #115.613233 seconds (4.13 G allocations: 197.981 GiB, 16.93% gc time)
-@time convert_gt(UInt8, vcffile, trans=true); #249.568465 seconds (4.10 G allocations: 309.245 GiB, 4.93% gc time)
-
-
-
-
-stream = GzipDecompressorStream(open(vcffile))
-line = readline(stream)
-line = readline(stream)
-line = readline(stream)
-line = readline(stream)
-line = readline(stream)
-line = readline(stream)
-
-
-sample_data .= split(line, "\t")
-
-# split by field. Assume GT field comes before all other field
-fn1 = x -> split(x, ":")
-split_words = map(fn1, datas[10:end])
-
-fn2 = strs-> begin 
-    println(strs)
-end
-map(fn2, split_words)
-
-# profile convert_gt
-using Revise
-using ProfileView
-using VCFTools
-using GeneticVariation
-using Random
-using BenchmarkTools
+#import data
 cd("/Users/biona001/.julia/dev/VCFTools/test")
-f = "test.08Jun17.d8b.vcf.gz"
+vcffile = "test.08Jun17.d8b.vcf.gz"
+
+H, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt = convert_ht(Float32, vcffile, save_snpinfo(), trans=true)
+@code_warntype convert_ht(Float32, vcffile, save_snpinfo(), trans=true)
+H2 = convert_ht(Float32, vcffile, trans=true)
+all(H .== H2)
+@code_warntype convert_ht(Float32, vcffile, trans=true)
 
 
-@profview convert_gt(UInt8, f)
-@profview convert_gt(UInt8, f)
+X, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt = convert_gt(Float32, vcffile, save_snpinfo(), trans=true)
+@code_warntype convert_gt(Float32, vcffile, save_snpinfo(), trans=true)
+X2 = convert_gt(Float32, vcffile, trans=true)
+all(X .== X2)
+@code_warntype convert_gt(Float32, vcffile, trans=true)
