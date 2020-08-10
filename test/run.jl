@@ -610,3 +610,16 @@ fn2 = strs-> begin
 end
 map(fn2, split_words)
 
+# profile convert_gt
+using Revise
+using ProfileView
+using VCFTools
+using GeneticVariation
+using Random
+using BenchmarkTools
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+f = "test.08Jun17.d8b.vcf.gz"
+
+
+@profview convert_gt(UInt8, f)
+@profview convert_gt(UInt8, f)

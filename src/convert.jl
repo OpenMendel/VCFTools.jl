@@ -47,7 +47,12 @@ function copy_gt!(
     center::Bool = false,
     scale::Bool = false,
     msg::String = "", 
-    record_positions::Union{AbstractVector, Nothing} = nothing
+    sampleID::Union{AbstractVector, Nothing} = nothing,
+    record_chr::Union{AbstractVector, Nothing} = nothing,
+    record_pos::Union{AbstractVector, Nothing} = nothing,
+    record_ids::Union{AbstractVector, Nothing} = nothing,
+    record_ref::Union{AbstractVector, Nothing} = nothing,
+    record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg))
     record = VCF.Record()
@@ -61,13 +66,13 @@ function copy_gt!(
         end
         gtkey = VCF.findgenokey(record, "GT")
         # if no GT field, fill by missing values
-        if gtkey == nothing
+        if gtkey === nothing
             @inbounds @simd for i in 1:size(A, 1)
                 A[i, j] = missing
             end
         end
         # save record's position
-        record_positions == nothing || (record_positions[j] = VCF.pos(record))
+        record_positions === nothing || (record_positions[j] = VCF.pos(record))
         # second pass: impute, convert, center, scale
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
         ct = 2alt_freq
@@ -102,9 +107,9 @@ end
 """
     copy_gt_trans!(A, reader; [model=:additive], [impute=false], [center=false], [scale=false])
 
-Fill the columns of matrix `A` by the GT data from VCF records in `reader` where the ALT allele
-in each record is interpreted as a `1`. Record without GT field is converted to `missing`. If an 
-optional `record_positions` vector is supplied, it will be filled with each record's position.
+Fill the columns of matrix `A` by the GT data from VCF records in `reader` where
+the ALT allele in each record is interpreted as a `1`. Records where GT field
+is `.|.` or `.\.` are converted to `missing`. 
 
 # Input
 - `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each column is one person's genotype. 
@@ -116,7 +121,6 @@ optional `record_positions` vector is supplied, it will be filled with each reco
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
 - `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-- `save_snp_info`: Boolean. If true, will also output sample ID, chrom, pos, snp id, ref, and alt vectors
 
 # Output
 - `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
@@ -138,7 +142,7 @@ function copy_gt_trans!(
     record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
-    sampleID == nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:size(A, 1)
@@ -151,15 +155,15 @@ function copy_gt_trans!(
         end
         gtkey = VCF.findgenokey(record, "GT")
         # if no GT field, fill by missing values
-        if gtkey == nothing
+        if gtkey === nothing
             fill!(view(A, j, :), missing)
         end
         # save record's information
-        record_chr == nothing || (record_chr[j] = VCF.chrom(record))
-        record_pos == nothing || (record_pos[j] = VCF.pos(record))
-        record_ids == nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
-        record_ref == nothing || (record_ref[j] = VCF.ref(record))
-        record_alt == nothing || (record_alt[j] = VCF.alt(record))
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
         # second pass: impute, convert, center, scale
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
         ct = 2alt_freq
@@ -248,7 +252,9 @@ function convert_gt(
     else
         out = Matrix{Union{t, Missing}}(undef, samples, records)
         copy_gt!(out, reader; model = model, impute = impute,
-            center = center, scale = scale, msg = msg)
+            center = center, scale = scale, msg = msg, sampleID=sampleID,
+            record_chr=record_chr, record_pos=record_pos, record_ids=record_ids,
+            record_ref=record_ref, record_alt=record_alt)
     end
     close(reader)
     if save_snp_info
@@ -314,7 +320,7 @@ end
 Fill 2 columns of `A` by the GT data from VCF records in `reader`, 
 each record filling 2 columns.The minor allele for each record is 
 the ALT allele (i.e. will read 0s and 1s of the vcffile as-is). 
-Missing GT field is NOT allowed. 
+Missing GT field is NOT allowed, but missing data is allowed. 
 
 # Input
 - `A`: matrix where rows are haplotypes. Person `i`'s haplotype are filled in rows 2i - 1 and 2i. 
@@ -343,7 +349,7 @@ function copy_ht!(
         gtkey = VCF.findgenokey(record, "GT")
 
         # haplotype reference files must have GT field
-        if gtkey == nothing
+        if gtkey === nothing
             error("Missing GT field for record $j. Reference panels cannot have missing data!")
         end
 
@@ -374,14 +380,12 @@ end
 Fill 2 columns of `A` by the GT data from VCF records in `reader`, 
 each record filling 2 columns. The minor allele for each record is 
 the ALT allele (i.e. will read 0s and 1s of the vcffile as-is). 
-Missing GT field is NOT allowed. If an optional `record_positions` 
-vector is supplied, it will be filled with each record's position.
+Missing GT field is NOT allowed, but missing data is allowed. 
 
 # Input
 - `A`: matrix where columns are haplotypes. Person `i`'s haplotype are filled in columns 2i - 1 and 2i. 
 - `reader`: a VCF reader
 - `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-- `record_positions`: Vector where `record_positions[i]` is `A[i, :]`'s record (SNP) position
 """
 function copy_ht_trans!(
     A::Union{AbstractMatrix{T}, AbstractVector{T}},
@@ -398,7 +402,7 @@ function copy_ht_trans!(
     p, n = size(A)
     nn   = Int(n / 2)
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
-    sampleID == nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:p
@@ -412,14 +416,14 @@ function copy_ht_trans!(
         gtkey = VCF.findgenokey(record, "GT")
 
         # save record's information
-        record_chr == nothing || (record_chr[j] = VCF.chrom(record))
-        record_pos == nothing || (record_pos[j] = VCF.pos(record))
-        record_ids == nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
-        record_ref == nothing || (record_ref[j] = VCF.ref(record))
-        record_alt == nothing || (record_alt[j] = VCF.alt(record))
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
 
         # haplotype reference files must have GT field
-        if gtkey == nothing
+        if gtkey === nothing
             error("Missing GT field for record $j. Reference panels cannot have missing data!")
         end
 
@@ -534,7 +538,7 @@ function copy_ds!(
         dskey = VCF.findgenokey(record, key)
 
         # if no dosage field, fill by missing values
-        if dskey == nothing
+        if dskey === nothing
             @inbounds @simd for i in 1:size(A, 1)
                 A[i, j] = missing
             end
@@ -607,7 +611,7 @@ function copy_ds_trans!(
         dskey = VCF.findgenokey(record, key)
 
         # if no dosage field, fill by missing values
-        if dskey == nothing
+        if dskey === nothing
             @inbounds @simd for i in 1:size(A, 2)
                 A[j, i] = missing
             end

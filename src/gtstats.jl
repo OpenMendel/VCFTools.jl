@@ -49,7 +49,7 @@ function gtstats(vcffile::AbstractString, out::IO=devnull)
     for record in reader
         records += 1
         # if no "GT" field, skip this record
-        VCF.findgenokey(record, "GT") == nothing && continue
+        VCF.findgenokey(record, "GT") === nothing && continue
         # calcuate summary statistics
         lines += 1
         n00, n01, n11, n0, n1, altfreq, reffreq, missings,
@@ -114,7 +114,7 @@ function gtstats(
         # dropped field or "." => 0x2e
         if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
             missings += 1
-            missings_by_sample == nothing || (missings_by_sample[i] += 1)
+            missings_by_sample === nothing || (missings_by_sample[i] += 1)
         else
             # "0" => 0x30, "1" => 0x31
             if record.data[geno[gtkey][1]] == 0x30
