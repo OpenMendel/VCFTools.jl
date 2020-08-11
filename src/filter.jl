@@ -61,19 +61,17 @@ function filter(
     pmeter = Progress(records, 5, "filtering vcf file...")
 
     # write to des
-    i = 1
-    while true
+    for i in eachindex(record_mask)
         if record_mask[i] 
-            !allow_multiallelic && length(VCF.alt(record)) > 1 && continue # screen for multi-allelic sites
-            filter_record!(record, sample_mask)
+            if !allow_multiallelic && length(VCF.alt(record)) > 1 
+                !eof(reader) && read!(reader, record)
+                next!(pmeter)
+                continue
+            end
+            VCFTools.filter_record!(record, sample_mask)
             VCF.write(writer, record)
         end
-        if eof(reader) 
-            next!(pmeter); break
-        else
-            read!(reader, record)
-            i += 1
-        end
+        read!(reader, record)
         next!(pmeter)
     end
 
