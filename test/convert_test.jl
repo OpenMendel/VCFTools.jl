@@ -40,25 +40,8 @@ end
 
 @testset "convert_ht(vcfile)" begin
     vcffile = "test.08Jun17.d8b.vcf.gz"
-    # convert to a reference haplotype panel of Float32
-    @time H1 = convert_ht(Float32, vcffile)
-    @test size(H1) == (382, 1356)
-    @test typeof(H1) == Matrix{Float32}
-    # convert to a reference haplotype panel of Float64
-    @time H2 = convert_ht(Float64, vcffile)
-    @test size(H2) == (382, 1356)
-    @test typeof(H2) == Matrix{Float64}
-    # convert to bitarray
-    Hb = convert_ht(Bool, vcffile)
-    @test all(H1 .== convert(Matrix{Float32}, Hb))
-    # convert first record into 2 haplotype vectors and check their sum is the genotype vector
-    reader = VCF.Reader(openvcf(vcffile, "r"))
-    h1h2 = Matrix{Float64}(undef, 2, nrecords(vcffile))
-    copy_ht!(h1h2, reader)
-    reader = VCF.Reader(openvcf(vcffile, "r"))
-    g1 = Matrix{Union{Float64, Missing}}(undef, 1, nrecords(vcffile))
-    copy_gt!(g1, reader)
-    @test all(sum(h1h2, dims=1) .== g1)
+    # file is not phased, hence throws error
+    @test_throws ErrorException convert_ht(Float64, vcffile)
 end
 
 @testset "convert_ds" begin
@@ -102,28 +85,6 @@ end
     # @test isapprox(mean(At[5, :]), 0, atol=10)
     # @test isapprox(var(At[5, :]), 1, atol=10)
 
-
-
-    # convert_ht_trans!
-    @time H  = convert_ht(Float64, vcffile)
-    @time Ht = convert_ht(Float64, vcffile, trans=true)
-    @test all(Ht .== H')
-
-    # test if eof(reader) is working
-    out = Matrix{Float64}(undef, 382, 1400)
-    reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_ht!(out, reader)
-    @test size(out) == (382, 1400)
-    @test all(out[:, 1358:end] .== 0.0)
-
-    out = Matrix{Float64}(undef, 1400, 382)
-    reader = VCF.Reader(openvcf(vcffile, "r"))
-    copy_ht_trans!(out, reader)
-    @test size(out) == (1400, 382)
-    @test all(out[1358:end, :] .== 0.0)
-
-
-
     # convert_ds_trans!
     @time D  = convert_ds(Float64, vcffile)
     @time Dt = convert_ds(Float64, vcffile, trans=true)
@@ -141,4 +102,33 @@ end
     copy_ds_trans!(out, reader)
     @test size(out) == (1400, 191)
     @test all(ismissing.(out[1358:end, :]))
+end
+
+@testset "record info" begin
+    vcffile = "test.08Jun17.d8b.vcf"
+    X, sampleID, chr, pos, SNPid, ref, alt = convert_gt(Float64, vcffile, 
+        trans=false, save_snp_info=true, msg = "Importing genotype file...")
+    Xt, sampleIDt, chrt, post, SNPidt, reft, altt = convert_gt(Float64, vcffile, 
+        trans=true, save_snp_info=true, msg = "Importing genotype file...")
+
+    @test all(X .== Xt')
+    @test all(sampleID .== sampleIDt)
+    @test all(chr .== chrt)
+    @test all(pos .== post)
+    @test all(SNPid .== SNPidt)
+    @test all(ref .== reft)
+    @test all(alt .== altt)
+
+    D, sampleID, chr, pos, SNPid, ref, alt = convert_ds(Float64, vcffile, 
+        trans=false, save_snp_info=true, msg = "Importing genotype file...")
+    Dt, sampleIDt, chrt, post, SNPidt, reft, altt = convert_ds(Float64, vcffile, 
+        trans=true, save_snp_info=true, msg = "Importing genotype file...")
+
+    @test all(D .== Dt')
+    @test all(sampleID .== sampleIDt)
+    @test all(chr .== chrt)
+    @test all(pos .== post)
+    @test all(SNPid .== SNPidt)
+    @test all(ref .== reft)
+    @test all(alt .== altt)
 end

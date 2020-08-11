@@ -22,8 +22,7 @@ end
     copy_gt!(A, reader; ...)
 
 Fill the rows of matrix `A` by the GT data from VCF records in `reader`.
-Records with missing genotypes (i.e. GT field is `.\.` or `.|.`) are converted
-to `missing`.
+Records with missing genotypes are converted to `missing`.
 
 # Input
 - `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each
@@ -70,7 +69,8 @@ function copy_gt!(
     record = VCF.Record()
     for j in 1:size(A, 2)
         if eof(reader)
-            @warn("Reached end of reader; columns $j-$(size(A, 2)) are set to missing values")
+            @warn("Reached end of reader; columns $j-$(size(A, 2)) are " *
+                "set to missing values")
             fill!(view(A, :, j:size(A, 2)), missing)
             break
         else
@@ -125,7 +125,7 @@ end
 
 Fill the rows of matrix `A` by the GT data from VCF records in `reader` where
 the ALT allele in each record is interpreted as a `1`. Records with missing
-genotypes (i.e. GT field is `.\.` or `.|.`) are converted to `missing`.
+genotypes are converted to `missing`.
 
 # Input
 - `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each
@@ -230,8 +230,7 @@ end
     convert_gt(t, vcffile; [impute=false], [center=false], [scale=false])
 
 Convert the GT data from a VCF file to a matrix of type `t`, allowing for 
-missing values. Records with missing genotypes (i.e. GT field is `.\.` or `.|.`)
-are converted to `missing`.
+missing values. Records with missing genotypes are converted to `missing`.
 
 # Input
 - `t`: a type `t <: Real`
@@ -444,7 +443,7 @@ function copy_ht!(
             else # not missing
                 record.data[geno[gtkey][2]] == 0x7c || 
                     error("Allele separator should be '|' but was ", 
-                    record.data[geno[gtkey][2]])
+                    String([record.data[geno[gtkey][2]]]))
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
@@ -534,7 +533,7 @@ function copy_ht_trans!(
             else # not missing
                 record.data[geno[gtkey][2]] == 0x7c || 
                     error("Allele separator should be '|' but was ", 
-                    record.data[geno[gtkey][2]])
+                    String([record.data[geno[gtkey][2]]]))
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
