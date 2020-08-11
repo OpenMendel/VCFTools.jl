@@ -75,36 +75,27 @@ We'd like to convert the genotype data (GT field) into the matrix of minor allel
 
 ## Genetic model
 
-There are differnt SNP models. The *additive* SNP model essentially counts the number of **minor allele** (0, 1 or 2) per genotype. Other SNP models are *dominant* and *recessive*, both in terms of the **minor allele**. `VCFTools.jl` allows users to optionally check whether the `ALT` allele is the minor allele on-the-fly. When `ALT` allele is the minor allele, genotypes are translated to real number according to
+There are differnt SNP models. The *additive* SNP model essentially counts the number of **minor allele** (0, 1 or 2) per genotype. Other SNP models are *dominant* and *recessive*, both in terms of the **minor allele**. `VCFTools.jl` always assume the `ALT` allele in the VCF file is the minor allele. Thus genotypes are translated to real number according to
 
 | Genotype | VCF GT | `model=:additive` | `model=:dominant` | `model=:recessive` |    
 |:---:|:---:|:---:|:---:|:---:|  
-| ALT,ALT | 0/0, 0&#124;0 | 2 | 1 | 1 |  
-| REF,ALT | 0/1, 0&#124;1 | 1 | 1 | 0 |  
-| REF,REF | 1/1, 1&#124;1 | 0 | 0 | 0 |  
+| ALT, ALT | 0/0, 0&#124;0 | 2 | 1 | 1 |  
+| REF, ALT | 0/1, 0&#124;1 | 1 | 1 | 0 |  
+| REF, REF | 1/1, 1&#124;1 | 0 | 0 | 0 |  
 | missing | . | Null | Null | Null | 
 
-When `REF` allele is the minor allele, genotypes are translated according to
-
-| Genotype | VCF GT | `model=:additive` | `model=:dominant` | `model=:recessive` |    
-|:---:|:---:|:---:|:---:|:---:|  
-| ALT,ALT | 0/0, 0&#124;0 | 0 | 0 | 0 |  
-| REF,ALT | 0/1, 0&#124;1, 1/0, 1&#124;0 | 1 | 1 | 0 |  
-| REF,REF | 1/1, 1&#124;1 | 2 | 1 | 1 |  
-| missing | . | Null | Null | Null |
-
-To properly record the missing genotypes, VCFTools convert VCF GT data to matrix `A` where element type of `A` is either a numeric number, or missing value. In Julia, this means `eltype(A) <: Union{Missing, Real}` where `<:` means "is a subtype".
+To properly record the missing genotypes, VCFTools convert VCF GT data to matrix `A` where element type of `A` is either a numeric number, or missing value. In Julia, this means `eltype(A) <: Union{Missing, Real}` where `<:` means "is a subtype". 
 
 ## Convert GT data into a numeric genotype matrix
 
-Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, Int8}}`. Here `as_minorallele = false` indicates that `VCFTools.jl` will copy the `0`s and `1`s of the file directly into `A`, without checking if ALT or REF is the minor allele. 
+Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, Int8}}`. `VCFTools.jl` will copy the `0`s and `1`s of the file directly into `A` without checking if ALT or REF is the minor allele. 
 
 
 ```julia
-@time A = convert_gt(Int8, "test.08Jun17.d8b.vcf.gz"; as_minorallele = false, model = :additive, impute = false, center = false, scale = false)
+@time A = convert_gt(Int8, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = false, center = false, scale = false)
 ```
 
-      1.524313 seconds (6.51 M allocations: 373.169 MiB, 5.03% gc time)
+      2.115475 seconds (8.31 M allocations: 427.711 MiB, 5.54% gc time)
 
 
 
@@ -140,14 +131,14 @@ Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, 
 
 
 
-Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a numeric array. This checks which of `ALT/REF` is the minor allele, imputes the missing genotypes according to allele frequency, centers the dosages around 2MAF, and scales the dosages by `sqrt(2MAF*(1-MAF))`.
+We can also optionally impute missing genotypes according to allele frequency, centers the dosages around 2MAF, and scales the dosages by `sqrt(2MAF*(1-MAF))`.
 
 
 ```julia
-@time A = convert_gt(Float64, "test.08Jun17.d8b.vcf.gz"; as_minorallele = true, model = :additive, impute = true, center = true, scale = true)
+@time A = convert_gt(Float64, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = true, center = true, scale = true)
 ```
 
-      0.331800 seconds (1.54 M allocations: 127.557 MiB, 7.04% gc time)
+      0.331981 seconds (1.43 M allocations: 87.521 MiB, 4.29% gc time)
 
 
 
@@ -185,14 +176,14 @@ Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a numeric array. This che
 
 ## Convert GT data into haplotypes panels
 
-In certain applications such as genotype imputation, the genotypes are *phased*. In this case, the alleles are separated by a `'|'` (e.g. `0|0`). We can import these individual haplotypes into a numeric matrix via `convert_ht`
+In certain applications such as genotype imputation, the genotypes are *phased*. In this case, the alleles are separated by a `'|'` so we can distinguish heterozygote genotypes (`1|0` vs `0|1`). Haplotypes can be imported via `convert_ht`
 
 
 ```julia
-@time H = convert_ht(Int8, "test.08Jun17.d8b.vcf.gz"; as_minorallele = false)
+@time H = convert_ht(Int8, "test.08Jun17.d8b.vcf.gz")
 ```
 
-      0.262581 seconds (795.37 k allocations: 67.710 MiB, 5.38% gc time)
+      0.305814 seconds (1.27 M allocations: 77.888 MiB, 6.44% gc time)
 
 
 
@@ -228,7 +219,7 @@ In certain applications such as genotype imputation, the genotypes are *phased*.
 
 
 
-Note there are 382 rows to represent the haplotypes of 191 samples. 
+Note there are 382 rows to represent the haplotypes of 191 samples. The first sample occupies row 1 & 2, the second sample occupies 3&4...etc.
 
 !!! note
 
@@ -236,14 +227,14 @@ Note there are 382 rows to represent the haplotypes of 191 samples.
     
 ## Convert DS data into dosages
 
-Often data contains dosage information. One can similarly import dosage into a numeric matrix. In this case, matrix values can be any number between 0 and 2. 
+Often data contains dosage information. In this case, matrix values can be any number between 0 and 2. One can similarly import dosage into a numeric matrix.
 
 
 ```julia
 @time D = convert_ds(Float64, "test.08Jun17.d8b.vcf.gz"; key="DS", impute=false, center=false, scale=false)
 ```
 
-      0.286851 seconds (2.34 M allocations: 195.497 MiB, 7.33% gc time)
+      0.372537 seconds (2.26 M allocations: 157.272 MiB, 6.20% gc time)
 
 
 
@@ -323,8 +314,29 @@ end
 close(reader)
 ```
 
-    ┌ Warning: Only 7 records left in reader; columns 8-25 are set to missing values
-    └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/convert.jl:67
+    ┌ Warning: Reached end of reader; columns 7-25 are set to missing values
+    └ @ VCFTools /Users/biona001/.julia/dev/VCFTools/src/convert.jl:72
 
 
 As the warning suggests, the last window has less than 25 markers. The remaining columns in the matrix `g` are set to missing values.
+
+## Sample ID, Chromosome, position, REF/ALT alleles
+
+All function above can also save sample ID, chromosome, SNP position, and the REF/ALT alleles. For `convert_gt`, `convert_ht`, and `convert_ds`, this is achieved using the optional argument
+`save_snp_info = true`
+
+
+```julia
+@time X, X_sampleID, X_chr, X_pos, X_ids, X_ref, X_alt = convert_gt(Float64, 
+    "test.08Jun17.d8b.vcf.gz", save_snp_info=true)
+```
+
+      0.339747 seconds (875.53 k allocations: 60.335 MiB, 2.11% gc time)
+
+
+
+
+
+    (Union{Missing, Float64}[0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0 0.0], ["HG00096", "HG00097", "HG00099", "HG00100", "HG00101", "HG00102", "HG00103", "HG00104", "HG00106", "HG00108"  …  "HG00403", "HG00404", "HG00406", "HG00407", "HG00418", "HG00419", "HG00421", "HG00422", "HG00427", "HG00428"], ["22", "22", "22", "22", "22", "22", "22", "22", "22", "22"  …  "22", "22", "22", "22", "22", "22", "22", "22", "22", "22"], [20000086, 20000146, 20000199, 20000291, 20000428, 20000683, 20000771, 20000793, 20000810, 20000814  …  20099406, 20099579, 20099654, 20099659, 20099660, 20099674, 20099716, 20099752, 20099891, 20099941], Array{String,1}[["rs138720731"], ["rs73387790"], ["rs183293480"], ["rs185807825"], ["rs55902548"], ["rs142720028"], ["rs114690707"], ["rs189842693"], ["rs147349046"], ["rs183154520"]  …  ["rs41281429"], ["rs145947632"], ["rs9605066"], ["rs142467695"], ["rs74605905"], ["rs145967409"], ["rs139838034"], ["rs73389792"], ["rs1048659"], ["rs113958995"]], ["T", "G", "A", "G", "G", "A", "A", "T", "C", "T"  …  "G", "CCA", "C", "C", "C", "T", "C", "G", "C", "T"], Array{String,1}[["C"], ["A"], ["C"], ["T"], ["T"], ["G"], ["C"], ["C"], ["T"], ["C"]  …  ["C"], ["C"], ["T"], ["T"], ["T"], ["C"], ["G"], ["T"], ["G"], ["A"]])
+
+

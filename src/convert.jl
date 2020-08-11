@@ -441,9 +441,6 @@ function copy_ht!(
                 error("Missing GT field for record $j entry $(2i - 1). " * 
                     "Reference panels cannot have missing data!")
             else # not missing
-                record.data[geno[gtkey][2]] == 0x7c || 
-                    error("Allele separator should be '|' but was ", 
-                    String([record.data[geno[gtkey][2]]]))
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
@@ -531,9 +528,6 @@ function copy_ht_trans!(
                 error("Missing GT field for record $j entry $(2i - 1). " *
                     "Reference panels cannot have missing data!")
             else # not missing
-                record.data[geno[gtkey][2]] == 0x7c || 
-                    error("Allele separator should be '|' but was ", 
-                    String([record.data[geno[gtkey][2]]]))
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
                 a2 = record.data[geno[gtkey][3]] == 0x31
