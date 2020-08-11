@@ -57,21 +57,18 @@ function filter(
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
     writer = VCF.Writer(openvcf(des, "w"), filter_header(reader, sample_mask))
-    record = read(reader)
     pmeter = Progress(records, 5, "filtering vcf file...")
 
     # write to des
-    for i in eachindex(record_mask)
-        if record_mask[i] 
+    for (i, record) in enumerate(reader)
+        if record_mask[i] # keep this record
             if !allow_multiallelic && length(VCF.alt(record)) > 1 
-                !eof(reader) && read!(reader, record)
                 next!(pmeter)
                 continue
             end
             VCFTools.filter_record!(record, sample_mask)
             VCF.write(writer, record)
         end
-        read!(reader, record)
         next!(pmeter)
     end
 
