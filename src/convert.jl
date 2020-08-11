@@ -19,13 +19,14 @@ function convert_gt(
 end
 
 """
-    copy_gt!(A, reader; [model=:additive], [impute=false], [center=false], [scale=false])
+    copy_gt!(A, reader; ...)
 
-Fill the columns of matrix `A` by the GT data from VCF records in `reader` where the ALT allele
-in each record is interpreted as a `1`. Record without GT field is converted to `missing`.
+Fill the rows of matrix `A` by the GT data from VCF records in `reader`.
+Records with missing genotypes are converted to `missing`.
 
 # Input
-- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each row is a person's genotype. 
+- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each
+    row is a person's genotype. 
 - `reader`: a VCF reader
 
 # Optional argument
@@ -33,7 +34,16 @@ in each record is interpreted as a `1`. Record without GT field is converted to 
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing. 
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 
 # Output
 - `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
@@ -47,13 +57,20 @@ function copy_gt!(
     center::Bool = false,
     scale::Bool = false,
     msg::String = "", 
-    record_positions::Union{AbstractVector, Nothing} = nothing
+    sampleID::Union{AbstractVector, Nothing} = nothing,
+    record_chr::Union{AbstractVector, Nothing} = nothing,
+    record_pos::Union{AbstractVector, Nothing} = nothing,
+    record_ids::Union{AbstractVector, Nothing} = nothing,
+    record_ref::Union{AbstractVector, Nothing} = nothing,
+    record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg))
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
     for j in 1:size(A, 2)
         if eof(reader)
-            @warn("Reached end of reader; columns $j-$(size(A, 2)) are set to missing values")
+            @warn("Reached end of reader; columns $j-$(size(A, 2)) are " *
+                "set to missing values")
             fill!(view(A, :, j:size(A, 2)), missing)
             break
         else
@@ -61,13 +78,17 @@ function copy_gt!(
         end
         gtkey = VCF.findgenokey(record, "GT")
         # if no GT field, fill by missing values
-        if gtkey == nothing
+        if gtkey === nothing
             @inbounds @simd for i in 1:size(A, 1)
                 A[i, j] = missing
             end
         end
-        # save record's position
-        record_positions == nothing || (record_positions[j] = VCF.pos(record))
+        # save record's information
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
         # second pass: impute, convert, center, scale
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
         ct = 2alt_freq
@@ -100,14 +121,15 @@ function copy_gt!(
 end
 
 """
-    copy_gt_trans!(A, reader; [model=:additive], [impute=false], [center=false], [scale=false])
+    copy_gt_trans!(A, reader; ...)
 
-Fill the columns of matrix `A` by the GT data from VCF records in `reader` where the ALT allele
-in each record is interpreted as a `1`. Record without GT field is converted to `missing`. If an 
-optional `record_positions` vector is supplied, it will be filled with each record's position.
+Fill the rows of matrix `A` by the GT data from VCF records in `reader` where
+the ALT allele in each record is interpreted as a `1`. Records with missing
+genotypes are converted to `missing`.
 
 # Input
-- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each column is one person's genotype. 
+- `A`: a matrix or vector such that `eltype(A) <: Union{Missing, Real}`. Each
+    column is one person's genotype. 
 - `reader`: a VCF reader
 
 # Optional argument
@@ -115,8 +137,16 @@ optional `record_positions` vector is supplied, it will be filled with each reco
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-- `save_snp_info`: Boolean. If true, will also output sample ID, chrom, pos, snp id, ref, and alt vectors
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing. 
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 
 # Output
 - `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
@@ -138,12 +168,13 @@ function copy_gt_trans!(
     record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
-    sampleID == nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:size(A, 1)
         if eof(reader)
-            @warn("Reached end of reader; rows $j-$(size(A, 1)) are set to missing values")
+            @warn("Reached end of reader; rows $j-$(size(A, 1)) are set to " * 
+                "missing values")
             fill!(view(A, j:size(A, 1), :), missing)
             break
         else
@@ -151,15 +182,15 @@ function copy_gt_trans!(
         end
         gtkey = VCF.findgenokey(record, "GT")
         # if no GT field, fill by missing values
-        if gtkey == nothing
+        if gtkey === nothing
             fill!(view(A, j, :), missing)
         end
         # save record's information
-        record_chr == nothing || (record_chr[j] = VCF.chrom(record))
-        record_pos == nothing || (record_pos[j] = VCF.pos(record))
-        record_ids == nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
-        record_ref == nothing || (record_ref[j] = VCF.ref(record))
-        record_alt == nothing || (record_alt[j] = VCF.alt(record))
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
         # second pass: impute, convert, center, scale
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing)
         ct = 2alt_freq
@@ -191,15 +222,15 @@ function copy_gt_trans!(
 end
 
 function geno_ismissing(record::VCF.Record, range::UnitRange{Int})
-    return record.data[first(range)] == UInt8('.') || record.data[last(range)] == UInt8('.')
+    return record.data[first(range)] == UInt8('.') || 
+           record.data[last(range)] == UInt8('.')
 end
 
 """
-    convert_gt!(t, vcffile; [impute=false], [center=false], [scale=false])
+    convert_gt(t, vcffile; [impute=false], [center=false], [scale=false])
 
 Convert the GT data from a VCF file to a matrix of type `t`, allowing for 
-missing values. Each column of the matrix corresponds to one VCF record. 
-Record without GT field is converted to equivalent of missing genotypes.
+missing values. Records with missing genotypes are converted to `missing`.
 
 # Input
 - `t`: a type `t <: Real`
@@ -210,13 +241,23 @@ Record without GT field is converted to equivalent of missing genotypes.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `trans`: whether to import data transposed so that each column is 1 genotype, default `false`
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-- `save_snp_info`: Boolean. If true, will also output sample ID, chrom, pos, snp id, ref, and alt vectors
+- `trans`: whether to import data transposed so that each column is 1 genotype,
+    default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing. 
+- `save_snp_info`: Boolean. If true, will also output sample ID, chrom, pos,
+    snp id, ref, and alt vectors
 
 # Output
-- `A`: matrix where `eltype(A) <: Union{missing, Real}`. `ismissing(A[i, j]) == true`
-    indicates missing genotype.
+- `out`: The genotype matrix stored in column or rows depending on `trans`.
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 """
 function convert_gt(
     t::Type{T},
@@ -241,18 +282,21 @@ function convert_gt(
 
     if trans
         out = Matrix{Union{t, Missing}}(undef, records, samples)
-        copy_gt_trans!(out, reader; model = model, impute = impute, center = center, 
-            scale = scale, msg = msg, sampleID=sampleID, record_chr=record_chr, 
-            record_pos=record_pos, record_ids=record_ids, record_ref=record_ref, 
-            record_alt=record_alt)
+        copy_gt_trans!(out, reader; model = model, impute = impute,
+            center = center, scale = scale, msg = msg, sampleID=sampleID,
+            record_chr=record_chr, record_pos=record_pos, record_ids=record_ids,
+            record_ref=record_ref, record_alt=record_alt)
     else
         out = Matrix{Union{t, Missing}}(undef, samples, records)
         copy_gt!(out, reader; model = model, impute = impute,
-            center = center, scale = scale, msg = msg)
+            center = center, scale = scale, msg = msg, sampleID=sampleID,
+            record_chr=record_chr, record_pos=record_pos, record_ids=record_ids,
+            record_ref=record_ref, record_alt=record_alt)
     end
     close(reader)
     if save_snp_info
-        return out, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt
+        return out, sampleID, record_chr, record_pos, record_ids, record_ref, 
+            record_alt
     else
         return out
     end
@@ -262,15 +306,29 @@ end
     convert_ht(t, vcffile)
 
 Converts the GT data from a VCF file to a haplotype matrix of type `t`. One 
-column of the VCF record will become 2 column in the resulting matrix. If haplotypes
-are not phased, 1 will be on the left column (i.e. `1/0`).
+VCF record will become 2 column/row in the resulting matrix. Records cannot
+have missing genotypes and the target file must be phased. 
 
 # Input
 - `t`: a type `t <: Real`. If `t` is `Bool`, output will be a BitMatrix.
-- `vcffile`: VCF file path
-- `trans`: whether to import data transposed so that each column is 1 a haplotype, default `false`.
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-- `save_snp_info`: Boolean. If true, will also output sample ID, chrom, pos, snp id, ref, and alt vectors
+- `vcffile`: a phased VCF file
+- `trans`: whether to import data transposed so that each column is 1 a
+    haplotype, default `false`.
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing. 
+- `save_snp_info`: Boolean. If true, will also output sample ID, chrom, pos,
+    snp id, ref, and alt vectors
+
+# Output
+- `out`: The haplotype matrix stored in column or rows depending on `trans`.
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 """
 function convert_ht(
     t::Type{T},
@@ -292,17 +350,19 @@ function convert_ht(
     M = (t == Bool ? BitArray{2} : Matrix{t})
     if trans
         out = M(undef, records, 2samples)
-        copy_ht_trans!(out, reader, msg = msg, sampleID=sampleID, record_chr=record_chr, 
-            record_pos=record_pos, record_ids=record_ids, record_ref=record_ref, 
-            record_alt=record_alt)
+        copy_ht_trans!(out, reader, msg = msg, sampleID=sampleID, 
+            record_chr=record_chr, record_pos=record_pos, record_ids=record_ids,
+            record_ref=record_ref, record_alt=record_alt)
     else
         out = M(undef, 2samples, records)
-        # out = Mmap.mmap(Matrix{t}, 2samples, records)
-        copy_ht!(out, reader, msg = msg)
+        copy_ht!(out, reader, msg = msg, sampleID=sampleID,
+            record_chr=record_chr, record_pos=record_pos, record_ids=record_ids,
+            record_ref=record_ref, record_alt=record_alt)
     end
     close(reader)
     if save_snp_info
-        return out, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt
+        return out, sampleID, record_chr, record_pos, record_ids, record_ref, 
+            record_alt
     else
         return out
     end
@@ -311,30 +371,48 @@ end
 """
     copy_ht!(A, reader)
 
-Fill 2 columns of `A` by the GT data from VCF records in `reader`, 
-each record filling 2 columns.The minor allele for each record is 
-the ALT allele (i.e. will read 0s and 1s of the vcffile as-is). 
-Missing GT field is NOT allowed. 
+Fill 2 columns of `A` by the GT data from VCF records in `reader`, each record
+filling 2 columns. Missing data is not allowed and genotypes must be phased. 
 
 # Input
-- `A`: matrix where rows are haplotypes. Person `i`'s haplotype are filled in rows 2i - 1 and 2i. 
+- `A`: matrix where rows are haplotypes. Person `i`'s haplotype are filled in
+    rows `2i - 1` and `2i`. 
 - `reader`: a VCF reader
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
+
+# Optional inputs
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing.
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 """
 function copy_ht!(
     A::Union{AbstractMatrix{T}, AbstractVector{T}},
     reader::VCF.Reader;
-    msg::String = ""
+    msg::String = "",
+    sampleID::Union{AbstractVector, Nothing} = nothing,
+    record_chr::Union{AbstractVector, Nothing} = nothing,
+    record_pos::Union{AbstractVector, Nothing} = nothing,
+    record_ids::Union{AbstractVector, Nothing} = nothing,
+    record_ref::Union{AbstractVector, Nothing} = nothing,
+    record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
 
     n, p = size(A)
-    nn   = Int(n / 2)
+    nn   = n >>> 1
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
     record = VCF.Record()
 
     for j in 1:p
         if eof(reader)
-            @warn("Reached end of record! Columns $j-$p are filled with $(zero(T))s and are NOT haplotypes!")
+            @warn("Reached end of record! Columns $j-$p are filled " * 
+                "with $(zero(T))s and are NOT haplotypes!")
             fill!(view(A, :, j:size(A, 2)), zero(T))
             break
         else
@@ -343,16 +421,25 @@ function copy_ht!(
         gtkey = VCF.findgenokey(record, "GT")
 
         # haplotype reference files must have GT field
-        if gtkey == nothing
-            error("Missing GT field for record $j. Reference panels cannot have missing data!")
+        if gtkey === nothing
+            error("Missing GT field for record $j. Reference panels cannot "
+                * "have missing data!")
         end
+
+        # save record's information
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
 
         # second pass: convert
         for i in 1:nn
             geno = record.genotype[i]
             # Missing genotype: dropped field or when either haplotype contains "."
             if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
-                error("Missing GT field for record $j entry $(2i - 1). Reference panels cannot have missing data!")
+                error("Missing GT field for record $j entry $(2i - 1). " * 
+                    "Reference panels cannot have missing data!")
             else # not missing
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
@@ -371,17 +458,25 @@ end
 """
     copy_ht_trans!(A, reader)
 
-Fill 2 columns of `A` by the GT data from VCF records in `reader`, 
-each record filling 2 columns. The minor allele for each record is 
-the ALT allele (i.e. will read 0s and 1s of the vcffile as-is). 
-Missing GT field is NOT allowed. If an optional `record_positions` 
-vector is supplied, it will be filled with each record's position.
+Fill 2 rows of `A` by the GT data from VCF records in `reader`, each record
+filling 2 columns. Missing data is not allowed and genotypes must be phased. 
 
 # Input
-- `A`: matrix where columns are haplotypes. Person `i`'s haplotype are filled in columns 2i - 1 and 2i. 
+- `A`: matrix where columns are haplotypes. Person `i`'s haplotype are filled in
+    rows `2i - 1` and `2i`.
 - `reader`: a VCF reader
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-- `record_positions`: Vector where `record_positions[i]` is `A[i, :]`'s record (SNP) position
+
+# Optional inputs
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing.
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 """
 function copy_ht_trans!(
     A::Union{AbstractMatrix{T}, AbstractVector{T}},
@@ -396,14 +491,15 @@ function copy_ht_trans!(
     ) where T <: Real
 
     p, n = size(A)
-    nn   = Int(n / 2)
+    nn   = n >>> 1
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
-    sampleID == nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:p
         if eof(reader)
-            @warn("Reached end of record! Rows $j-$p are filled with $(zero(T))s and are NOT haplotypes!")
+            @warn("Reached end of record! Rows $j-$p are filled with "
+                * "$(zero(T))s and are NOT haplotypes!")
             fill!(view(A, j:size(A, 2)), zero(T))
             break
         else
@@ -412,15 +508,16 @@ function copy_ht_trans!(
         gtkey = VCF.findgenokey(record, "GT")
 
         # save record's information
-        record_chr == nothing || (record_chr[j] = VCF.chrom(record))
-        record_pos == nothing || (record_pos[j] = VCF.pos(record))
-        record_ids == nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
-        record_ref == nothing || (record_ref[j] = VCF.ref(record))
-        record_alt == nothing || (record_alt[j] = VCF.alt(record))
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
 
         # haplotype reference files must have GT field
-        if gtkey == nothing
-            error("Missing GT field for record $j. Reference panels cannot have missing data!")
+        if gtkey === nothing
+            error("Missing GT field for record $j. Reference panels cannot" *
+                " have missing data!")
         end
 
         # second pass: convert
@@ -428,7 +525,8 @@ function copy_ht_trans!(
             geno = record.genotype[i]
             # Missing genotype: dropped field or when either haplotype contains "."
             if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
-                error("Missing GT field for record $j entry $(2i - 1). Reference panels cannot have missing data!")
+                error("Missing GT field for record $j entry $(2i - 1). " *
+                    "Reference panels cannot have missing data!")
             else # not missing
                 # "0" (REF) => 0x30, "1" (ALT) => 0x31
                 a1 = record.data[geno[gtkey][1]] == 0x31
@@ -445,24 +543,38 @@ function copy_ht_trans!(
 end
 
 """
-    convert_ds(t, vcffile; [key = "DS"], [impute=false], [center=false], [scale=false])
+    convert_ds(t, vcffile; [key = "DS"], ...)
 
-Converts dosage data from a VCF file to a numeric matrix of type `t`. Here `key` specifies
-the FORMAT field of the VCF file that encodes the dosage (default = "DS"). If `impute=true`,
-we fill missing entries with 2 times the ALT allele frequency. 
+Converts dosage data from a VCF file to a numeric matrix of type `t`. Here `key`
+specifies the FORMAT field of the VCF file that encodes the dosage
+(default = "DS"). 
 
 # Arguments
 - `t`: type of output matrix. 
 - `vcffile`: VCF file path
 
 # Optional argument
-- `key`: The FIELD name if the VCF file that encodes dosages, defaults to `"DS"`
+- `key`: The FIELD name of the VCF file that encodes dosages, defaults to `"DS"`
 - `model`: genetic model `:additive` (default), `:dominant`, or `:recessive`
-- `impute`: impute missing genotype or not, default `false`
+- `impute`: impute missing genotype with 2 times the ALT allele frequency or
+    not. Default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `trans`: whether to import data transposed so that each column is 1 genotype, default `false`
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
+- `trans`: whether to import data transposed so that each column is 1 genotype,
+    default `false`
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing. 
+
+# Output
+- `out`: Dosage matrix 
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 """
 function convert_ds(
     t::Type{T},
@@ -473,27 +585,47 @@ function convert_ds(
     center::Bool = false,
     scale::Bool = false,
     trans::Bool = false,
+    save_snp_info::Bool=false,
     msg::String = ""
     ) where T <: Real
     reader = VCF.Reader(openvcf(vcffile, "r"))
+    records = nrecords(vcffile)
+    samples = nsamples(vcffile)
+    sampleID   = (save_snp_info ? Vector{String}(undef, samples) : nothing)
+    record_chr = (save_snp_info ? Vector{String}(undef, records) : nothing)
+    record_pos = (save_snp_info ? zeros(Int, records) : nothing)
+    record_ids = (save_snp_info ? Vector{Vector{String}}(undef, records) : nothing)
+    record_ref = (save_snp_info ? Vector{String}(undef, records) : nothing)
+    record_alt = (save_snp_info ? Vector{Vector{String}}(undef, records) : nothing)
+
     if trans
-        out = Matrix{Union{Missing, t}}(undef, nrecords(vcffile), nsamples(vcffile))
+        out = Matrix{Union{Missing, t}}(undef, records, samples)
         copy_ds_trans!(out, reader, key = key, impute = impute, center = center, 
-            scale = scale, msg = msg)
+            scale = scale, msg = msg, sampleID=sampleID, record_chr=record_chr, 
+            record_pos=record_pos, record_ids=record_ids, record_ref=record_ref, 
+            record_alt=record_alt)
     else
-        out = Matrix{Union{Missing, t}}(undef, nsamples(vcffile), nrecords(vcffile))
+        out = Matrix{Union{Missing, t}}(undef, samples, records)
         copy_ds!(out, reader, key = key, impute = impute, center = center, 
-            scale = scale, msg = msg)
+            scale = scale, msg = msg, sampleID=sampleID, record_chr=record_chr, 
+            record_pos=record_pos, record_ids=record_ids, record_ref=record_ref, 
+            record_alt=record_alt)
     end
     close(reader)
-    return out
+    if save_snp_info
+        return out, sampleID, record_chr, record_pos, record_ids, record_ref,
+            record_alt
+    else
+        return out
+    end
 end
 
 """
-    copy_ds!(A, reader; [key="DS"], [model=:additive], [impute=false], [center=false], [scale=false])
+    copy_ds!(A, reader; [key="DS"], ...)
 
-Fill the columns of matrix `A` by the dosage data from VCF records in `reader`. Record without GT field 
-is converted to `missing`. 
+Fill the columns of matrix `A` by the dosage data from VCF records in `reader`.
+Records with missing fields (i.e. `key` field is `.`) are converted to
+`missing`.
 
 # Input
 - `A`: matrix where rows are dosages. 
@@ -505,11 +637,16 @@ is converted to `missing`.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-
-# Output
-- `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
-    `ismissing(A[i, j]) == false` for all entries.
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing.
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 """
 function copy_ds!(
     A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
@@ -519,13 +656,21 @@ function copy_ds!(
     impute::Bool = false,
     center::Bool = false,
     scale::Bool = false,
-    msg::String = ""
+    msg::String = "",
+    sampleID::Union{AbstractVector, Nothing} = nothing,
+    record_chr::Union{AbstractVector, Nothing} = nothing,
+    record_pos::Union{AbstractVector, Nothing} = nothing,
+    record_ids::Union{AbstractVector, Nothing} = nothing,
+    record_ref::Union{AbstractVector, Nothing} = nothing,
+    record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg)) # update every 5 seconds
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
     for j in 1:size(A, 2)
         if eof(reader)
-            @warn("Reached end of reader; columns $j-$(size(A, 2)) are set to missing values")
+            @warn("Reached end of reader; columns $j-$(size(A, 2)) are set " * 
+                "to missing values")
             fill!(view(A, :, j:size(A, 2)), missing)
             break
         else
@@ -534,11 +679,18 @@ function copy_ds!(
         dskey = VCF.findgenokey(record, key)
 
         # if no dosage field, fill by missing values
-        if dskey == nothing
+        if dskey === nothing
             @inbounds @simd for i in 1:size(A, 1)
                 A[i, j] = missing
             end
         end
+
+        # save record's information
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
 
         # loop over every marker in record
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing) 
@@ -563,10 +715,10 @@ function copy_ds!(
 end
 
 """
-    copy_ds_trans!(A, reader; [key="DS"], [model=:additive], [impute=false], [center=false], [scale=false])
+    copy_ds_trans!(A, reader; [key="DS"], ...)
 
-Fill the columns of matrix `A` by the dosage data from VCF records in `reader`. Record without GT field 
-is converted to `missing`. 
+Fill the rows of matrix `A` by the dosage data from VCF records in `reader`.
+Records with missing fields (i.e. `key` field is `.`) are converted to `missing`.
 
 # Input
 - `A`: matrix where columns are dosages. 
@@ -578,11 +730,16 @@ is converted to `missing`.
 - `impute`: impute missing genotype or not, default `false`
 - `center`: center gentoype by 2maf or not, default `false`
 - `scale`: scale genotype by 1/√2maf(1-maf) or not, default `false`
-- `msg`: A message that will be printed to indicate progress. Defaults to not printing. 
-
-# Output
-- `A`: `ismissing(A[i, j]) == true` indicates missing genotype. If `impute=true`,
-    `ismissing(A[i, j]) == false` for all entries.
+- `msg`: A message that will be printed to indicate progress. Defaults to
+    not printing. 
+- `sampleID`: The sample ID for each person
+- `record_chr`: The chromosome number for each record
+- `record_pos`: The position for each record
+- `record_ids`: The record ID for each record. Only the first one is
+    recorded when there are multiple IDs. 
+- `record_ref`: The ref allele for each record
+- `record_alt`: The alternate allele for each record. Only the first one is
+    recorded when there are multiple alternate alleles. 
 """
 function copy_ds_trans!(
     A::Union{AbstractMatrix{Union{Missing, T}}, AbstractVector{Union{Missing, T}}},
@@ -592,13 +749,21 @@ function copy_ds_trans!(
     impute::Bool = false,
     center::Bool = false,
     scale::Bool = false,
-    msg::String = ""
+    msg::String = "",
+    sampleID::Union{AbstractVector, Nothing} = nothing,
+    record_chr::Union{AbstractVector, Nothing} = nothing,
+    record_pos::Union{AbstractVector, Nothing} = nothing,
+    record_ids::Union{AbstractVector, Nothing} = nothing,
+    record_ref::Union{AbstractVector, Nothing} = nothing,
+    record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg)) # update every 5 seconds
+    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
     record = VCF.Record()
     for j in 1:size(A, 1)
         if eof(reader)
-            @warn("Reached end of reader; rows $j-$(size(A, 1)) are set to missing values")
+            @warn("Reached end of reader; rows $j-$(size(A, 1)) " * 
+                "are set to missing values")
             fill!(view(A, j:size(A, 2), :), missing)
             break
         else
@@ -607,12 +772,19 @@ function copy_ds_trans!(
         dskey = VCF.findgenokey(record, key)
 
         # if no dosage field, fill by missing values
-        if dskey == nothing
+        if dskey === nothing
             @inbounds @simd for i in 1:size(A, 2)
                 A[j, i] = missing
             end
         end
 
+        # save record's information
+        record_chr === nothing || (record_chr[j] = VCF.chrom(record))
+        record_pos === nothing || (record_pos[j] = VCF.pos(record))
+        record_ids === nothing || (record_ids[j] = try VCF.id(record) catch; ["."] end)
+        record_ref === nothing || (record_ref[j] = VCF.ref(record))
+        record_alt === nothing || (record_alt[j] = VCF.alt(record))
+        
         # loop over every marker in record
         _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing) 
         ct = 2alt_freq

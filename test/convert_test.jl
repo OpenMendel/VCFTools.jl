@@ -102,8 +102,6 @@ end
     # @test isapprox(mean(At[5, :]), 0, atol=10)
     # @test isapprox(var(At[5, :]), 1, atol=10)
 
-
-
     # convert_ht_trans!
     @time H  = convert_ht(Float64, vcffile)
     @time Ht = convert_ht(Float64, vcffile, trans=true)
@@ -122,8 +120,6 @@ end
     @test size(out) == (1400, 382)
     @test all(out[1358:end, :] .== 0.0)
 
-
-
     # convert_ds_trans!
     @time D  = convert_ds(Float64, vcffile)
     @time Dt = convert_ds(Float64, vcffile, trans=true)
@@ -141,4 +137,33 @@ end
     copy_ds_trans!(out, reader)
     @test size(out) == (1400, 191)
     @test all(ismissing.(out[1358:end, :]))
+end
+
+@testset "record info" begin
+    vcffile = "test.08Jun17.d8b.vcf"
+    X, sampleID, chr, pos, SNPid, ref, alt = convert_gt(Float64, vcffile, 
+        trans=false, save_snp_info=true, msg = "Importing genotype file...")
+    Xt, sampleIDt, chrt, post, SNPidt, reft, altt = convert_gt(Float64, vcffile, 
+        trans=true, save_snp_info=true, msg = "Importing genotype file...")
+
+    @test all(X .== Xt')
+    @test all(sampleID .== sampleIDt)
+    @test all(chr .== chrt)
+    @test all(pos .== post)
+    @test all(SNPid .== SNPidt)
+    @test all(ref .== reft)
+    @test all(alt .== altt)
+
+    D, sampleID, chr, pos, SNPid, ref, alt = convert_ds(Float64, vcffile, 
+        trans=false, save_snp_info=true, msg = "Importing genotype file...")
+    Dt, sampleIDt, chrt, post, SNPidt, reft, altt = convert_ds(Float64, vcffile, 
+        trans=true, save_snp_info=true, msg = "Importing genotype file...")
+
+    @test all(D .== Dt')
+    @test all(sampleID .== sampleIDt)
+    @test all(chr .== chrt)
+    @test all(pos .== post)
+    @test all(SNPid .== SNPidt)
+    @test all(ref .== reft)
+    @test all(alt .== altt)
 end
