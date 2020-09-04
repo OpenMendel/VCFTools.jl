@@ -10,15 +10,15 @@ function grm(
     method::Symbol = :GRM,
     minmaf::Real = 0.01,
     cinds::Union{Nothing, AbstractVector{<:Integer}} = nothing,
-    t::Type{T} = Float64,
-    scale_missing::Bool = false
+    t::Type{T} = Float64
     ) where T <: Real
 
-    # load genotype into memor. Each row is a sample
+    # load genotype into memory. Each row is a sample
     x = convert_gt(t, vcffile, model=:additive, msg="importing genotypes")
     
     # compute summary statistics
     n, p = size(x)
+    mis = zeros(n) # per-sample missing data
     maf = zeros(p) # minor allele frequency
     wts = zeros(p) # inverse standard deviation
     cts = zeros(p) # mean
@@ -27,6 +27,7 @@ function grm(
         for j in 1:n
             if ismissing(x[j, i])
                 nmissing += 1
+                mis[j] += 1
             elseif x[j, i] == 0
                 n00 += 1
             elseif x[j, i] == 1
@@ -46,10 +47,11 @@ function grm(
         wts[i] = altfreq == 0 ? 1.0 : 1.0 / √(2altfreq * (1 - altfreq))
     end
     
+    mis ./= p
     colinds = something(cinds, maf .≥ minmaf)
 
     return @views grm!(x[:, colinds], method, maf[colinds], wts[colinds], 
-        cts[colinds], scale_missing)
+        cts[colinds], mis)
 end
 
 """
@@ -66,7 +68,7 @@ function grm!(
     maf::AbstractVector,
     wts::AbstractVector,
     cts::AbstractVector,
-    scale_missing::Bool
+    mis::AbstractVector
     )
     m, n = size(G)
     if method == :GRM
@@ -90,7 +92,15 @@ function grm!(
     else
         throw(ArgumentError("method should be :GRM, :MoM, or :Robust"))
     end
-    Φ
+    
+    # scale missing data
+    @inbounds for i in 1:m
+        @simd for j in 1:m
+            Φ[j, i] /= ((1 - mis[i]) * (1 - mis[j]))
+        end
+    end
+
+    return Φ
 end
 
 function _impute_center_scale!(
@@ -99,8 +109,7 @@ function _impute_center_scale!(
     cts::AbstractVector;
     impute::Bool=false,
     center::Bool=false,
-    scale::Bool=false,
-    scale_missing::Bool=false
+    scale::Bool=false
     )
     m, n = size(x)
     @inbounds for i in 1:n
