@@ -7,18 +7,19 @@ Missing data is handled according to:
 """
 function grm(
     vcffile::AbstractString;
-    method::Symbol = :GRM,
+    method::Symbol = :Robust,
     minmaf::Real = 0.01,
     cinds::Union{Nothing, AbstractVector{<:Integer}} = nothing,
-    t::Type{T} = Float64
+    t::Type{T} = Float64,
+    scale_missing::Bool = false
     ) where T <: Real
 
     # load genotype into memory. Each row is a sample
     x = convert_gt(t, vcffile, model=:additive, msg="importing genotypes")
-    
+
     # compute summary statistics
     n, p = size(x)
-    mis = zeros(n) # per-sample missing data
+    mis = zeros(n) # proportion of missingness SNPs in each sample
     maf = zeros(p) # minor allele frequency
     wts = zeros(p) # inverse standard deviation
     cts = zeros(p) # mean
@@ -46,12 +47,12 @@ function grm(
         cts[i] = 2altfreq
         wts[i] = altfreq == 0 ? 1.0 : 1.0 / √(2altfreq * (1 - altfreq))
     end
-    
+
     mis ./= p
     colinds = something(cinds, maf .≥ minmaf)
 
     return @views grm!(x[:, colinds], method, maf[colinds], wts[colinds], 
-        cts[colinds], mis)
+        cts[colinds], mis, scale_missing)
 end
 
 """
@@ -68,7 +69,8 @@ function grm!(
     maf::AbstractVector,
     wts::AbstractVector,
     cts::AbstractVector,
-    mis::AbstractVector
+    mis::AbstractVector,
+    scale_missing::Bool = false
     )
     m, n = size(G)
     if method == :GRM
@@ -92,11 +94,13 @@ function grm!(
     else
         throw(ArgumentError("method should be :GRM, :MoM, or :Robust"))
     end
-    
+
     # scale missing data
-    @inbounds for i in 1:m
-        @simd for j in 1:m
-            Φ[j, i] /= ((1 - mis[i]) * (1 - mis[j]))
+    if scale_missing
+        @inbounds for i in 1:m
+            @simd for j in 1:m
+                Φ[j, i] /= ((1 - mis[i]) * (1 - mis[j]))
+            end
         end
     end
 
