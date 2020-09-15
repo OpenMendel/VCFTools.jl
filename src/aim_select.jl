@@ -5,6 +5,11 @@ Ranks SNPs by their ancestry information content. All people should
 be assigned ancestry fractions and be fully typed. Ranks are assigned
 by a likelihood ratio heterogeneity test. Sex chromosome is ignored. 
 
+# Inputs
+- `vcffile`: VCF file, ending with .vcf or .vcf.gz
+- `sampleID_to_population`: A dictionary mapping every sample ID to a population
+    origin. 
+
 # Note:
 Method is adapted from MendelAimSelection.jl
 https://github.com/OpenMendel/MendelAimSelection.jl
@@ -13,21 +18,22 @@ function aim_select(
     vcffile::AbstractString, 
     sampleID_to_population::Dict{String, String}
     )
-    pvalues = zeros(nrecords(vcffile))
-    populations = unique_populations(sampleID_to_population)
-    alleles = Vector{Int}(undef, length(populations)),
-    genes = Vector{Int}(undef, length(populations))
+    reader = VCF.Reader(openvcf(vcffile, "r"))
+    sampleID = VCF.header(reader).sampleID
+    ethnics = ethnic(sampleID, sampleID_to_population)
+    populations = unique(ethnics)
+
+    # preallocated vectors
+    alleles = Vector{Int}(undef, length(ethnics))
+    genes = Vector{Int}(undef, length(ethnics))
+    records = nrecords(vcffile)
+    pvalues = zeros(records)
 
     # loop over SNPs
-    reader = VCF.Reader(openvcf(vcffile, "r"))
+    pbar = ProgressMeter.Progress(records, 5)
     for (i, record) in enumerate(reader)
-        # if no "GT" field, skip this record
-        if VCF.findgenokey(record, "GT") === nothing
-            pvalues[i] = 1.0
-            continue
-        end
-        pvalues[i] = aim_select(record, sampleID_to_population, populations,
-            alleles, genes)
+        pvalues[i] = aim_select(record, ethnics, alleles, genes)
+        next!(pbar)
     end
     close(out); close(reader)
 
@@ -36,12 +42,15 @@ end
 
 function aim_select(
     record::VCF.Record,
-    sampleID_to_population::Dict{String, String},
-    populations::Vector{String},
-    alleles::Vector{Int} = Vector{Int}(undef, length(populations)),
-    genes::Vector{Int} = Vector{Int}(undef, length(populations))
+    ethnics::Vector{String},
+    alleles::Vector{Int},
+    genes::Vector{Int}
     )
+    fill!(alleles, 0)
+    fill!(genes, 0)
+
     # summarize current record
+    people = length(ethnics)
     n00, n01, n11, n0, n1, altfreq, reffreq, missings,
         minorallele, maf, hwepval = gtstats(record)
 
@@ -49,12 +58,14 @@ function aim_select(
     maf ≤ 0.01 && return 1.0
 
     # Tally reference alleles and genes in each population
-    people = length(sampleID_to_population)
-    for (person, ethnic) in sampleID_to_population
+    for i in 1:people
         # which population this person belongs
-        j = something(findfirst(x -> x == ethnic, populations))
+        ethnic = ethnics[i]
+        j = something(findfirst(x -> x == ethnic, ethnics))
         # get genotype: "0" (REF) => 0x30, "1" (ALT) => 0x31
         geno = record.genotype[i]
+        gtkey = VCF.findgenokey(record, "GT")
+        gtkey === nothing && return 1.0 # if no "GT" field, skip this record
         a1 = record.data[geno[gtkey][1]] == 0x31
         a2 = record.data[geno[gtkey][3]] == 0x31
         # increment counters
@@ -64,7 +75,7 @@ function aim_select(
 
     # Add the maximum loglikelihoods for the different populations
     lrt = 0.0
-    for j = 1:length(populations)
+    for j = 1:length(ethnics)
         p = 0.0
         if genes[j] > 0
             p = alleles[j] / genes[j]
@@ -90,15 +101,19 @@ function aim_select(
 end
 
 """
-    unique_populations(x::Dict{String, String})
+    ethnic(sampleID::Vector{String}, sampleID_to_population::Dict{String, String})
 
-Computes the unique list of populations, preserving order. `x` is a `Dict`
-where sample IDs are keys and populations are values. 
+Computes the the population origin for each sample in `sampleID`. 
+`sampleID_to_population` is a `Dict` where sample IDs are keys and populations
+are values. 
 """
-function unique_populations(x::Dict{String, String})
-    populations = String[]
-    for (key, val) in x
-        val ∉ populations && push!(populations, val)
+function ethnic(
+    sampleID::Vector{String}, 
+    sampleID_to_population::Dict{String, String}
+    )
+    populations = Vector{String}(undef, length(sampleID))
+    for (i, id) in enumerate(sampleID)
+        populations[i] = sampleID_to_population[id]
     end
     return populations
 end

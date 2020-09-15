@@ -520,3 +520,26 @@ X, sampleID, record_chr, record_pos, record_ids, record_ref, record_alt = conver
 X2 = convert_gt(Float32, vcffile, trans=true)
 all(X .== X2)
 @code_warntype convert_gt(Float32, vcffile, trans=true)
+
+
+# test aim selection
+using Revise
+using GeneticVariation
+using Random
+using VCFTools
+using BenchmarkTools
+
+# get each sample's population origin
+cd("/Users/biona001/.julia/dev/MendelImpute/data/1000_genome_phase3_v5/country_origin")
+sampleID_to_population = Dict{String, String}()
+for population in readdir("data/")
+    for sample in readdir("data/" * population)
+        sample == ".DS_Store" && continue
+        sampleID_to_population[sample] = population
+    end
+end
+
+# chr22 in 1000 genomes data
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
+pvals = aim_select(vcffile, sampleID_to_population)
