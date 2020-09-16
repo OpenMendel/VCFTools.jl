@@ -528,6 +528,56 @@ using GeneticVariation
 using Random
 using VCFTools
 using BenchmarkTools
+using DataFrames
+using CSV
+
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
+reader = VCF.Reader(openvcf(vcffile, "r"))
+sampleID = VCF.header(reader).sampleID
+close(reader)
+
+# get each sample's population origin
+cd("/Users/biona001/.julia/dev/MendelImpute/data/1000_genome_phase3_v5/country_origin")
+sampleID_to_population = Dict{String, String}()
+df = DataFrame(Person = String[], Sex = Int[], Ethnic = String[])
+for population in readdir("data/")
+    for sample in readdir("data/" * population)
+        sample == ".DS_Store" && continue
+        sampleID_to_population[sample] = population
+        sample in sampleID && push!(df, (sample, 1, population))
+    end
+end
+df
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+CSV.write("chr22.1kg.phase3.ped", df)
+
+# chr22 in 1000 genomes data
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
+pvals = aim_select(vcffile, sampleID_to_population)
+snps = nrecords(vcffile)
+bonferroni = 0.05 / snps
+signifiant_snps = findall(p -> p < bonferroni, pvals)
+
+using SnpArrays
+vcf2plink("chr22.1kg.phase3.v5a.vcf.gz", "chr22.1kg.phase3.v5a")
+
+
+using Revise
+using MendelAimSelection
+AimSelection("aim_control.txt")
+
+
+# test aim selection
+using Revise
+using GeneticVariation
+using Random
+using VCFTools
+using BenchmarkTools
+using DataFrames
+using CSV
+using MendelAimSelection
 
 # get each sample's population origin
 cd("/Users/biona001/.julia/dev/MendelImpute/data/1000_genome_phase3_v5/country_origin")
@@ -543,7 +593,25 @@ end
 cd("/Users/biona001/.julia/dev/VCFTools/test")
 vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
 pvals = aim_select(vcffile, sampleID_to_population)
-snps = nrecords(vcffile)
-bonferroni = 0.05 / snps
 
-signifiant_snps = findall(p -> p < bonferroni, pvals)
+
+
+# test 16th record
+cd("/Users/biona001/.julia/dev/VCFTools/test")
+vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
+reader = VCF.Reader(openvcf(vcffile, "r"))
+for i in 1:15
+    read(reader)
+end
+record = read(reader)
+close(reader)
+
+sampleID = VCF.header(reader).sampleID
+ethnics = VCFTools.ethnic(sampleID, sampleID_to_population)
+sort!(ethnics) # why should I sort this?
+populations = unique(ethnics)
+alleles = Vector{Int}(undef, length(populations))
+genes = Vector{Int}(undef, length(populations))
+aim_select(record, populations, ethnics, alleles, genes)
+
+AimSelection("aim_control.txt")

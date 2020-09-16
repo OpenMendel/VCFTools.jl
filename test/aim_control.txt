@@ -1,0 +1,14 @@
+#
+# Input and Output files.
+#
+field_separator = ','
+pedigree_file = chr22.1kg.phase3.ped
+
+plink_field_separator = '	'
+plink_input_basename = chr22.1kg.phase3.v5a
+
+output_field_separator = ','
+output_file = chr22.1kg.phase3.output.txt
+#
+# Analysis parameters for AIM Selection option.
+#

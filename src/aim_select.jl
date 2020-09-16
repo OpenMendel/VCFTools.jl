@@ -1,5 +1,6 @@
 """
-    aim_select(vcffile::AbstractString)
+    aim_select(vcffile::AbstractString, sampleID_to_population::Dict{String, String}, 
+        [maf_threshold::Float64=0.01])
 
 Ranks SNPs by their ancestry information content. All people should 
 be assigned ancestry fractions and be fully typed. P-values are computed 
@@ -10,29 +11,37 @@ via a likelihood ratio heterogeneity test. Sex chromosome is ignored (for now).
 - `sampleID_to_population`: A dictionary mapping every sample ID to a population
     origin. 
 
+# Optional Inputs
+- `maf_threshold`: Minimum minor allele frequency for SNPs considered (default 0.01)
+
 # Note:
 Method is adapted from MendelAimSelection.jl
 https://github.com/OpenMendel/MendelAimSelection.jl
 """
 function aim_select(
     vcffile::AbstractString, 
-    sampleID_to_population::Dict{String, String}
+    sampleID_to_population::Dict{String, String},
+    maf_threshold::Float64 = 0.01,
     )
+    0.0 < maf_threshold < 0.5 || error("maf_threshold should be between 0 and 0.5.")
+
+    # data information
     reader = VCF.Reader(openvcf(vcffile, "r"))
     sampleID = VCF.header(reader).sampleID
+    # ethnics = sort!(ethnic(sampleID, sampleID_to_population)) # to match with MendelAimSelection
     ethnics = ethnic(sampleID, sampleID_to_population)
     populations = unique(ethnics)
 
     # preallocated vectors
-    alleles = Vector{Int}(undef, length(ethnics))
-    genes = Vector{Int}(undef, length(ethnics))
+    alleles = Vector{Int}(undef, length(populations))
+    genes = Vector{Int}(undef, length(populations))
     records = nrecords(vcffile)
     pvalues = zeros(records)
 
     # loop over SNPs
     pbar = ProgressMeter.Progress(records, 5)
     for (i, record) in enumerate(reader)
-        pvalues[i] = aim_select(record, ethnics, alleles, genes)
+        pvalues[i] = aim_select(record, ethnics, populations, alleles, genes, maf_threshold)
         next!(pbar)
     end
     close(reader)
@@ -43,8 +52,10 @@ end
 function aim_select(
     record::VCF.Record,
     ethnics::Vector{String},
-    alleles::Vector{Int} = Vector{Int}(undef, length(ethnics)),
-    genes::Vector{Int} = Vector{Int}(undef, length(ethnics)),
+    populations::Vector{String} = unique(ethnics),
+    alleles::Vector{Int} = Vector{Int}(undef, length(populations)),
+    genes::Vector{Int} = Vector{Int}(undef, length(populations)),
+    maf_threshold::Float64 = 0.01
     )
     fill!(alleles, 0)
     fill!(genes, 0)
@@ -55,13 +66,12 @@ function aim_select(
         minorallele, maf, hwepval = gtstats(record)
 
     # skip SNPs with maf too small
-    maf ≤ 0.01 && return 1.0
+    maf ≤ maf_threshold && return 1.0
 
     # Tally reference alleles and genes in each population
     @inbounds for i in 1:people
         # which population this person belongs
-        ethnic = ethnics[i]
-        j = something(findfirst(x -> x == ethnic, ethnics))
+        j = something(findfirst(isequal(ethnics[i]), populations))
         # get genotype: "0" (REF) => 0x30, "1" (ALT) => 0x31
         geno = record.genotype[i]
         gtkey = VCF.findgenokey(record, "GT")
@@ -75,7 +85,7 @@ function aim_select(
 
     # Add the maximum loglikelihoods for the different populations
     lrt = 0.0
-    @inbounds for j in 1:length(ethnics)
+    @inbounds for j in 1:length(populations)
         p = 0.0
         if genes[j] > 0
             p = alleles[j] / genes[j]
@@ -114,9 +124,9 @@ function ethnic(
     sampleID::Vector{String}, 
     sampleID_to_population::Dict{String, String}
     )
-    populations = Vector{String}(undef, length(sampleID))
+    ethnics = Vector{String}(undef, length(sampleID))
     for (i, id) in enumerate(sampleID)
-        @inbounds populations[i] = sampleID_to_population[id]
+        @inbounds ethnics[i] = sampleID_to_population[id]
     end
-    return populations
+    return ethnics
 end
