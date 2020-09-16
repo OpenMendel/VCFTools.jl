@@ -3,7 +3,7 @@
         [maf_threshold::Float64=0.01])
 
 Ranks SNPs by their ancestry information content. All people should 
-be assigned ancestry fractions and be fully typed. P-values are computed 
+be assigned an ancestry origin and be fully typed. P-values are computed 
 via a likelihood ratio heterogeneity test. Sex chromosome is ignored (for now). 
 
 # Inputs
@@ -73,9 +73,12 @@ function aim_select(
         # which population this person belongs
         j = something(findfirst(isequal(ethnics[i]), populations))
         # get genotype: "0" (REF) => 0x30, "1" (ALT) => 0x31
-        geno = record.genotype[i]
         gtkey = VCF.findgenokey(record, "GT")
         gtkey === nothing && return 1.0 # if no "GT" field, skip this record
+        geno = record.genotype[i]
+        if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
+            return 1.0 # if genotype missing, skip this record
+        end
         a1 = record.data[geno[gtkey][1]] == 0x31
         a2 = record.data[geno[gtkey][3]] == 0x31
         # increment counters
@@ -113,7 +116,7 @@ end
 """
     ethnic(sampleID::Vector{String}, sampleID_to_population::Dict{String, String})
 
-Computes the population origin for each sample in `sampleID`. 
+Computes the population origin for each sample in `sampleID`, returns a dictionary
 
 # Inputs
 - `sampleID`: Vector of sample IDs
