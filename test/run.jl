@@ -543,3 +543,7 @@ end
 cd("/Users/biona001/.julia/dev/VCFTools/test")
 vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
 pvals = aim_select(vcffile, sampleID_to_population)
+snps = nrecords(vcffile)
+bonferroni = 0.05 / snps
+
+signifiant_snps = findall(p -> p < bonferroni, pvals)

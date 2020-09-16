@@ -2,8 +2,8 @@
     aim_select(vcffile::AbstractString)
 
 Ranks SNPs by their ancestry information content. All people should 
-be assigned ancestry fractions and be fully typed. Ranks are assigned
-by a likelihood ratio heterogeneity test. Sex chromosome is ignored. 
+be assigned ancestry fractions and be fully typed. P-values are computed 
+via a likelihood ratio heterogeneity test. Sex chromosome is ignored (for now). 
 
 # Inputs
 - `vcffile`: VCF file, ending with .vcf or .vcf.gz
@@ -35,7 +35,7 @@ function aim_select(
         pvalues[i] = aim_select(record, ethnics, alleles, genes)
         next!(pbar)
     end
-    close(out); close(reader)
+    close(reader)
 
     return pvalues
 end
@@ -43,8 +43,8 @@ end
 function aim_select(
     record::VCF.Record,
     ethnics::Vector{String},
-    alleles::Vector{Int},
-    genes::Vector{Int}
+    alleles::Vector{Int} = Vector{Int}(undef, length(ethnics)),
+    genes::Vector{Int} = Vector{Int}(undef, length(ethnics)),
     )
     fill!(alleles, 0)
     fill!(genes, 0)
@@ -58,7 +58,7 @@ function aim_select(
     maf ≤ 0.01 && return 1.0
 
     # Tally reference alleles and genes in each population
-    for i in 1:people
+    @inbounds for i in 1:people
         # which population this person belongs
         ethnic = ethnics[i]
         j = something(findfirst(x -> x == ethnic, ethnics))
@@ -75,7 +75,7 @@ function aim_select(
 
     # Add the maximum loglikelihoods for the different populations
     lrt = 0.0
-    for j = 1:length(ethnics)
+    @inbounds for j in 1:length(ethnics)
         p = 0.0
         if genes[j] > 0
             p = alleles[j] / genes[j]
@@ -83,7 +83,7 @@ function aim_select(
         if 0.0 < p < 1.0
             n = genes[j]
             x = alleles[j]
-            lrt = lrt + x * log(p) + (n - x)*log(1.0 - p)
+            lrt += x * log(p) + (n - x)*log(1.0 - p)
         end
     end
 
@@ -103,9 +103,12 @@ end
 """
     ethnic(sampleID::Vector{String}, sampleID_to_population::Dict{String, String})
 
-Computes the the population origin for each sample in `sampleID`. 
-`sampleID_to_population` is a `Dict` where sample IDs are keys and populations
-are values. 
+Computes the population origin for each sample in `sampleID`. 
+
+# Inputs
+- `sampleID`: Vector of sample IDs
+- `sampleID_to_population`: a `Dict` where sample IDs are keys and populations
+    are values.
 """
 function ethnic(
     sampleID::Vector{String}, 
@@ -113,7 +116,7 @@ function ethnic(
     )
     populations = Vector{String}(undef, length(sampleID))
     for (i, id) in enumerate(sampleID)
-        populations[i] = sampleID_to_population[id]
+        @inbounds populations[i] = sampleID_to_population[id]
     end
     return populations
 end
