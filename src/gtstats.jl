@@ -4,7 +4,7 @@
 Calculate genotype statistics for each marker with GT field in a VCF file.
 
 # Input
-- `vcffile`: VCF file, ending with .vcf or .vcf.gz
+- `vcffile`: VCF file, ending with `.vcf` or `.vcf.gz`
 - `out`: output file name or IOStream. Default is `out=devnull` (no output).
 One line with 15 tab-delimited fiels is written per marker to `out`:
     - 1-8)  VCF fixed fields (CHROM, POS, ID, REF, ALT, QUAL, FILT, INFO)
@@ -15,6 +15,8 @@ One line with 15 tab-delimited fiels is written per marker to `out`:
     -  13)  Minor allele count             (REF allele vs ALT alleles)
     -  14)  Minor allele frequency         (REF allele vs ALT alleles)
     -  15)  HWE P-value                    (REF allele vs ALT alleles)
+- `pval_method`: Method for calculating hardy weinburg equilibrium p-values. 
+    Can be `:Pearson` (default) or `:Fisher`.
 
 # Output
 - `records`: number of records in the input VCF file
@@ -28,10 +30,12 @@ One line with 15 tab-delimited fiels is written per marker to `out`:
     record (marker). `minorallele_by_record[i]=true` means the minor allele is
     the REF allele for marker `i`; `minorallele_by_record[i]=false` means the
     minor allele is the ALT allele for marker `i`
+- `hwe_by_record`: hardy weinburg equilibrium p-values in each record calculated
+    using `pval_method`
 """
 function gtstats(
     vcffile::AbstractString, 
-    out::IO=devnull, 
+    out::IO=devnull;
     pval_method::Symbol = :Pearson
     )
     # open VCF file
@@ -45,9 +49,11 @@ function gtstats(
     missings_by_record = Int[]
     maf_by_record = Float64[]
     minorallele_by_record = Bool[]
+    hwe_by_record = Float64[]
     sizehint!(maf_by_record, records)
     sizehint!(missings_by_record, records)
     sizehint!(minorallele_by_record, records)
+    sizehint!(hwe_by_record, records)
     # loop over records
     records = lines = 0
     for record in reader
@@ -64,6 +70,7 @@ function gtstats(
         push!(missings_by_record, missings)
         push!(maf_by_record, maf)
         push!(minorallele_by_record, minorallele)
+        push!(hwe_by_record, hwepval)
         # output
         nbytes = record.format[1][1] - 2
         unsafe_write(out, pointer(record.data), nbytes)
@@ -74,7 +81,7 @@ function gtstats(
     end
     close(out); close(reader)
     return records, samples, lines, missings_by_sample, missings_by_record,
-        maf_by_record, minorallele_by_record
+        maf_by_record, minorallele_by_record, hwe_by_record
 end
 
 function gtstats(vcffile::AbstractString, out::AbstractString)
@@ -164,6 +171,8 @@ function hwe(n00::Integer, n01::Integer, n11::Integer, method::Symbol=:Pearson)
         # Fisher exact test
         n0 = n01 + 2n00
         pval, _, _ = hwe_fisher(n01, n, n0)
+    else
+        error("method can only be :Pearson or :Fisher!")
     end
     return pval
 end
