@@ -29,7 +29,11 @@ One line with 15 tab-delimited fiels is written per marker to `out`:
     the REF allele for marker `i`; `minorallele_by_record[i]=false` means the
     minor allele is the ALT allele for marker `i`
 """
-function gtstats(vcffile::AbstractString, out::IO=devnull)
+function gtstats(
+    vcffile::AbstractString, 
+    out::IO=devnull, 
+    pval_method::Symbol = :Pearson
+    )
     # open VCF file
     reader = VCF.Reader(openvcf(vcffile, "r"))
     # set up progress bar
@@ -52,8 +56,8 @@ function gtstats(vcffile::AbstractString, out::IO=devnull)
         VCF.findgenokey(record, "GT") === nothing && continue
         # calcuate summary statistics
         lines += 1
-        n00, n01, n11, n0, n1, altfreq, reffreq, missings,
-            minorallele, maf, hwepval = gtstats(record, missings_by_sample)
+        n00, n01, n11, n0, n1, altfreq, reffreq, missings, minorallele, maf, 
+            hwepval = gtstats(record, missings_by_sample, pval_method)
         missfreq = missings / (n0 + n1)
         altfreq  = n1 / (n0 + n1)
         minoralleles = minorallele ? n0 : n1
@@ -102,7 +106,8 @@ Calculate genotype statistics for a VCF record with GT field.
 """
 function gtstats(
     record::VCF.Record,
-    missings_by_sample::Union{Vector,Nothing}=nothing
+    missings_by_sample::Union{Vector,Nothing}=nothing,
+    pval_method::Symbol=:Pearson
     )
     # n11: number of homozygote ALT/ALT or ALT|ALT
     # n00: number of homozygote REF/REF or REF|REF
@@ -131,30 +136,97 @@ function gtstats(
     reffreq     = n0 / (n0 + n1)
     minorallele = n0 < n1 # true if REF is minor 
     maf         = minorallele ? reffreq : altfreq
-    hwepval     = hwe(n00, n01, n11)
+    hwepval     = hwe(n00, n01, n11, pval_method)
     return n00, n01, n11, n0, n1, altfreq, reffreq, missings,
         minorallele, maf, hwepval
 end
 
 """
-    hwe(n00, n01, n11)
+    hwe(n00, n01, n11, [method=:Pearson])
 
-Hardy-Weinberg equilibrium test.
+Hardy-Weinberg equilibrium test using Pearson Chi squared test or Fisher's
+exact test. 
 """
-function hwe(n00::Integer, n01::Integer, n11::Integer)
+function hwe(n00::Integer, n01::Integer, n11::Integer, method::Symbol=:Pearson)
     n = n00 + n01 + n11
     n == 0 && return 1.0
     p0 = (n01 + 2n00) / 2n
     (p0 ≤ 0.0 || p0 ≥ 1.0) && return 1.0
     p1 = 1 - p0
-    # Pearson's Chi-squared test
-    e00 = n * p0 * p0
-    e01 = 2n * p0 * p1
-    e11 = n * p1 * p1
-    ts = (n00 - e00)^2 / e00 + (n01 - e01)^2 / e01 + (n11 - e11)^2 / e11
-    pval = ccdf(Chi(1), ts)
-    # TODO Fisher exact test
+    if method == :Pearson
+        # Pearson's Chi-squared test
+        e00 = n * p0 * p0
+        e01 = 2n * p0 * p1
+        e11 = n * p1 * p1
+        ts = (n00 - e00)^2 / e00 + (n01 - e01)^2 / e01 + (n11 - e11)^2 / e11
+        pval = ccdf(Chi(1), ts)
+    elseif method == :Fisher
+        # Fisher exact test
+        n0 = n01 + 2n00
+        pval, _, _ = hwe_fisher(n01, n, n0)
+    end
     return pval
+end
+
+"""
+    fisher_exact(n01::Integer, N::Integer, n0::Integer)
+
+Computes probability of observing n01 heterozygote genotypes. 
+
+# Arguments:
+- `n01` = heterozygous counts
+- `N` = total samples with nonmissing genotypes
+- `n0` = number of 0 alleles = `2*n00 + n01`
+"""
+function fisher_exact(n01::Integer, N::Integer, n0::Integer)
+    n1  = 2N - n0
+    n00 = (n0 - n01) >> 1 # fast division by 2
+    n11 = (n1 - n01) >> 1
+    logp = n01*log(2) + logfactorial(N) - logfactorial(n00) - 
+        logfactorial(n01) - logfactorial(n11) + logfactorial(n0) + 
+        logfactorial(n1) - logfactorial(2N)
+    return exp(logp)
+end
+
+"""
+    hwe_fisher(o01::Integer, N::Integer, n0::Integer)
+
+Computes p-value for deviation from Hardy weinburg equilibrium using Fisher's
+exact test. Also computes tail probabilities P(n01 ≤ o01) and P(n01 ≥ o01) 
+where n01 is the number of heterozygotes and o01 is number of observed 
+heterozygotes. 
+
+# Arguments:
+- `o01` = observed heterozygous counts
+- `N` = total samples with non-missing genotypes
+- `n0` = number of 0 alleles = 2*n00 + n01
+"""
+function hwe_fisher(o01::Integer, N::Integer, n0::Integer)
+    n1 = 2N - n0
+
+    # P(number of heterozygous ≤ n01)
+    ts_low = 0.0
+    for n01 in isodd(n0):2:o01
+        ts_low += fisher_exact(n01, N, n0)
+    end
+
+    # P(number of heterozygous ≥ n01)
+    ts_high = 0.0
+    for n01 in o01:2:min(n1, n0)
+        ts_high += fisher_exact(n01, N, n0)
+    end
+
+    # P_hwe according to https://pubmed.ncbi.nlm.nih.gov/15789306/
+    hwepval = 0.0
+    for n01 in isodd(n0):2:min(n1, n0)
+        nAB     = fisher_exact(o01, N, n0)
+        nABstar = fisher_exact(n01, N, n0)
+        if nAB ≥ nABstar
+            hwepval += nABstar
+        end
+    end
+
+    return hwepval, ts_low, ts_high
 end
 
 """

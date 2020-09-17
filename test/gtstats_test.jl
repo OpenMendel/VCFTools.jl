@@ -87,3 +87,53 @@ end
     #@time records, samples, lines = gtstats("chr22.1kg.ref.phase1_release_v3.20101123.vcf.gz", "gtstats.out.gz") # about 180 seconds
     #@show maf_by_record
 end
+
+@testset "Fishers exact HWE test" begin
+    # See p20-21 in http://courses.washington.edu/b516/lectures_2009/HWE_Lecture.pdf
+    n0 = 179
+    n1 = 21
+    N = (n0 + n1) >> 1
+    n01 = 1
+    @test VCFTools.fisher_exact(n01, N, n0) < .000001
+    n01 = 3
+    @test VCFTools.fisher_exact(n01, N, n0) < .000001
+    n01 = 5
+    @test VCFTools.fisher_exact(n01, N, n0) < .000001
+    n01 = 7
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .000001
+    n01 = 9
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .000047
+    n01 = 11
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .000870
+    n01 = 13
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .009375
+    n01 = 15
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .059283
+    n01 = 17
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .214465
+    n01 = 19
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .406355
+    n01 = 21
+    @test round(VCFTools.fisher_exact(n01, N, n0), digits=6) == .309604
+
+    # Picked a few values in Table 1 of 
+    # AJHG Volume 76, Issue 5, May 2005, Pages 887-893
+    # https://www.sciencedirect.com/science/article/pii/S0002929707607356
+    N  = 100
+    n0 = 21
+    o01 = 11
+    hwepval, ts_low, ts_high = VCFTools.hwe_fisher(o01, N, n0)
+    @test round(hwepval, digits=6) == .000919
+    @test round(ts_low, digits=6)  == .000919
+    @test round(ts_high, digits=6) == .999952
+    o01 = 17
+    hwepval, ts_low, ts_high = VCFTools.hwe_fisher(o01, N, n0)
+    @test round(hwepval, digits=6) == .284042
+    @test round(ts_low, digits=6)  == .284042
+    @test round(ts_high, digits=6) == .930424
+    o01 = 21
+    hwepval, ts_low, ts_high = VCFTools.hwe_fisher(o01, N, n0)
+    @test round(hwepval, digits=6) == .593645
+    @test round(ts_low, digits=6)  == 1.0
+    @test round(ts_high, digits=6) == .309604
+end
