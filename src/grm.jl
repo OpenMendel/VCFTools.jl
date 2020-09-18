@@ -16,39 +16,8 @@ function grm(
 
     # load genotype into memory. Each row is a sample
     x = convert_gt(t, vcffile, model=:additive, msg="importing genotypes")
+    mis, maf, wts, cts = summarize(x)
 
-    # compute summary statistics
-    n, p = size(x)
-    mis = zeros(n) # proportion of missingness SNPs in each sample
-    maf = zeros(p) # minor allele frequency
-    wts = zeros(p) # inverse standard deviation
-    cts = zeros(p) # mean
-    @inbounds for i in 1:p
-        n00 = n01 = n11 = nmissing = 0
-        for j in 1:n
-            if ismissing(x[j, i])
-                nmissing += 1
-                mis[j] += 1
-            elseif x[j, i] == 0
-                n00 += 1
-            elseif x[j, i] == 1
-                n01 += 1
-            elseif x[j, i] == 2
-                n11 += 1
-            else
-                error("genotype is not 0, 1, 2, or missing!")
-            end
-        end
-        n0 = 2n00 + n01
-        n1 = 2n11 + n01
-        altfreq = n1 / (n0 + n1)
-        reffreq = n0 / (n0 + n1)
-        maf[i] = altfreq < reffreq ? altfreq : reffreq
-        cts[i] = 2altfreq
-        wts[i] = altfreq == 0 ? 1.0 : 1.0 / √(2altfreq * (1 - altfreq))
-    end
-
-    mis ./= p
     colinds = something(cinds, maf .≥ minmaf)
 
     return @views grm!(x[:, colinds], method, maf[colinds], wts[colinds], 
@@ -60,7 +29,7 @@ end
 
 Computes GRM of `G` where `Gᵢ ∈ {0, 1, 2, missing}`. `G` is modified. 
 
-Missing data is handled according to:
+If `scale_missing = true`, missing data is handled according to:
 `https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6220858/`
 """
 function grm!(
@@ -126,4 +95,77 @@ function _impute_center_scale!(
         end
     end
     return nothing
+end
+
+"""
+    summarize(x::AbstractMatrix)
+
+Given genotype matrix `x`, calculates missing proportion for each sample
+and minor allele frequency, inverse std, and mean for each SNP.
+
+
+# Inputs
+- `X`: Raw genotype matrix, each row is a sample. `X[i, j] ∈ [0, 1, 2, missing]`
+"""
+function summarize(x::AbstractMatrix)
+    n, p = size(x)
+    mis = zeros(n) # proportion of missingness SNPs in each sample
+    maf = zeros(p) # minor allele frequency
+    wts = zeros(p) # inverse standard deviation
+    cts = zeros(p) # mean
+    @inbounds for i in 1:p
+        n00 = n01 = n11 = nmissing = 0
+        for j in 1:n
+            if ismissing(x[j, i])
+                nmissing += 1
+                mis[j] += 1
+            elseif x[j, i] == 0
+                n00 += 1
+            elseif x[j, i] == 1
+                n01 += 1
+            elseif x[j, i] == 2
+                n11 += 1
+            else
+                error("genotype is not 0, 1, 2, or missing!")
+            end
+        end
+        n0 = 2n00 + n01
+        n1 = 2n11 + n01
+        altfreq = n1 / (n0 + n1)
+        reffreq = n0 / (n0 + n1)
+        maf[i] = altfreq < reffreq ? altfreq : reffreq
+        cts[i] = 2altfreq
+        wts[i] = altfreq == 0 ? 1.0 : 1.0 / √(2altfreq * (1 - altfreq))
+    end
+
+    mis ./= p
+
+    return mis, maf, wts, cts
+end
+
+"""
+    robust_GRM_skipmissing(X::AbstractMatrix, maf::AbstractVector)
+
+Calculates robust GRM estimator for genotype matrix `X`, but the inner product 
+between 2 samples are only performed on SNPs present in both samples. 
+
+# Inputs
+- `X`: Raw genotype matrix, each row is a sample. `X[i, j] ∈ [0, 1, 2, missing]`
+"""
+function robust_GRM_skipmissing(X::AbstractMatrix)
+    n, p = size(X)
+    mis, maf, wts, cts = VCFTools.summarize(X)
+    Φ = Matrix{eltype(X)}(undef, n, n)
+    @inbounds for i in 1:n, j in 1:n
+        Φij = 0.0
+        scal = 0.0
+        for k in 1:p
+            if !ismissing(X[i, k]) && !ismissing(X[j, k])
+                scal += 4 * maf[k] * (1 - maf[k])
+                Φij += (X[i, k] - cts[k]) * (X[j, k] - cts[k])
+            end
+        end
+        Φ[i, j] = Φij / scal
+    end
+    return Φ
 end

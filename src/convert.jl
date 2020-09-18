@@ -312,9 +312,9 @@ have missing genotypes and the target file must be phased.
 # Input
 - `t`: a type `t <: Real`. If `t` is `Bool`, output will be a BitMatrix.
 - `vcffile`: a phased VCF file
-- `trans`: whether to import data transposed so that each column is 1 a
+- `trans`: whether to import data transposed so that each column is a
     haplotype, default `false`.
-- `msg`: A message that will be printed to indicate progress. Defaults to
+- `msg`: A message that will be printed to indicate import progress. Defaults to
     not printing. 
 - `save_snp_info`: Boolean. If true, will also output sample ID, chrom, pos,
     snp id, ref, and alt vectors
