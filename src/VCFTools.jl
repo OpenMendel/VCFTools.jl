@@ -11,6 +11,7 @@ import GeneticVariation.VCF
 export conformgt_by_id, conformgt_by_pos,
     gtstats, geno_ismissing,
     nrecords, nsamples, openvcf,
+    sampleID,
     # convert functions
     save_snpinfo,
     convert_gt, copy_gt!,
