@@ -1,9 +1,20 @@
 """
     grm(vcffile::AbstractString, method = :GRM, minmaf=0.01, colinds=nothing)
 
-Computes the genetic relationship matrix of a VCF file using specified method.
-Missing data is handled according to:
-`https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6220858/`
+Computes the genetic relationship matrix of a VCF file. 
+
+# Inputs
+- `vcffile`: VCF file path
+
+# Optional Inputs
+- `method`: Method to compute GRM. Can be `:Robust` (default), `:GRM`, or `:MoM`
+- `minmaf`: columns (SNPs) with MAF less than `minmaf` are excluded; default 0.01.
+- `cinds`: indices or mask of columns to be used for calculating GRM (default
+    `nothing`)
+- `t`: Float type for calculating GRM; default `Float64`.
+- `scale_missing`: If `false`, all missing data is imputed to the mean. If `true`,
+    missing data is handled according to this paper:
+    `https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6220858/` (default `false`)
 """
 function grm(
     vcffile::AbstractString;
@@ -102,7 +113,6 @@ end
 
 Given genotype matrix `x`, calculates missing proportion for each sample
 and minor allele frequency, inverse std, and mean for each SNP.
-
 
 # Inputs
 - `X`: Raw genotype matrix, each row is a sample. `X[i, j] ∈ [0, 1, 2, missing]`
