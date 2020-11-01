@@ -133,15 +133,3 @@ function ethnic(
     end
     return ethnics
 end
-
-"""
-    sampleID(vcffile::AbstractString)
-
-Helper function for extracting sample IDs from a VCF file. 
-"""
-function sampleID(vcffile::AbstractString)
-    reader = VCF.Reader(openvcf(vcffile, "r"))
-    sampleID = VCF.header(reader).sampleID
-    close(reader)
-    return sampleID
-end
