@@ -10,9 +10,9 @@ VCFTools.jl provide Julia utilities for handling VCF files.
 
 Within Julia, press `]` to use the package manager and type:
 
-    (v1.3) pkg> add https://github.com/OpenMendel/VCFTools.jl
+    (v1.5) pkg> add https://github.com/OpenMendel/VCFTools.jl
 
-This package supports Julia v1.0+.
+This package supports Julia v1.5+.
 
 ## Citation
 

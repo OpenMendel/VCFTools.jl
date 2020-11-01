@@ -14,6 +14,7 @@ Pages = ["api.md"]
 openvcf
 nrecords
 nsamples
+sampleID
 gtstats
 filter
 filter_record!
