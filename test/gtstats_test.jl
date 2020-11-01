@@ -88,6 +88,17 @@ end
     #@show maf_by_record
 end
 
+@testset "get sampleID" begin
+    # download and extract test file if not exist
+    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+        joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
+    ids = sampleID("test.08Jun17.d8b.vcf.gz")
+    @test length(ids) == 191
+    @test typeof(ids) == Array{String, 1}
+    @test ids[1] == "HG00096"
+    @test ids[end] == "HG00428"
+end
+
 @testset "Fishers exact HWE test" begin
     # See p20-21 in http://courses.washington.edu/b516/lectures_2009/HWE_Lecture.pdf
     n0 = 179
