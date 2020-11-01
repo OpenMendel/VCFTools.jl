@@ -5,9 +5,11 @@
 *.vcf.gz
 *.out*
 *.csv.gz
+*.ped
+*.bed
+*.fam
+*.bim
 
 .DS_Store
 .ipynb_checkpoints
 docs/build/
-
-Manifest.toml

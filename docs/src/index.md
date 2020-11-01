@@ -27,6 +27,7 @@ Pages = [
     "man/filter.md",
     "man/convert.md",
     "man/conformgt.md",
+    "man/aim.md"
     "man/api.md"
 ]
 Depth = 2
