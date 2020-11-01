@@ -13,6 +13,7 @@ makedocs(
         "Filter" => "man/filter.md",
         "Convert" => "man/convert.md",
         "Match markers in two VCF" => "man/conformgt.md",
+        "Ancestry informative markers" => "man/conformgt.md",
         "API"  => "man/api.md"
     ]
 )

@@ -11,6 +11,7 @@ import GeneticVariation.VCF
 export conformgt_by_id, conformgt_by_pos,
     gtstats, geno_ismissing,
     nrecords, nsamples, openvcf,
+    sampleID,
     # convert functions
     save_snpinfo,
     convert_gt, copy_gt!,
@@ -22,13 +23,16 @@ export conformgt_by_id, conformgt_by_pos,
     filter, filter_header, 
     filter_chr, filter_range,
     mask_gt, find_duplicate_marker,
-    unsafe_convert_gt, unsafe_convert_gt2, unsafe_convert_gt3
+    unsafe_convert_gt, unsafe_convert_gt2, unsafe_convert_gt3,
+    # aim selection
+    aim_select
 
 # package code goes here
 include("gtstats.jl")
 include("conformgt.jl")
 include("convert.jl")
 include("filter.jl")
+include("aim_select.jl")
 include("unsafe_convert.jl")
 
 end # module
