@@ -10,14 +10,16 @@
 - Extract specific data fields from a VCF file. 
 - Filtering/subsetting VCF files. 
 - Match markers in two VCF files according to ID. 
+- Calculation of Genetic Relationship Matrix.
+- Rank SNPs by their ancestry informativeness.
 
 ## Installation
 
 Use the Julia package manager to install `VCFTools.jl`. Press `]` and type:
 ```julia
-(v1.3) pkg> add https://github.com/OpenMendel/VCFTools.jl
+(v1.5) pkg> add https://github.com/OpenMendel/VCFTools.jl
 ```
-This package supports Julia `v1.0`+.
+This package supports Julia `v1.5`+.
 
 ## Manual Outline
 
@@ -27,6 +29,7 @@ Pages = [
     "man/filter.md",
     "man/convert.md",
     "man/conformgt.md",
+    "man/grm.md"
     "man/aim.md"
     "man/api.md"
 ]
