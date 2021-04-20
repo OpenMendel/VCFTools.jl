@@ -2,7 +2,7 @@
 
 | **Documentation** | **Build Status** | **Code Coverage**  | **Citation**  |  
 |-------------------|------------------|--------------------|--------------------|  
-| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/VCFTools.jl/dev/) [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/VCFTools.jl/stable) | [![build Actions Status](https://github.com/OpenMendel/VCFTools.jl/workflows/CI/badge.svg)](https://github.com/OpenMendel/VCFTools.jl/actions) [![CI (Julia nightly)](https://github.com/openmendel/VCFTools.jl/workflows/JuliaNightly/badge.svg)](https://github.com/OpenMendel/VCFTools.jl/actions/workflows/JuliaNightly.yml) | [![codecov](https://codecov.io/gh/OpenMendel/VCFTools.jl/branch/master/graph/badge.svg?token=QtTQogesUk)](https://codecov.io/gh/OpenMendel/VCFTools.jl)
+| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/VCFTools.jl/dev/) [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/VCFTools.jl/stable) | [![build Actions Status](https://github.com/OpenMendel/VCFTools.jl/workflows/CI/badge.svg)](https://github.com/OpenMendel/VCFTools.jl/actions) [![CI (Julia nightly)](https://github.com/openmendel/VCFTools.jl/workflows/JuliaNightly/badge.svg)](https://github.com/OpenMendel/VCFTools.jl/actions/workflows/JuliaNightly.yml) | [![codecov](https://codecov.io/gh/OpenMendel/VCFTools.jl/branch/master/graph/badge.svg?token=QtTQogesUk)](https://codecov.io/gh/OpenMendel/VCFTools.jl) | [![DOI](https://zenodo.org/badge/100287089.svg)](https://zenodo.org/badge/latestdoi/100287089) |
 
 VCFTools.jl provide Julia utilities for handling VCF files.
 
