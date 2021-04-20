@@ -297,7 +297,7 @@ end
 """
     sampleID(vcffile::AbstractString)
 
-Helper function for extracting sample IDs from a VCF file. 
+Helper function for extracting sample IDs from a VCF file.
 """
 function sampleID(vcffile::AbstractString)
     reader = VCF.Reader(openvcf(vcffile, "r"))
