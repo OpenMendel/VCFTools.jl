@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Ancestry informative markers · VCFTools</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">VCFTools</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../summaryinfo/">VCF Summary</a></li><li><a class="tocitem" href="../filter/">Filter</a></li><li><a class="tocitem" href="../convert/">Convert</a></li><li><a class="tocitem" href="../conformgt/">Match markers in two VCF</a></li><li><a class="tocitem" href="../grm/">Genetic Relationship Matrix</a></li><li class="is-active"><a class="tocitem" href>Ancestry informative markers</a><ul class="internal"><li><a class="tocitem" href="#Example-data"><span>Example data</span></a></li><li><a class="tocitem" href="#Preprocess-data"><span>Preprocess data</span></a></li><li><a class="tocitem" href="#Run-AIM-selection"><span>Run AIM selection</span></a></li></ul></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Ancestry informative markers</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Ancestry informative markers</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/VCFTools.jl/blob/master/docs/src/man/aim.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Ancestry-Informative-Markers"><a class="docs-heading-anchor" href="#Ancestry-Informative-Markers">Ancestry Informative Markers</a><a id="Ancestry-Informative-Markers-1"></a><a class="docs-heading-anchor-permalink" href="#Ancestry-Informative-Markers" title="Permalink"></a></h1><p>When sample origins are available, one can select SNPs that are most informative at predicting ancestry for your data — the best Ancestry Informative Markers (AIMs).</p><h2 id="Example-data"><a class="docs-heading-anchor" href="#Example-data">Example data</a><a id="Example-data-1"></a><a class="docs-heading-anchor-permalink" href="#Example-data" title="Permalink"></a></h2><p>For illustration, we use <a href="http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/">chromosome 22 data</a> (129 MB) from 1000 genomes project. As show below, this data contains 424147 SNPs and 2504 samples.</p><pre><code class="language-julia">using Revise
+using VCFTools
+using Random
+using CSV
+using DataFrames
+using StatsBase</code></pre><pre><code class="language-julia"># download data
+vcffile = &quot;chr22.1kg.phase3.v5a.vcf.gz&quot;
+isfile(vcffile) || 
+    download(&quot;http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz&quot;, 
+    joinpath(pwd(), vcffile))
+
+# compute simple summary statistics
+@show nrecords(vcffile)
+@show nsamples(vcffile);</code></pre><pre><code class="language-none">nrecords(vcffile) = 424147
+nsamples(vcffile) = 2504</code></pre><p>Next the <a href="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000_genomes_project/data/">population codes</a> for 1000 genome&#39;s samples are explained <a href="https://www.internationalgenome.org/category/population/">here</a>. </p><h2 id="Preprocess-data"><a class="docs-heading-anchor" href="#Preprocess-data">Preprocess data</a><a id="Preprocess-data-1"></a><a class="docs-heading-anchor-permalink" href="#Preprocess-data" title="Permalink"></a></h2><p>To compute AIM markers, we need:</p><ul><li>Origin (country/continent/population) of every sample stored in a dictionary</li><li>Complete SNP information. If any sample contains missing genotypes, the given SNP will have p-value of 1. </li></ul><p>The goal is to save the sample origin information into a dictionary where keys are sample IDs and values are origin. Here, the population origin are stored in the file <code>1000genomes.population.txt</code> under <code>VCFTools/test</code>.</p><pre><code class="language-julia"># cd to test folder
+joinpath(pathof(VCFTools), &quot;test&quot;)
+
+# read population origin into a dataframe
+df = CSV.read(&quot;1000genomes.population.txt&quot;)
+
+# create dictionary with key = ID, value = population 
+sampleID_to_population = Dict{String, String}()
+for (id, population) in eachrow(df)
+     sampleID_to_population[id] = population
+end
+sampleID_to_population</code></pre><pre><code class="language-none">Dict{String,String} with 2504 entries:
+  &quot;HG01791&quot; =&gt; &quot;GBR&quot;
+  &quot;HG02736&quot; =&gt; &quot;PJL&quot;
+  &quot;HG00182&quot; =&gt; &quot;FIN&quot;
+  &quot;HG03914&quot; =&gt; &quot;BEB&quot;
+  &quot;HG00149&quot; =&gt; &quot;GBR&quot;
+  &quot;NA12156&quot; =&gt; &quot;CEU&quot;
+  &quot;HG02642&quot; =&gt; &quot;GWD&quot;
+  &quot;HG02851&quot; =&gt; &quot;GWD&quot;
+  &quot;NA19835&quot; =&gt; &quot;ASW&quot;
+  &quot;NA19019&quot; =&gt; &quot;LWK&quot;
+  &quot;HG01131&quot; =&gt; &quot;CLM&quot;
+  &quot;HG03578&quot; =&gt; &quot;MSL&quot;
+  &quot;NA18550&quot; =&gt; &quot;CHB&quot;
+  &quot;HG02401&quot; =&gt; &quot;CDX&quot;
+  &quot;HG01350&quot; =&gt; &quot;CLM&quot;
+  &quot;HG03973&quot; =&gt; &quot;ITU&quot;
+  &quot;NA07000&quot; =&gt; &quot;CEU&quot;
+  &quot;HG01709&quot; =&gt; &quot;IBS&quot;
+  &quot;HG01395&quot; =&gt; &quot;PUR&quot;
+  &quot;HG01980&quot; =&gt; &quot;PEL&quot;
+  &quot;HG01979&quot; =&gt; &quot;PEL&quot;
+  &quot;HG01122&quot; =&gt; &quot;CLM&quot;
+  &quot;HG03869&quot; =&gt; &quot;ITU&quot;
+  &quot;HG03729&quot; =&gt; &quot;ITU&quot;
+  &quot;NA19920&quot; =&gt; &quot;ASW&quot;
+  ⋮         =&gt; ⋮</code></pre><h2 id="Run-AIM-selection"><a class="docs-heading-anchor" href="#Run-AIM-selection">Run AIM selection</a><a id="Run-AIM-selection-1"></a><a class="docs-heading-anchor-permalink" href="#Run-AIM-selection" title="Permalink"></a></h2><p>A p-value will be computed for each SNP. Smaller p-values indicate more ancestry informative.</p><pre><code class="language-julia">pvals = VCFTools.aim_select(vcffile, sampleID_to_population)</code></pre><pre><code class="language-none">[32mProgress: 100%|█████████████████████████████████████████| Time: 0:04:58[39m
+
+
+
+
+
+424147-element Array{Float64,1}:
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 5.684678238417218e-120
+ 2.2097628180404582e-104
+ 1.0
+ ⋮
+ 1.0
+ 1.0
+ 3.918650824065397e-73
+ 2.2771505483860234e-77
+ 1.0
+ 1.8351937329381248e-92
+ 1.0
+ 1.0
+ 1.0
+ 3.0769656913253715e-14
+ 1.0
+ 1.0</code></pre><p>We can rank these p-values</p><pre><code class="language-julia">aim_rank = ordinalrank(pvals)
+DataFrame(pvalues=pvals, rank=aim_rank)</code></pre><p>&lt;table class=&quot;data-frame&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th&gt;pvalues&lt;/th&gt;&lt;th&gt;rank&lt;/th&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th&gt;Float64&lt;/th&gt;&lt;th&gt;Int64&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;p&gt;424,147 rows × 2 columns&lt;/p&gt;&lt;tr&gt;&lt;th&gt;1&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193453&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;2&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193454&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;3&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193455&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;4&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193456&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;5&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193457&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;6&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193458&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;7&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193459&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;8&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193460&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;9&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193461&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;10&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193462&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;11&lt;/th&gt;&lt;td&gt;5.68468e-120&lt;/td&gt;&lt;td&gt;39800&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;12&lt;/th&gt;&lt;td&gt;2.20976e-104&lt;/td&gt;&lt;td&gt;49662&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;13&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193463&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;14&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193464&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;15&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193465&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;16&lt;/th&gt;&lt;td&gt;2.00626e-61&lt;/td&gt;&lt;td&gt;96498&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;17&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193466&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;18&lt;/th&gt;&lt;td&gt;1.4409e-78&lt;/td&gt;&lt;td&gt;73608&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;19&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193467&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;20&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193468&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;21&lt;/th&gt;&lt;td&gt;1.17489e-25&lt;/td&gt;&lt;td&gt;176783&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;22&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193469&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;23&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193470&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;24&lt;/th&gt;&lt;td&gt;1.66383e-76&lt;/td&gt;&lt;td&gt;75835&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;25&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193471&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;26&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193472&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;27&lt;/th&gt;&lt;td&gt;7.71708e-107&lt;/td&gt;&lt;td&gt;47963&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;28&lt;/th&gt;&lt;td&gt;1.18618e-22&lt;/td&gt;&lt;td&gt;181376&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;29&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193473&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;30&lt;/th&gt;&lt;td&gt;1.0&lt;/td&gt;&lt;td&gt;193474&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;th&gt;&amp;vellip;&lt;/th&gt;&lt;td&gt;&amp;vellip;&lt;/td&gt;&lt;td&gt;&amp;vellip;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../grm/">« Genetic Relationship Matrix</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 April 2021 22:28">Tuesday 20 April 2021</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
