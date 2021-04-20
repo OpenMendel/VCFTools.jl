@@ -27,7 +27,7 @@ function aim_select(
 
     # data information
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    sampleID = VCF.header(reader).sampleID
+    sampleID = header(reader).sampleID
     # ethnics = sort!(ethnic(sampleID, sampleID_to_population)) # to match with MendelAimSelection
     ethnics = ethnic(sampleID, sampleID_to_population)
     populations = unique(ethnics)
@@ -73,7 +73,7 @@ function aim_select(
         # which population this person belongs
         j = something(findfirst(isequal(ethnics[i]), populations))
         # get genotype: "0" (REF) => 0x30, "1" (ALT) => 0x31
-        gtkey = VCF.findgenokey(record, "GT")
+        gtkey = findgenokey(record, "GT")
         gtkey === nothing && return 1.0 # if no "GT" field, skip this record
         geno = record.genotype[i]
         if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])

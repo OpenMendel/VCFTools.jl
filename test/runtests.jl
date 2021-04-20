@@ -1,6 +1,6 @@
 using VCFTools
 using Test
-using GeneticVariation
+using VariantCallFormat
 using CodecZlib
 using DelimitedFiles
 

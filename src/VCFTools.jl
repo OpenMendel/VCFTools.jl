@@ -7,7 +7,8 @@ using ProgressMeter
 using DelimitedFiles
 using Dates
 using SpecialFunctions
-import GeneticVariation.VCF
+using VariantCallFormat
+import VariantCallFormat.findgenokey
 
 export conformgt_by_id, conformgt_by_pos,
     gtstats, geno_ismissing,

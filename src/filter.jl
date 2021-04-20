@@ -94,14 +94,14 @@ function filter_header(
     sample_mask::BitVector
     )
     # save meta information
-    # fileformat = VCF.header(reader).metainfo[1]
+    # fileformat = header(reader).metainfo[1]
     # filedate   = VCF.MetaInfo("##filedate=" * string(Dates.today()))
     # signature  = VCF.MetaInfo("##source=VCFTools.jl")
-    # metainfo = vcat(fileformat, filedate, signature, VCF.header(reader).metainfo[2:end])
+    # metainfo = vcat(fileformat, filedate, signature, header(reader).metainfo[2:end])
 
     # filter sampleID
-    metainfo = VCF.header(reader).metainfo
-    sampleID = VCF.header(reader).sampleID[sample_mask]
+    metainfo = header(reader).metainfo
+    sampleID = header(reader).sampleID[sample_mask]
     return VCF.Header(metainfo, sampleID)
 end
 
@@ -195,13 +195,13 @@ function mask_gt(
 
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
-    writer = VCF.Writer(openvcf(des, "w"), VCF.header(reader))
+    writer = VCF.Writer(openvcf(des, "w"), header(reader))
     record = read(reader)
 
     # loop over each record
     i = 1 # record (row) counter
     while true
-        gtkey = VCF.findgenokey(record, "GT")
+        gtkey = findgenokey(record, "GT")
         if gtkey != nothing 
             # loop over genotypes
             for (j, geno) in enumerate(record.genotype)
@@ -279,8 +279,8 @@ function filter_chr(
 
     # create input and output VCF files
     reader = VCF.Reader(openvcf(src, "r"))
-    metainfo = VCF.header(reader).metainfo
-    sampleID = VCF.header(reader).sampleID
+    metainfo = header(reader).metainfo
+    sampleID = header(reader).sampleID
     writer = VCF.Writer(openvcf(des, "w"), VCF.Header(metainfo, sampleID))
     cnt = 0
     for record in reader
@@ -308,8 +308,8 @@ function filter_range(
     des::AbstractString = "filtered.chr$chr:$from-$to." * src
     )
     reader = VCF.Reader(openvcf(src, "r"))
-    metainfo = VCF.header(reader).metainfo
-    sampleID = VCF.header(reader).sampleID
+    metainfo = header(reader).metainfo
+    sampleID = header(reader).sampleID
     writer = VCF.Writer(openvcf(des, "w"), VCF.Header(metainfo, sampleID))
     cnt = 0
     for record in reader

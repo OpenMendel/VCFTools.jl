@@ -1,9 +1,3 @@
-using VCFTools
-using Random
-using CSV
-using DataFrames
-using StatsBase
-
 @testset "AIM selection" begin
     # download data
     vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
@@ -13,7 +7,7 @@ using StatsBase
 
     # cd to test folder and read population origin
     joinpath(pathof(VCFTools), "test")
-    df = CSV.read("1000genomes.population.txt")
+    df = CSV.read("1000genomes.population.txt", DataFrame)
 
     # create dictionary with key = ID, value = population 
     sampleID_to_population = Dict{String, String}()

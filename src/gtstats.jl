@@ -59,7 +59,7 @@ function gtstats(
     for record in reader
         records += 1
         # if no "GT" field, skip this record
-        VCF.findgenokey(record, "GT") === nothing && continue
+        findgenokey(record, "GT") === nothing && continue
         # calcuate summary statistics
         lines += 1
         n00, n01, n11, n0, n1, altfreq, reffreq, missings, minorallele, maf, 
@@ -120,7 +120,7 @@ function gtstats(
     # n00: number of homozygote REF/REF or REF|REF
     # n01: number of heterozygote REF/ALT or REF|ALT
     missings = n00 = n10 = n11 = 0
-    gtkey = VCF.findgenokey(record, "GT")
+    gtkey = findgenokey(record, "GT")
     for i in 1:lastindex(record.genotype)
         geno = record.genotype[i]
         # dropped field or "." => 0x2e
@@ -273,13 +273,13 @@ Number of records (markers) in a VCF file. Each record is a row.
 """
 function nrecords(vcffile::AbstractString)
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    records = countvcflines(vcffile) - length(VCF.header(reader)) - 1
+    records = countvcflines(vcffile) - length(header(reader)) - 1
     close(reader)
     records
 end
 
 function nsamples(reader::VCF.Reader)
-    length(VCF.header(reader).sampleID)
+    length(header(reader).sampleID)
 end
 
 """
@@ -289,7 +289,7 @@ Number of samples (individuals) in a VCF file.
 """
 function nsamples(vcffile::AbstractString)
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    samples = length(VCF.header(reader).sampleID)
+    samples = length(header(reader).sampleID)
     close(reader)
     samples
 end
@@ -301,7 +301,7 @@ Helper function for extracting sample IDs from a VCF file.
 """
 function sampleID(vcffile::AbstractString)
     reader = VCF.Reader(openvcf(vcffile, "r"))
-    sampleID = VCF.header(reader).sampleID
+    sampleID = header(reader).sampleID
     close(reader)
     return sampleID
 end

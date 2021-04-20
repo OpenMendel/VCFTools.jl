@@ -1,5 +1,3 @@
-using GeneticVariation
-
 @testset "convert_gt(vcfile)" begin
     vcffile = "test.08Jun17.d8b.vcf.gz"
     isfile(vcffile) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",

@@ -65,7 +65,7 @@ function copy_gt!(
     record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg))
-    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= header(reader).sampleID)
     record = VCF.Record()
     for j in 1:size(A, 2)
         if eof(reader)
@@ -76,7 +76,7 @@ function copy_gt!(
         else
             read!(reader, record)
         end
-        gtkey = VCF.findgenokey(record, "GT")
+        gtkey = findgenokey(record, "GT")
         # if no GT field, fill by missing values
         if gtkey === nothing
             @inbounds @simd for i in 1:size(A, 1)
@@ -168,7 +168,7 @@ function copy_gt_trans!(
     record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg))
-    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:size(A, 1)
@@ -180,7 +180,7 @@ function copy_gt_trans!(
         else
             read!(reader, record)
         end
-        gtkey = VCF.findgenokey(record, "GT")
+        gtkey = findgenokey(record, "GT")
         # if no GT field, fill by missing values
         if gtkey === nothing
             fill!(view(A, j, :), missing)
@@ -405,7 +405,7 @@ function copy_ht!(
 
     n, p = size(A)
     nn   = n >>> 1
-    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= header(reader).sampleID)
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
     record = VCF.Record()
 
@@ -418,7 +418,7 @@ function copy_ht!(
         else
             read!(reader, record)
         end
-        gtkey = VCF.findgenokey(record, "GT")
+        gtkey = findgenokey(record, "GT")
 
         # haplotype reference files must have GT field
         if gtkey === nothing
@@ -493,7 +493,7 @@ function copy_ht_trans!(
     p, n = size(A)
     nn   = n >>> 1
     msg != "" && (pmeter = Progress(p, 5, msg)) # update every 5 seconds
-    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= header(reader).sampleID)
     record = VCF.Record()
 
     for j in 1:p
@@ -505,7 +505,7 @@ function copy_ht_trans!(
         else
             read!(reader, record)
         end
-        gtkey = VCF.findgenokey(record, "GT")
+        gtkey = findgenokey(record, "GT")
 
         # save record's information
         record_chr === nothing || (record_chr[j] = VCF.chrom(record))
@@ -665,7 +665,7 @@ function copy_ds!(
     record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 2), 5, msg)) # update every 5 seconds
-    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= header(reader).sampleID)
     record = VCF.Record()
     for j in 1:size(A, 2)
         if eof(reader)
@@ -676,7 +676,7 @@ function copy_ds!(
         else
             read!(reader, record)
         end
-        dskey = VCF.findgenokey(record, key)
+        dskey = findgenokey(record, key)
 
         # if no dosage field, fill by missing values
         if dskey === nothing
@@ -758,7 +758,7 @@ function copy_ds_trans!(
     record_alt::Union{AbstractVector, Nothing} = nothing
     ) where T <: Real
     msg != "" && (pmeter = Progress(size(A, 1), 5, msg)) # update every 5 seconds
-    sampleID === nothing || (sampleID .= VCF.header(reader).sampleID)
+    sampleID === nothing || (sampleID .= header(reader).sampleID)
     record = VCF.Record()
     for j in 1:size(A, 1)
         if eof(reader)
@@ -769,7 +769,7 @@ function copy_ds_trans!(
         else
             read!(reader, record)
         end
-        dskey = VCF.findgenokey(record, key)
+        dskey = findgenokey(record, key)
 
         # if no dosage field, fill by missing values
         if dskey === nothing
