@@ -36,6 +36,8 @@ include("convert.jl")
 include("filter.jl")
 include("aim_select.jl")
 include("grm.jl")
-#include("unsafe_convert.jl")
+
+# test data directory
+datadir(parts...) = joinpath(@__DIR__, "..", "test", parts...)    
 
 end # module
