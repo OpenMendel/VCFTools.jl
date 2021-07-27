@@ -14,6 +14,9 @@ ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 VariantCallFormat = "28eba6e3-a997-4ad9-87c6-d933b8bca6c1"
 
+[compat]
+SpecialFunctions = "1"
+
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
