@@ -79,10 +79,10 @@ There are differnt SNP models. The *additive* SNP model essentially counts the n
 
 | Genotype | VCF GT | `model=:additive` | `model=:dominant` | `model=:recessive` |    
 |:---:|:---:|:---:|:---:|:---:|  
-| ALT, ALT | 0/0, 0&#124;0 | 2 | 1 | 1 |  
-| REF, ALT | 0/1, 0&#124;1 | 1 | 1 | 0 |  
-| REF, REF | 1/1, 1&#124;1 | 0 | 0 | 0 |  
-| missing | . | Null | Null | Null | 
+| ALT, ALT | 0/0, 0$\vert$0 | 2 | 1 | 1 |  
+| REF, ALT | 0/1, 0$\vert$1 | 1 | 1 | 0 |  
+| REF, REF | 1/1, 1$\vert$1 | 0 | 0 | 0 |  
+| missing | ./., .$\vert$. | Null | Null | Null | 
 
 To properly record the missing genotypes, VCFTools convert VCF GT data to matrix `A` where element type of `A` is either a numeric number, or missing value. In Julia, this means `eltype(A) <: Union{Missing, Real}` where `<:` means "is a subtype". 
 
@@ -95,13 +95,13 @@ Convert GT data in VCF file test.08Jun17.d8b.vcf.gz to a `Matrix{Union{Missing, 
 @time A = convert_gt(Int8, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = false, center = false, scale = false)
 ```
 
-      2.115475 seconds (8.31 M allocations: 427.711 MiB, 5.54% gc time)
+      1.760590 seconds (2.06 M allocations: 118.037 MiB, 1.18% gc time, 95.14% compilation time)
 
 
 
 
 
-    191×1356 Array{Union{Missing, Int8},2}:
+    191×1356 Matrix{Union{Missing, Int8}}:
      0  0  0  0  1  0  0  0  0  0  0  0  2  …  0  0  0  0  1  0  0  0  0  0  0  0
      0  0  0  0  0  0  0  0  0  0  0  0  2     0  0  0  0  0  0  0  0  0  0  0  0
      0  0  0  0  1  0  0  0  0  0  0  0  2     0  0  0  0  1  0  0  0  0  0  0  0
@@ -138,13 +138,13 @@ We can also optionally impute missing genotypes according to allele frequency, c
 @time A = convert_gt(Float64, "test.08Jun17.d8b.vcf.gz"; model = :additive, impute = true, center = true, scale = true)
 ```
 
-      0.331981 seconds (1.43 M allocations: 87.521 MiB, 4.29% gc time)
+      0.148316 seconds (523.76 k allocations: 42.592 MiB, 4.85% gc time, 47.83% compilation time)
 
 
 
 
 
-    191×1356 Array{Union{Missing, Float64},2}:
+    191×1356 Matrix{Union{Missing, Float64}}:
      0.0  0.0  0.0  0.0   1.41301   0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0  -0.390016  -0.390016  0.0
@@ -158,7 +158,7 @@ We can also optionally impute missing genotypes according to allele frequency, c
      0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0   2.36899    2.36899   0.0
      0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0   2.36899    2.36899   0.0
-     ⋮                              ⋮    ⋱                                  ⋮  
+     ⋮                              ⋮    ⋱                                  ⋮
      0.0  0.0  0.0  0.0   1.41301   0.0     0.0  0.0   2.36899    2.36899   0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0  …  0.0  0.0  -0.390016  -0.390016  0.0
      0.0  0.0  0.0  0.0  -0.586138  0.0     0.0  0.0  -0.390016  -0.390016  0.0
@@ -183,13 +183,13 @@ In certain applications such as genotype imputation, the genotypes are *phased*.
 @time H = convert_ht(Int8, "test.08Jun17.d8b.vcf.gz")
 ```
 
-      0.305814 seconds (1.27 M allocations: 77.888 MiB, 6.44% gc time)
+      0.160939 seconds (732.86 k allocations: 52.687 MiB, 5.00% gc time, 50.10% compilation time)
 
 
 
 
 
-    382×1356 Array{Int8,2}:
+    382×1356 Matrix{Int8}:
      0  0  0  0  1  0  0  0  0  0  0  0  1  …  0  0  0  0  1  0  0  0  0  0  0  0
      0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
      0  0  0  0  0  0  0  0  0  0  0  0  1     0  0  0  0  0  0  0  0  0  0  0  0
@@ -234,13 +234,13 @@ Often data contains dosage information. In this case, matrix values can be any n
 @time D = convert_ds(Float64, "test.08Jun17.d8b.vcf.gz"; key="DS", impute=false, center=false, scale=false)
 ```
 
-      0.372537 seconds (2.26 M allocations: 157.272 MiB, 6.20% gc time)
+      0.204783 seconds (1.56 M allocations: 121.663 MiB, 10.37% gc time, 31.82% compilation time)
 
 
 
 
 
-    191×1356 Array{Union{Missing, Float64},2}:
+    191×1356 Matrix{Union{Missing, Float64}}:
      0.0   0.0  0.0  0.0   1.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0   0.0  0.0
      0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
      0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  0.05  0.0  0.0
@@ -254,7 +254,7 @@ Often data contains dosage information. In this case, matrix values can be any n
      0.0   0.0  0.0  0.0   0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  1.0   1.0  0.0
      0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
      0.0   0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  1.0   1.0  0.0
-     ⋮                          ⋮         ⋱       ⋮                         ⋮  
+     ⋮                          ⋮         ⋱       ⋮                         ⋮
      0.0   0.0  0.0  0.0   1.0  0.0  0.0     0.0  0.0  0.0  0.0  1.0   1.0  0.0
      0.0   0.0  0.0  0.0   0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0   0.0  0.0
      0.05  0.0  0.0  0.0   0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0   0.0  0.0
@@ -282,7 +282,7 @@ For example, to loop over all genotype markers in the VCF file test.08Jun17.d8b.
 
 
 ```julia
-using GeneticVariation
+using VariantCallFormat
 
 # initialize VCF reader
 people, snps = nsamples("test.08Jun17.d8b.vcf.gz"), nrecords("test.08Jun17.d8b.vcf.gz")
@@ -320,10 +320,50 @@ close(reader)
 
 As the warning suggests, the last window has less than 25 markers. The remaining columns in the matrix `g` are set to missing values.
 
-## Sample ID, Chromosome, position, REF/ALT alleles
+## Sample ID, Chromosome, SNP position, REF/ALT alleles
 
-All function above can also save sample ID, chromosome, SNP position, and the REF/ALT alleles. For `convert_gt`, `convert_ht`, and `convert_ds`, this is achieved using the optional argument
-`save_snp_info = true`
+To extract sample ID without looping over the entire VCF file, you can do
+
+
+```julia
+ids = sampleID("test.08Jun17.d8b.vcf.gz")
+```
+
+
+
+
+    191-element Vector{String}:
+     "HG00096"
+     "HG00097"
+     "HG00099"
+     "HG00100"
+     "HG00101"
+     "HG00102"
+     "HG00103"
+     "HG00104"
+     "HG00106"
+     "HG00108"
+     "HG00109"
+     "HG00110"
+     "HG00111"
+     ⋮
+     "HG00383"
+     "HG00384"
+     "HG00403"
+     "HG00404"
+     "HG00406"
+     "HG00407"
+     "HG00418"
+     "HG00419"
+     "HG00421"
+     "HG00422"
+     "HG00427"
+     "HG00428"
+
+
+
+However, extracting each SNP's (record) chromosome, SNP position, or REF/ALT alleles, one must loop over the entire VCF file. This is achieved using the optional argument
+`save_snp_info = true` that can be supplied to functions `convert_gt`, `convert_ht`, and `convert_ds`.
 
 
 ```julia
@@ -331,12 +371,17 @@ All function above can also save sample ID, chromosome, SNP position, and the RE
     "test.08Jun17.d8b.vcf.gz", save_snp_info=true)
 ```
 
-      0.339747 seconds (875.53 k allocations: 60.335 MiB, 2.11% gc time)
+      0.088368 seconds (536.26 k allocations: 43.550 MiB, 9.98% gc time)
 
 
 
 
 
-    (Union{Missing, Float64}[0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0 0.0], ["HG00096", "HG00097", "HG00099", "HG00100", "HG00101", "HG00102", "HG00103", "HG00104", "HG00106", "HG00108"  …  "HG00403", "HG00404", "HG00406", "HG00407", "HG00418", "HG00419", "HG00421", "HG00422", "HG00427", "HG00428"], ["22", "22", "22", "22", "22", "22", "22", "22", "22", "22"  …  "22", "22", "22", "22", "22", "22", "22", "22", "22", "22"], [20000086, 20000146, 20000199, 20000291, 20000428, 20000683, 20000771, 20000793, 20000810, 20000814  …  20099406, 20099579, 20099654, 20099659, 20099660, 20099674, 20099716, 20099752, 20099891, 20099941], Array{String,1}[["rs138720731"], ["rs73387790"], ["rs183293480"], ["rs185807825"], ["rs55902548"], ["rs142720028"], ["rs114690707"], ["rs189842693"], ["rs147349046"], ["rs183154520"]  …  ["rs41281429"], ["rs145947632"], ["rs9605066"], ["rs142467695"], ["rs74605905"], ["rs145967409"], ["rs139838034"], ["rs73389792"], ["rs1048659"], ["rs113958995"]], ["T", "G", "A", "G", "G", "A", "A", "T", "C", "T"  …  "G", "CCA", "C", "C", "C", "T", "C", "G", "C", "T"], Array{String,1}[["C"], ["A"], ["C"], ["T"], ["T"], ["G"], ["C"], ["C"], ["T"], ["C"]  …  ["C"], ["C"], ["T"], ["T"], ["T"], ["C"], ["G"], ["T"], ["G"], ["A"]])
+    (Union{Missing, Float64}[0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0 0.0], ["HG00096", "HG00097", "HG00099", "HG00100", "HG00101", "HG00102", "HG00103", "HG00104", "HG00106", "HG00108"  …  "HG00403", "HG00404", "HG00406", "HG00407", "HG00418", "HG00419", "HG00421", "HG00422", "HG00427", "HG00428"], ["22", "22", "22", "22", "22", "22", "22", "22", "22", "22"  …  "22", "22", "22", "22", "22", "22", "22", "22", "22", "22"], [20000086, 20000146, 20000199, 20000291, 20000428, 20000683, 20000771, 20000793, 20000810, 20000814  …  20099406, 20099579, 20099654, 20099659, 20099660, 20099674, 20099716, 20099752, 20099891, 20099941], [["rs138720731"], ["rs73387790"], ["rs183293480"], ["rs185807825"], ["rs55902548"], ["rs142720028"], ["rs114690707"], ["rs189842693"], ["rs147349046"], ["rs183154520"]  …  ["rs41281429"], ["rs145947632"], ["rs9605066"], ["rs142467695"], ["rs74605905"], ["rs145967409"], ["rs139838034"], ["rs73389792"], ["rs1048659"], ["rs113958995"]], ["T", "G", "A", "G", "G", "A", "A", "T", "C", "T"  …  "G", "CCA", "C", "C", "C", "T", "C", "G", "C", "T"], [["C"], ["A"], ["C"], ["T"], ["T"], ["G"], ["C"], ["C"], ["T"], ["C"]  …  ["C"], ["C"], ["T"], ["T"], ["T"], ["C"], ["G"], ["T"], ["G"], ["A"]])
 
 
+
+
+```julia
+
+```

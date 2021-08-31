@@ -26,8 +26,6 @@ convert_ds
 copy_gt!
 copy_ht!
 copy_ds!
-copy_gt_as_is!
-copy_ht_as_is!
 conformgt_by_id
 conformgt_by_pos
 mask_gt
