@@ -26,12 +26,12 @@ function write_vcf(
     outfile::AbstractString,
     x1::AbstractMatrix,
     x2::AbstractMatrix;
-    chr::AbstractVector{String} = ["1"     for i in 1:p],
-    pos::AbstractVector{Int}    = [100i    for i in 1:p],
-    ref::AbstractVector{String} = ["A"     for i in 1:p],
-    alt::AbstractVector{String} = ["T"     for i in 1:p],
-    sampleID::AbstractVector{String} = [string(i) for i in 1:n],
-    SNPids::AbstractVector{String} = ["snp$i" for i in 1:p],
+    chr::AbstractVector{String} = ["1"     for i in 1:size(x1, 2)],
+    pos::AbstractVector{Int}    = [100i    for i in 1:size(x1, 2)],
+    ref::AbstractVector{String} = ["A"     for i in 1:size(x1, 2)],
+    alt::AbstractVector{String} = ["T"     for i in 1:size(x1, 2)],
+    sampleID::AbstractVector{String} = [string(i) for i in 1:size(x1, 1)],
+    SNPids::AbstractVector{String} = ["snp$i" for i in 1:size(x1, 2)],
     )
     n, p = size(x1)
     (n, p) == size(x2) || error("x1 and x2 have different dimensions!")
@@ -117,12 +117,12 @@ https://github.com/OpenMendel/MendelImpute.jl/blob/master/src/impute.jl#L23
 function write_vcf(
     outfile::AbstractString,
     x::AbstractMatrix;
-    chr::AbstractVector{String} = ["1"     for i in 1:p],
-    pos::AbstractVector{Int}    = [100i    for i in 1:p],
-    ref::AbstractVector{String} = ["A"     for i in 1:p],
-    alt::AbstractVector{String} = ["T"     for i in 1:p],
-    sampleID::AbstractVector{String} = [string(i) for i in 1:n],
-    SNPids::AbstractVector{String} = ["snp$i" for i in 1:p],
+    chr::AbstractVector{String} = ["1"     for i in 1:size(x, 2)],
+    pos::AbstractVector{Int}    = [100i    for i in 1:size(x, 2)],
+    ref::AbstractVector{String} = ["A"     for i in 1:size(x, 2)],
+    alt::AbstractVector{String} = ["T"     for i in 1:size(x, 2)],
+    sampleID::AbstractVector{String} = [string(i) for i in 1:size(x, 1)],
+    SNPids::AbstractVector{String} = ["snp$i" for i in 1:size(x, 2)],
     )
     n, p = size(x)
     io = openvcf(outfile, "w")
