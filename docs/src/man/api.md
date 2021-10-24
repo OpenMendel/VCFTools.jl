@@ -29,4 +29,5 @@ copy_ds!
 conformgt_by_id
 conformgt_by_pos
 mask_gt
+write_vcf
 ```

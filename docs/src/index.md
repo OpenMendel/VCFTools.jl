@@ -12,6 +12,7 @@
 - Match markers in two VCF files according to ID. 
 - Calculation of Genetic Relationship Matrix.
 - Rank SNPs by their ancestry informativeness.
+- Saving numeric matrix into VCF file
 
 ## Installation
 
@@ -29,6 +30,7 @@ Pages = [
     "man/summaryinfo.md",
     "man/filter.md",
     "man/convert.md",
+    "man/write.md",
     "man/conformgt.md",
     "man/grm.md"
     "man/aim.md"

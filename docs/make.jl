@@ -12,6 +12,7 @@ makedocs(
         "VCF Summary" => "man/summaryinfo.md",
         "Filter" => "man/filter.md",
         "Convert" => "man/convert.md",
+        "Write" => "man/write.md",
         "Match markers in two VCF" => "man/conformgt.md",
         "Genetic Relationship Matrix" => "man/grm.md",
         "Ancestry informative markers" => "man/aim.md",
