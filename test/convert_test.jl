@@ -180,7 +180,4 @@ end
     write_vcf("test.write.vcf.gz", X)
     G = convert_gt(Float64, "test.write.vcf.gz")
     @test all(G .== X)
-
-    # clean up
-    rm("test.write.vcf.gz", force=true)
 end
