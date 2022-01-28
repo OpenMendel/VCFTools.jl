@@ -79,10 +79,10 @@ There are differnt SNP models. The *additive* SNP model essentially counts the n
 
 | Genotype | VCF GT | `model=:additive` | `model=:dominant` | `model=:recessive` |    
 |:---:|:---:|:---:|:---:|:---:|  
-| ALT, ALT | 0/0, 0$\vert$0 | 2 | 1 | 1 |  
+| ALT, ALT | 1/1, 1$\vert$1 | 2 | 1 | 1 |  
 | REF, ALT | 0/1, 0$\vert$1 | 1 | 1 | 0 |  
-| REF, REF | 1/1, 1$\vert$1 | 0 | 0 | 0 |  
-| missing | ./., .$\vert$. | Null | Null | Null | 
+| REF, REF | 0/0, 0$\vert$0 | 0 | 0 | 0 |  
+| missing | ./., .$\vert$. | missing | missing | missing | 
 
 To properly record the missing genotypes, VCFTools convert VCF GT data to matrix `A` where element type of `A` is either a numeric number, or missing value. In Julia, this means `eltype(A) <: Union{Missing, Real}` where `<:` means "is a subtype". 
 
