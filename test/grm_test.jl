@@ -1,6 +1,6 @@
 @testset "grm" begin
     vcf = "test.08Jun17.d8b.vcf.gz"
-    isfile(vcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile(vcf) || Downloads.download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$vcf"))) 
     # standard GRM method
     Φgrm = grm(vcf, method=:GRM)

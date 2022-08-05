@@ -89,9 +89,9 @@ end
     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
     tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+    isfile(refvcf) || Downloads.download("https://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$refvcf")))
-    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/tcest.08Jun17.d8b.vcf.gz", 
+    isfile(tgtvcf) || Downloads.download("https://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$tgtvcf")))
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
@@ -122,9 +122,9 @@ end
     refvcf = "chr22.1kg.phase3.v5a.vcf.gz"    
     tgtvcf = "test.08Jun17.d8b.vcf.gz"
     outvcf = "conformgt.matched"
-    isfile(refvcf) || download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+    isfile(refvcf) || Downloads.download("https://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$refvcf"))) 
-    isfile(tgtvcf) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+    isfile(tgtvcf) || Downloads.download("https://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$tgtvcf")))
     #@code_warntype conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
     #@test @inferred conformgt_by_id(refvcf, tgtvcf, outvcf, "22", 20000086:20099941, false)
