@@ -1,6 +1,6 @@
 @testset "convert_gt(vcfile)" begin
     vcffile = "test.08Jun17.d8b.vcf.gz"
-    isfile(vcffile) || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile(vcffile) || Downloads.download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         abspath(joinpath(dirname(pathof(VCFTools)), "..", "test/$vcffile"))) 
     #@code_warntype convert_gt(UInt8, vcffile; impute = false, center = false, scale = false)
     # @inferred convert_gt(UInt8, vcffile; impute = false, center = false, scale = false)
@@ -164,4 +164,20 @@ end
     @test all(SNPid .== SNPidt)
     @test all(ref .== reft)
     @test all(alt .== altt)
+end
+
+@testset "write VCF" begin
+    # write haplotypes
+    H1 = bitrand(100, 200)
+    H2 = bitrand(100, 200)
+    write_vcf("test.write.vcf.gz", H1, H2)
+    H = convert_ht(Bool, "test.write.vcf.gz")
+    @test all(H1 .== view(H, 1:2:size(H, 1), :))
+    @test all(H2 .== view(H, 2:2:size(H, 1), :))
+
+    # write genotypes
+    X = H1 + H2
+    write_vcf("test.write.vcf.gz", X)
+    G = convert_gt(Float64, "test.write.vcf.gz")
+    @test all(G .== X)
 end

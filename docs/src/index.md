@@ -2,7 +2,7 @@
 
 *Julia utilities for handling VCF files*
 
-`VCFTools.jl` implements some Julia utilities for handling [VCF](https://github.com/samtools/hts-specs) files. This package heavily uses the VCF parser developed in the [`BioJulia/GeneticVariation.jl`](https://github.com/BioJulia/GeneticVariation.jl) package.
+`VCFTools.jl` implements some Julia utilities for handling [VCF](https://github.com/samtools/hts-specs) files. This package heavily uses the VCF parser developed in the [`BioJulia/GeneticVariation.jl`](https://github.com/BioJulia/GeneticVariation.jl) package, which has been superseded by [`VariantCallFormal.jl`](https://github.com/rasmushenningsson/VariantCallFormat.jl)
 
 ## Package Features
 
@@ -12,12 +12,14 @@
 - Match markers in two VCF files according to ID. 
 - Calculation of Genetic Relationship Matrix.
 - Rank SNPs by their ancestry informativeness.
+- Saving numeric matrix into VCF file
 
 ## Installation
 
-Use the Julia package manager to install `VCFTools.jl`. Press `]` and type:
+Within Julia,
 ```julia
-(v1.5) pkg> add https://github.com/OpenMendel/VCFTools.jl
+using Pkg
+pkg"add VCFTools"
 ```
 This package supports Julia `v1.5`+.
 
@@ -28,6 +30,7 @@ Pages = [
     "man/summaryinfo.md",
     "man/filter.md",
     "man/convert.md",
+    "man/write.md",
     "man/conformgt.md",
     "man/grm.md"
     "man/aim.md"

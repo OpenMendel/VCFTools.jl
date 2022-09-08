@@ -6,7 +6,7 @@ end
 
 @testset "openvcf" begin
     # download and extract test file if not exist
-    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile("test.08Jun17.d8b.vcf.gz") || Downloads.download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
     @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "r+")
     @test_throws ArgumentError openvcf("test.08Jun17.d8b.vcf.gz", "w+")
@@ -17,14 +17,14 @@ end
 
 @testset "nrecords(vcf)" begin
     # download and extract test file if not exist
-    isfile("test.08Jun17.d8b.vcf.gz") ||   download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile("test.08Jun17.d8b.vcf.gz") ||   Downloads.download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
     @test nrecords("test.08Jun17.d8b.vcf.gz") == 1356
 end
 
 @testset "nsamples(vcf)" begin
     # download test file if not exist
-    isfile("test.08Jun17.d8b.vcf.gz") ||  download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile("test.08Jun17.d8b.vcf.gz") ||  Downloads.download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
     @test nsamples("test.08Jun17.d8b.vcf.gz") == 191
 end
@@ -47,7 +47,7 @@ end
     # output tuple: (records, samples, lines, missings_by_sample, missings_by_record, maf_by_record, minorallele_by_record)
 
     # download and extract test file and unzip
-    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile("test.08Jun17.d8b.vcf.gz") || Downloads.download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
     write("test.08Jun17.d8b.vcf", read(GzipDecompressorStream(open("test.08Jun17.d8b.vcf.gz", "r"))))
 
@@ -90,7 +90,7 @@ end
 
 @testset "get sampleID" begin
     # download and extract test file if not exist
-    isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
+    isfile("test.08Jun17.d8b.vcf.gz") || Downloads.download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
         joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
     ids = sampleID("test.08Jun17.d8b.vcf.gz")
     @test length(ids) == 191

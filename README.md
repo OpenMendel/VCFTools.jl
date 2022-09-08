@@ -8,9 +8,12 @@ VCFTools.jl provide Julia utilities for handling VCF files.
 
 ## Installation
 
-Within Julia, press `]` to use the package manager and type:
 
-    (v1.5) pkg> add https://github.com/OpenMendel/VCFTools.jl
+This package is registered in the default Julia package registry, and can be installed through standard package installation procedure: e.g., running the following code in Julia REPL.
+```julia
+using Pkg
+pkg"add VCFTools"
+```
 
 This package supports Julia v1.5+.
 
@@ -18,8 +21,8 @@ This package supports Julia v1.5+.
 
 If you use [OpenMendel](https://openmendel.github.io) analysis packages in your research, please cite the following reference in the resulting publications:
 
-Zhou H, Sinsheimer JS, Bates DM, Chu BB, German CA, Ji SS, Keys KL, Kim J, Ko S, Mosher GD, Papp JC, Sobel EM, Zhai J, Zhou JJ, Lange K. (2020) OPENMENDEL: a cooperative programming project for statistical genetics,  _Hum Genet_, 139:61-71. [doi: 10.1007/s00439-019-02001-z](https://doi.org/10.1007/s00439-019-02001-z).
+*Zhou H, Sinsheimer JS, Bates DM, Chu BB, German CA, Ji SS, Keys KL, Kim J, Ko S, Mosher GD, Papp JC, Sobel EM, Zhai J, Zhou JJ, Lange K. OPENMENDEL: a cooperative programming project for statistical genetics. Hum Genet. 2020 Jan;139(1):61-71. doi: 10.1007/s00439-019-02001-z. Epub 2019 Mar 26. PMID: 30915546; PMCID: [PMC6763373](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6763373/).*
 
 ## Acknowledgments
 
-This project is supported by the National Institutes of Health under NIGMS awards R01GM053275 and R25GM103774 and NHGRI award R01HG006139.
+This project has been supported by the National Institutes of Health under awards R01GM053275, R01HG006139, R25GM103774, and 1R25HG011845.

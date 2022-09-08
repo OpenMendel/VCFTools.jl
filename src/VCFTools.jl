@@ -27,7 +27,9 @@ export conformgt_by_id, conformgt_by_pos,
     filter_chr, filter_range,
     mask_gt, find_duplicate_marker,    
     # aim selection
-    aim_select
+    aim_select,
+    # write routines
+    write_vcf
 
 # package code goes here
 include("gtstats.jl")
@@ -36,6 +38,7 @@ include("convert.jl")
 include("filter.jl")
 include("aim_select.jl")
 include("grm.jl")
+include("write.jl")
 
 # test data directory
 datadir(parts...) = joinpath(@__DIR__, "..", "test", parts...)    

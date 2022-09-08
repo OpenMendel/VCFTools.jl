@@ -1,8 +1,8 @@
 @testset "AIM selection" begin
-    # download data
+    # Downloads.download data
     vcffile = "chr22.1kg.phase3.v5a.vcf.gz"
     isfile(vcffile) || 
-        download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
+        Downloads.download("http://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz", 
         joinpath(pwd(), vcffile))
 
     # cd to test folder and read population origin

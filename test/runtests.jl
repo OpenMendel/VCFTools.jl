@@ -10,6 +10,7 @@ using CSV
 using DataFrames
 using StatsBase
 using LinearAlgebra
+using Downloads
 
 include("gtstats_test.jl")
 include("conformgt_test.jl")
