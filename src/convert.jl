@@ -693,22 +693,41 @@ function copy_ds!(
         record_alt === nothing || (record_alt[j] = VCF.alt(record))
 
         # loop over every marker in record
-        _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing) 
-        ct = 2alt_freq
-        wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
+        # _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing) 
+        # ct = 2alt_freq
+        # wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
         for i in 1:size(A, 1)
             geno = record.genotype[i]
             # Missing genotype: dropped field or "." => 0x2e
             if dskey > lastindex(geno) || record.data[geno[dskey]] == [0x2e]
-                A[i, j] = (impute ? ct : missing)
+                A[i, j] = missing # (impute ? ct : missing)
             else # not missing
                 A[i, j] = parse(T, String(record.data[geno[dskey]]))
             end
+
+        end
+        if center || scale || impute
+            total_ds = zero(T)
+            cnt = 0
+            for i in 1:size(A, 1)
+                if A[i, j] !== missing
+                    total_ds += A[i, j]
+                    cnt += 1
+                end
+            end
+            ct = total_ds / cnt
+            wt = ct == 0 ? 1.0 : 1.0 / √(ct * (1 - ct/2))
             # center and scale if asked
             center && !ismissing(A[i, j]) && (A[i, j] -= ct)
             scale && !ismissing(A[i, j]) && (A[i, j] *= wt)
+            if impute
+                for i in 1:size(A, 1)
+                    if A[i, j] === missing
+                        A[i, j] = ct
+                    end
+                end
+            end
         end
-
         # update progress
         msg != "" && next!(pmeter)
     end
@@ -786,20 +805,39 @@ function copy_ds_trans!(
         record_alt === nothing || (record_alt[j] = VCF.alt(record))
         
         # loop over every marker in record
-        _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing) 
-        ct = 2alt_freq
-        wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
+        # _, _, _, _, _, alt_freq, _, _, _, _, _ = gtstats(record, nothing) 
+        # ct = 2alt_freq
+        # wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
         for i in 1:size(A, 2)
             geno = record.genotype[i]
             # Missing genotype: dropped field or "." => 0x2e
             if dskey > lastindex(geno) || record.data[geno[dskey]] == [0x2e]
-                A[j, i] = (impute ? ct : missing)
+                A[j, i] = missing #(impute ? ct : missing)
             else # not missing
                 A[j, i] = parse(T, String(record.data[geno[dskey]]))
             end
+        end
+        if center || scale || impute
+            total_ds = zero(T)
+            cnt = 0
+            for i in 1:size(A, 2)
+                if A[j, i] !== missing
+                    total_ds += A[j, i]
+                    cnt += 1
+                end
+            end
+            ct = total_ds / cnt
+            wt = ct == 0 ? 1.0 : 1.0 / √(ct * (1 - ct/2))
             # center and scale if asked
             center && !ismissing(A[j, i]) && (A[j, i] -= ct)
             scale && !ismissing(A[j, i]) && (A[j, i] *= wt)
+            if impute
+                for i in 1:size(A, 2)
+                    if A[j, i] === missing
+                        A[j, i] = ct
+                    end
+                end
+            end
         end
 
         #update progress
