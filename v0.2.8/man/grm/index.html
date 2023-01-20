@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Genetic Relationship Matrix · VCFTools</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">VCFTools</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../summaryinfo/">VCF Summary</a></li><li><a class="tocitem" href="../filter/">Filter</a></li><li><a class="tocitem" href="../convert/">Convert</a></li><li><a class="tocitem" href="../write/">Write</a></li><li><a class="tocitem" href="../conformgt/">Match markers in two VCF</a></li><li class="is-active"><a class="tocitem" href>Genetic Relationship Matrix</a><ul class="internal"><li><a class="tocitem" href="#Example-data"><span>Example data</span></a></li><li><a class="tocitem" href="#High-proportion-of-missing-data"><span>High proportion of missing data</span></a></li><li><a class="tocitem" href="#Inhomogeneous-populations"><span>Inhomogeneous populations</span></a></li></ul></li><li><a class="tocitem" href="../aim/">Ancestry informative markers</a></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Genetic Relationship Matrix</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Genetic Relationship Matrix</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/VCFTools.jl/blob/master/docs/src/man/grm.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Genetic-Relationship-Matrix"><a class="docs-heading-anchor" href="#Genetic-Relationship-Matrix">Genetic Relationship Matrix</a><a id="Genetic-Relationship-Matrix-1"></a><a class="docs-heading-anchor-permalink" href="#Genetic-Relationship-Matrix" title="Permalink"></a></h1><p>For homogeneous population, the grm function computes an empirical kinship matrix using either the classical genetic relationship matrix (<code>model=:GRM</code>), the method of moment method, (<code>model=:MoM</code>), or the robust method (<code>model=:Robust</code>). See the section Kinship Comparison of this <a href="https://link.springer.com/article/10.1007/s00439-019-02001-z">manuscript</a> for the formulae and references for these methods.</p><pre><code class="language-julia hljs">using VCFTools
+using BenchmarkTools
+using Random</code></pre><h2 id="Example-data"><a class="docs-heading-anchor" href="#Example-data">Example data</a><a id="Example-data-1"></a><a class="docs-heading-anchor-permalink" href="#Example-data" title="Permalink"></a></h2><p>We use a small dataset for illustration.</p><pre><code class="language-julia hljs">vcf = &quot;test.08Jun17.d8b.vcf.gz&quot;
+isfile(vcf) || download(&quot;http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz&quot;,
+    joinpath(pwd(), &quot;test.08Jun17.d8b.vcf.gz&quot;)) </code></pre><pre><code class="nohighlight hljs">true</code></pre><p>Classical genetic relation matrix:</p><pre><code class="language-julia hljs">Φgrm = grm(vcf, method=:GRM)</code></pre><pre><code class="nohighlight hljs">191×191 Array{Union{Missing, Float64},2}:
+  0.509639   -0.173137     0.139009    0.344595   …  -0.0538013    0.118336
+ -0.173137    0.269917    -0.0378611  -0.168066       0.0149373   -0.0938038
+  0.139009   -0.0378611    0.544581    0.0929861     -0.0811612   -0.108824
+  0.344595   -0.168066     0.0929861   0.632202       0.0380955    0.197141
+  0.135174    0.0502916   -0.104267    0.0336621      0.0569862    0.151167
+  0.246076   -0.014241     0.179227    0.19268    …  -0.139676    -0.165812
+  0.020906   -0.139727    -0.139303    0.0851532      0.0886343    0.2662
+  0.215287   -0.0120802    0.174532    0.180937      -0.13446     -0.150215
+ -0.0857512   0.101322     0.0273445  -0.124995      -0.0284517   -0.133978
+ -0.0334045   0.00105786  -0.0847244   0.0192485      0.17522      0.28381
+  0.191035   -0.194461     0.123831    0.343103   …  -0.169409    -0.123299
+  0.0403932   0.0362218   -0.104964    0.0818739      0.120505     0.221341
+  0.119437   -0.159888    -0.154841    0.0654152      0.00605001   0.189286
+  ⋮                                               ⋱                ⋮
+ -0.0151901   0.0145886   -0.0797194  -0.0432524     -0.11637     -0.144026
+ -0.176762    0.0709844   -0.0553092  -0.196741   …   0.0202614   -0.0684934
+  0.119737   -0.0772078   -0.0293833   0.192959       0.139404     0.465827
+  0.160204   -0.108528    -0.155567    0.32801        0.330113     0.587766
+  0.0114375  -0.135734    -0.134039    0.132396       0.0916851    0.258156
+ -0.0667285  -0.075066    -0.0659199   0.060112      -0.00138809  -0.00636518
+ -0.100007    0.0307077   -0.0525619  -0.0751086  …   0.204855     0.40322
+  0.158981   -0.116065    -0.15441     0.406356       0.314238     0.579388
+ -0.0155081  -0.0123674   -0.076561   -0.0252304      0.115077     0.370777
+ -0.138001    0.0857907   -0.0506552  -0.15243        0.0454182   -0.0203949
+ -0.0538013   0.0149373   -0.0811612   0.0380955      0.247693     0.269822
+  0.118336   -0.0938038   -0.108824    0.197141   …   0.269822     0.763134</code></pre><pre><code class="language-julia hljs"># calculate GRM using Float64 = double precision
+@btime grm($vcf, method=:GRM);</code></pre><pre><code class="nohighlight hljs">  109.355 ms (520006 allocations: 42.78 MiB)</code></pre><p>Computation time is dominated by data import. For large VCF files, we recommend converting to PLINK files and use <a href="https://github.com/OpenMendel/SnpArrays.jl">SnpArrays.jl</a>&#39;s GRM functions. </p><pre><code class="language-julia hljs"># time to import data
+@btime convert_gt(Float64, $vcf);</code></pre><pre><code class="nohighlight hljs">  70.635 ms (519985 allocations: 42.42 MiB)</code></pre><p>By default, <code>grm</code> exlcudes SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument <code>minmaf</code>.</p><pre><code class="language-julia hljs"># compute GRM excluding SNPs with MAF≤0.05 
+grm(vcf, method=:GRM, minmaf=0.05)</code></pre><pre><code class="nohighlight hljs">191×191 Array{Union{Missing, Float64},2}:
+  0.554328   -0.214182     0.170112    …  -0.17178     -0.0647294   0.155598
+ -0.214182    0.305252    -0.0674007       0.103615     0.016486   -0.114942
+  0.170112   -0.0674007    0.357826       -0.0544721   -0.0910721  -0.139278
+  0.443756   -0.203137     0.136578       -0.185155     0.0550511   0.258983
+  0.136835    0.067131    -0.113638        0.0211501    0.0755193   0.198218
+  0.291432   -0.020033     0.215636    …  -0.112002    -0.177116   -0.205093
+  0.0352073  -0.170828    -0.157507       -0.130001     0.115162    0.342286
+  0.275446   -0.0141623    0.21027        -0.0988044   -0.167418   -0.182397
+ -0.104754    0.124656     0.00681675      0.108201    -0.0378602  -0.165262
+ -0.0359602   0.00233001  -0.0923087       0.0609292    0.220443    0.361188
+  0.254598   -0.23304      0.178358    …  -0.24739     -0.201663   -0.139165
+  0.0564595   0.0463671   -0.117655        0.00785399   0.151922    0.282956
+  0.155375   -0.199302    -0.180192       -0.115809     0.0085127   0.242738
+  ⋮                                    ⋱                            ⋮
+ -0.01318     0.0192445   -0.0860713      -0.102959    -0.144756   -0.174637
+ -0.218718    0.0866758   -0.0586966   …   0.143783     0.0231579  -0.08324
+  0.157352   -0.0941577   -0.0397914      -0.0489522    0.177118    0.361727
+  0.201673   -0.139738    -0.185857       -0.0729051    0.409593    0.737014
+  0.0359959  -0.153181    -0.138269       -0.169825     0.131629    0.344859
+ -0.0618942  -0.0772039   -0.0529604      -0.151762     0.01507     0.0135899
+ -0.117868    0.0409624   -0.0505296   …   0.102447     0.23121     0.301612
+  0.203299   -0.14602     -0.181252       -0.0664162    0.392868    0.729678
+ -0.0136508  -0.0145859   -0.0821884       0.0803987    0.145022    0.259378
+ -0.17178     0.103615    -0.0544721       0.197499     0.0530589  -0.0246084
+ -0.0647294   0.016486    -0.0910721       0.0530589    0.280131    0.340445
+  0.155598   -0.114942    -0.139278    …  -0.0246084    0.340445    0.734055</code></pre><p>To specify specific SNPs for calculating empirical kinship, use the <code>cinds</code> keyword (default is <code>nothing</code>). When <code>cinds</code> is specified, <code>minmaf</code> is ignored.</p><pre><code class="language-julia hljs"># robust GRM using every other SNP
+grm(vcf, cinds=1:2:nrecords(vcf))</code></pre><pre><code class="nohighlight hljs">191×191 Array{Union{Missing, Float64},2}:
+  0.615936   -0.300454     0.119274   …  -0.202922   -0.0880007    0.199078
+ -0.300454    0.374049    -0.0554153      0.106105    0.00604129  -0.169099
+  0.119274   -0.0554153    0.40731       -0.0868751  -0.0794463   -0.104096
+  0.523751   -0.285146     0.134582      -0.219862    0.0240505    0.321878
+  0.159964    0.0390207   -0.14321        0.0290594   0.0364882    0.151578
+  0.302406   -0.0227735    0.192718   …  -0.150977   -0.208044    -0.211195
+  0.136271   -0.188909    -0.0916589     -0.123625    0.152535     0.450363
+  0.2916     -0.0228298    0.203411      -0.151033   -0.197351    -0.200502
+ -0.142535    0.134245     0.0272584      0.124283   -0.0617748   -0.247664
+ -0.0798966  -0.00735309  -0.0928407      0.0686797   0.237347     0.373936
+  0.351425   -0.253236     0.241737   …  -0.295445   -0.159025    -0.0116866
+  0.0778531   0.0321547   -0.117829       0.0114441   0.126366     0.262954
+  0.259521   -0.259145    -0.172644      -0.0863686   0.0285528    0.326381
+  ⋮                                   ⋱                            ⋮
+  0.0865764   0.0516272   -0.0231112     -0.108824   -0.144392    -0.169042
+ -0.27631     0.118712    -0.0742687  …   0.162497    0.0194357   -0.155704
+  0.250798   -0.171125     0.0121194     -0.0843426   0.148821     0.414401
+  0.297453   -0.242711    -0.16696       -0.0699352   0.421211     0.805033
+  0.170601   -0.176077    -0.0788273     -0.16454     0.154618     0.430947
+  0.0591123  -0.0940788    0.0246696     -0.157787    0.0323798    0.104473
+ -0.184012    0.0605192   -0.0464669  …   0.0935549   0.283721     0.366564
+  0.292726   -0.22594     -0.160938      -0.0639134   0.373486     0.778807
+ -0.0181024  -0.0530515   -0.0847928      0.0874768   0.137903     0.252993
+ -0.202922    0.106105    -0.0868751      0.246634    0.0498263   -0.0285702
+ -0.0880007   0.00604129  -0.0794463      0.0498263   0.336736     0.376581
+  0.199078   -0.169099    -0.104096   …  -0.0285702   0.376581     0.867896</code></pre><h2 id="High-proportion-of-missing-data"><a class="docs-heading-anchor" href="#High-proportion-of-missing-data">High proportion of missing data</a><a id="High-proportion-of-missing-data-1"></a><a class="docs-heading-anchor-permalink" href="#High-proportion-of-missing-data" title="Permalink"></a></h2><p>By default, missing data is imputed to the mean of each SNP. If genotype missing rate is too high (e.g. &gt;10%), this introduces biases and reduces the variance. The appendix of <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6220858/">this paper</a> proposes to scale the estimated kinship values as</p><p class="math-container">\[\Phi^c_{ij} = \frac{\Phi_{ij}}{(1 - m_i)(1 - m_j)}\]</p><p>where <span>$\Phi^c_{ij}$</span> is the corrected kinship coefficient between samples <span>$i$</span> and <span>$j$</span>, <span>$\Phi_{ij}$</span> is the estimated kinship coefficient  that initializes missing by the mean, and <span>$m_i$</span>, <span>$m_j$</span> are the proportion of missing data for individuals <span>$i$</span> and <span>$j$</span>. </p><pre><code class="language-julia hljs"># randomly mask genotypes
+Random.seed!(2020)
+masked_vcf = &quot;masked.test.08Jun17.d8b.vcf.gz&quot;
+p, n = nrecords(vcf), nsamples(vcf)
+mask_gt(vcf, bitrand(p, n), des=masked_vcf) # create vcf file with missings
+
+# estimate GRM, adjusting for missing initialization
+Φrbs_sm = grm(masked_vcf, method=:Robust, scale_missing=true)</code></pre><pre><code class="nohighlight hljs">191×191 Array{Union{Missing, Float64},2}:
+  1.30588    -0.290492     0.0689064   …  -0.276493   -0.111094     0.228753
+ -0.290492    0.651879    -0.0633084       0.120228   -0.0162717   -0.138165
+  0.0689064  -0.0633084    0.745551       -0.0492747  -0.0907247   -0.15895
+  0.430492   -0.247225     0.109645       -0.19945     0.0501855    0.172614
+  0.126902    0.0610365   -0.102666       -0.0522749   0.00563318   0.130814
+  0.297125   -0.00438906   0.166185    …  -0.11928    -0.267808    -0.206888
+  0.158559   -0.201101    -0.0921285      -0.170932    0.133963     0.468156
+  0.291988   -0.0396832    0.228577       -0.130672   -0.212078    -0.184651
+ -0.0933044   0.0609117   -0.0205374       0.119006   -0.0707123   -0.149736
+ -0.0986155   0.0212019   -0.104169        0.0411152   0.247845     0.283098
+  0.394477   -0.336916     0.156454    …  -0.270127   -0.106199    -0.054917
+  0.101792    0.0190197   -0.116953       -0.0284481   0.12791      0.180167
+  0.265324   -0.273398    -0.131791       -0.143237    0.0624757    0.318722
+  ⋮                                    ⋱                            ⋮
+  0.108532    0.0291635   -0.0279842      -0.14845    -0.226982    -0.17088
+ -0.330036    0.152157    -0.0822878   …   0.202119    0.0365194   -0.141963
+  0.293801   -0.166514    -0.0953181      -0.081469    0.204271     0.500274
+  0.301582   -0.173733    -0.140419       -0.16801     0.392107     0.761084
+  0.255879   -0.203995    -0.0920963      -0.226188    0.247413     0.436354
+  0.0534598  -0.0868044    0.0217071      -0.11379     0.0803161    0.107935
+ -0.239608    0.0928141   -0.00405421  …   0.116603    0.287398     0.227279
+  0.261594   -0.226794    -0.154149       -0.158804    0.468693     0.62726
+ -0.0638803   0.0142407   -0.073264        0.085191    0.126589     0.230395
+ -0.276493    0.120228    -0.0492747       0.452869    0.0445575   -0.0420102
+ -0.111094   -0.0162717   -0.0907247       0.0445575   0.706254     0.383406
+  0.228753   -0.138165    -0.15895     …  -0.0420102   0.383406     1.51661</code></pre><p><strong>Note:</strong> The resulting kinship values may have values exceedingly large (e.g. &gt; 1) if <span>$m_i$</span> or <span>$m_j$</span> is close to 1. Please proceed with caution. </p><h2 id="Inhomogeneous-populations"><a class="docs-heading-anchor" href="#Inhomogeneous-populations">Inhomogeneous populations</a><a id="Inhomogeneous-populations-1"></a><a class="docs-heading-anchor-permalink" href="#Inhomogeneous-populations" title="Permalink"></a></h2><p>If your population is admixed, we recommend one to follow <a href="https://openmendel.github.io/SnpArrays.jl/latest/#Inhomogenous/admixed-populations">this protocol</a> in SnpArrays.jl.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../conformgt/">« Match markers in two VCF</a><a class="docs-footer-nextpage" href="../aim/">Ancestry informative markers »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 20 January 2023 00:56">Friday 20 January 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
