@@ -697,6 +697,9 @@ function copy_ds!(
         # ct = 2alt_freq
         # wt = alt_freq == 0 ? 1.0 : 1.0 / √(2alt_freq * (1 - alt_freq))
         for i in 1:size(A, 1)
+            if dskey === nothing
+                break
+            end
             geno = record.genotype[i]
             # Missing genotype: dropped field or "." => 0x2e
             if dskey > lastindex(geno) || record.data[geno[dskey]] == [0x2e]
