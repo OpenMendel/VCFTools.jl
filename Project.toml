@@ -17,7 +17,7 @@ VariantCallFormat = "28eba6e3-a997-4ad9-87c6-d933b8bca6c1"
 [compat]
 CodecZlib = "0.7"
 Distributions = "0.24, 0.25"
-HypothesisTests = "0.10"
+HypothesisTests = "0.10, 0.11"
 ProgressMeter = "1"
 SpecialFunctions = "1, 2"
 VariantCallFormat = "0.5"
@@ -26,11 +26,11 @@ julia = "1"
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
 [targets]
 test = ["Test", "CSV", "Random", "StatsBase", "DataFrames", "LinearAlgebra", "Downloads"]
