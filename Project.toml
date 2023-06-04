@@ -2,7 +2,7 @@ name = "VCFTools"
 uuid = "a620830f-fdd7-5ebc-8d26-3621ab35fbfe"
 keywords = ["Variant call format", "VCF"]
 authors = ["Hua Zhou <hwachou@gmail.com>", "OpenMendel Team"]
-version = "0.2.9"
+version = "0.2.10"
 
 [deps]
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
