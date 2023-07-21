@@ -32,6 +32,7 @@ export conformgt_by_id, conformgt_by_pos,
     write_vcf
 
 # package code goes here
+
 include("gtstats.jl")
 include("conformgt.jl")
 include("convert.jl")
@@ -39,6 +40,7 @@ include("filter.jl")
 include("aim_select.jl")
 include("grm.jl")
 include("write.jl")
+include("iterator.jl")
 
 # test data directory
 datadir(parts...) = joinpath(@__DIR__, "..", "test", parts...)    
