@@ -29,18 +29,26 @@ end
 end
 
 function Base.iterate(itr::VCFIterator, state=1)
-    rows = length(itr.vcf)
+    rows = nrecords(itr.vcffile)
     if state <= 0 || state > rows
         return nothing
     else
-        result = (view(itr.vcf[state]),state+1)
+        count = 1
+        for record in itr.vcf
+            if count == state
+                result = (view(record),state+1)
+                break
+            else
+                count = count + 1 
+            end
+        end
         state = state + 1
         return result
     end
 end
 
 @inline function Base.length(itr::VCFIterator)
-    return length(itr.vcf)
+    return nrecords(itr.vcffile)
 end
 
 @inline function vcfiterator(vcffile::AbstractString)
