@@ -30,22 +30,49 @@ end
 
 function Base.iterate(itr::VCFIterator, state=1)
     rows = nrecords(itr.vcffile)
+
     if state <= 0 || state > rows
         return nothing
     else
-        count = 1
-        for record in itr.vcf
-            if count == state
-                result = (view(record),state+1)
+        reader = VCF.Reader(openvcf(itr.vcffile, "r"))
+        vector = []
+        chr = ""
+        pos = 0
+        ids = ""
+        ref = ""
+        alt = ""
+        qual = 0.0
+
+        count = 0
+
+        for record in reader
+            chr = VCF.chrom(record)
+            pos = VCF.pos(record)
+            ids = VCF.id(record) # VCF.id(record)[1]
+            ref = VCF.ref(record)
+            alt = VCF.alt(record) # VCF.alt(record)[1]
+            qual = VCF.qual(record)
+            push!(vector, (chr, pos, ids, ref, alt, qual))
+
+            count += 1
+
+            if count == state 
                 break
-            else
-                count = count + 1 
             end
         end
-        state = state + 1
-        return result
+
+        close(reader)
+
+        if isempty(vector)
+            return nothing
+        else
+            if state == count 
+                println("Chromosome: $chr, Position: $pos, IDs: $ids, REF: $ref, ALT: $alt, QUAL: $qual")
+                return (vector, state + 1)
+            end
+        end
     end
-end
+end 
 
 @inline function Base.length(itr::VCFIterator)
     return nrecords(itr.vcffile)
