@@ -15,25 +15,31 @@ function test_iteration()
         
     # Create the VCFIterator
     iterator = vcfiterator(vcf_file)
-    
+
     # Iterate over the variants and collect the rows
-    rows = []
     next_state = 1
-    final_state = 3
+    final_state = 2
+    row = []
     while next_state !== final_state
         row, next_state = iterate(iterator, next_state)
-        push!(rows, row)
     end
-    
-    # Expected result
-    expected_rows = []
-    for n in 1:final_state
-        push!(expected_rows, vcf_file[i])
-    end 
 
-    # Test that the iterated rows match the expected result
-    @test rows == expected_rows
-        
+    @test row == Any[("22", 20000086, ["rs138720731"], "T", ["C"], 100.0)]
+    @test next_state == 2
+
+    next_state = 1
+    final_state = 3
+    row = []
+    while next_state !== final_state
+        if next_state == 2
+            row = []
+        end
+        row, next_state = iterate(iterator, next_state)
+    end
+
+    @test row == Any[("22", 20000086, ["rs138720731"], "T", ["C"], 100.0), ("22", 20000146, ["rs73387790"], "G", ["A"], 100.0)]
+    @test next_state == 3
+
     # Clean up the temporary VCF file
     rm(vcf_file)
 end
