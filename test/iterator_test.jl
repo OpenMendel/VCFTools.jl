@@ -37,7 +37,7 @@ function test_iteration()
         row, next_state = iterate(iterator, next_state)
     end
 
-    @test row == Any[("22", 20000086, ["rs138720731"], "T", ["C"], 100.0), ("22", 20000146, ["rs73387790"], "G", ["A"], 100.0)]
+    @test row == Any[("22", 20000146, ["rs73387790"], "G", ["A"], 100.0)]
     @test next_state == 3
 
     # Clean up the temporary VCF file

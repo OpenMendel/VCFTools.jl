@@ -46,6 +46,7 @@ function Base.iterate(itr::VCFIterator, state=1)
         count = 0
 
         for record in reader
+            vector = []
             chr = VCF.chrom(record)
             pos = VCF.pos(record)
             ids = VCF.id(record) # VCF.id(record)[1]
