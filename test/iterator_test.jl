@@ -37,6 +37,8 @@ function test_iteration()
         row, next_state = iterate(iterator, next_state)
     end
 
+    # return a tuple not an array 
+
     @test row == Any[("22", 20000146, ["rs73387790"], "G", ["A"], 100.0)]
     @test next_state == 3
 
@@ -47,3 +49,5 @@ end
 @testset "iterator(vcf)" begin
     test_iteration()
 end 
+
+# put genetic variant base tests here 

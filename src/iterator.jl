@@ -24,7 +24,9 @@ mutable struct VCFRow <: Variant
     QUAL::Float64
 end
 
-@inline function Base.eltype(::Type{<:VariantIterator})
+# return VCFRow item from the iterate function 
+
+@inline function Base.eltype(::Type{<:VariantIterator}) # vector of string 
     VCFRow
 end
 
@@ -53,8 +55,8 @@ function Base.iterate(itr::VCFIterator, state=1)
             ref = VCF.ref(record)
             alt = VCF.alt(record) # VCF.alt(record)[1]
             qual = VCF.qual(record)
-            push!(vector, (chr, pos, ids, ref, alt, qual))
-
+            # return a tuple not an array 
+            vcf_row = VCFRow(chr, pos, ids, ref, alt, qual)
             count += 1
 
             if count == state 
@@ -69,7 +71,7 @@ function Base.iterate(itr::VCFIterator, state=1)
         else
             if state == count 
                 println("Chromosome: $chr, Position: $pos, IDs: $ids, REF: $ref, ALT: $alt, QUAL: $qual")
-                return (vector, state + 1)
+                return (vcf_row, state + 1)
             end
         end
     end
@@ -84,25 +86,37 @@ end
 end
 
 function chrom(vcffile::AbstractString, state=1)::String
-    return itr.vcf[state].CHROM
+    iterator = vcfiterator(vcffile)
+    result, state = iterate(iterator, state)
+    return result[1]
 end
 
 function pos(vcffile::AbstractString, state=1)::Int
-    return itr.vcf[state].POS
+    iterator = vcfiterator(vcffile)
+    result, state = iterate(iterator, state)
+    return result[2]
 end
 
 function rsid(vcffile::AbstractString, state=1)::String
-    return itr.vcf[state].ID
+    iterator = vcfiterator(vcffile)
+    result, state = iterate(iterator, state)
+    return result[3]
 end
 
 function alleles(vcffile::AbstractString, state=1)::Vector{String}
-    return itr.vcf[state].ALT
+    iterator = vcfiterator(vcffile)
+    result, state = iterate(iterator, state)
+    return result[4:5]
 end
 
 function alt_allele(vcffile::AbstractString, state=1)::String
-    return itr.vcf[state].ALT[1]
+    iterator = vcfiterator(vcffile)
+    result, state = iterate(iterator, state)
+    return result[5]
 end
 
 function ref_allele(vcffile::AbstractString, state=1)::String
-    return itr.vcf[state].REF
+    iterator = vcfiterator(vcffile)
+    result, state = iterate(iterator, state)
+    return result[4]
 end
