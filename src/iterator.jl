@@ -15,6 +15,11 @@ mutable struct VCFIndex <: Variant
     index::Int
 end
 
+mutable struct VCFData <: GeneticData
+    file_name::AbstractString
+    io::IOStream 
+end
+
 mutable struct VCFRow <: Variant
     CHROM::String
     POS::Int64
@@ -85,38 +90,69 @@ end
     VCFIterator(vcffile)
 end
 
-function chrom(vcffile::AbstractString, state=1)::String
-    iterator = vcfiterator(vcffile)
-    result, state = iterate(iterator, state)
-    return result[1]
+function chrom(data::VCFData, row::VCFRow)::String
+    return row.CHROM
 end
 
-function pos(vcffile::AbstractString, state=1)::Int
-    iterator = vcfiterator(vcffile)
-    result, state = iterate(iterator, state)
-    return result[2]
+function pos(data::VCFData, row::VCFRow)::Int
+    return row.POS
 end
 
-function rsid(vcffile::AbstractString, state=1)::String
-    iterator = vcfiterator(vcffile)
-    result, state = iterate(iterator, state)
-    return result[3]
+function rsid(data::VCFData, row::VCFRow)::String
+    return row.ID
 end
 
-function alleles(vcffile::AbstractString, state=1)::Vector{String}
-    iterator = vcfiterator(vcffile)
-    result, state = iterate(iterator, state)
-    return result[4:5]
+function alleles(data::VCFData, row::VCFRow)::Vector{String}
+    return (row.REF, row.ALT)
 end
 
-function alt_allele(vcffile::AbstractString, state=1)::String
-    iterator = vcfiterator(vcffile)
-    result, state = iterate(iterator, state)
-    return result[5]
+function alt_allele(data::VCFData, row::VCFRow)::String
+    return row.ALT
 end
 
-function ref_allele(vcffile::AbstractString, state=1)::String
-    iterator = vcfiterator(vcffile)
-    result, state = iterate(iterator, state)
-    return result[4]
+function ref_allele(data::VCFData, row::VCFRow)::String
+    return row.REF
 end
+
+# use GeneticData as argument for genetic variant base functions 
+# GeneticData, VCFRow
+
+function maf(data::VCFData, row::VCFRow)
+    copy_gt!(out, row)
+    ref_count = 0
+
+    for genotype in out
+        alleles = split(genotype, '/')
+        ref_count += count(x -> x == "0", alleles)
+    end
+    
+    total_alleles = length(out) * 2
+    
+    if total_alleles == 0 
+        return 0.0
+    end 
+
+    result = min(ref_count, total_alleles - ref_count) / total_alleles
+
+    if result > 0.5
+        return 1 - result
+    else
+        return result
+    end
+
+    # each iteration of the iterator gives you VCFRow 
+    # for each iteration take the average over the vector
+    # divide average over the samples by 2
+
+end
+
+#copyto! function
+#copygt! copydt
+#reads in genotypes 0 1 2 average divided by two allele frequency of alternate allele 
+#dosages for each snp 0-2
+
+function hwepval(g::GeneticData, v::Variant)
+    return 0.0
+end
+
+#inside snparrays hwe
