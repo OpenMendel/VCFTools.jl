@@ -120,13 +120,18 @@ end
 function maf(data::VCFData, row::VCFRow)
     copy_gt!(out, row)
     ref_count = 0
+    alt_count = 0
 
     for genotype in out
         alleles = split(genotype, '/')
         ref_count += count(x -> x == "0", alleles)
+        alt_count += count(x -> x != "0", alleles)
     end
+
+    # ./.
+    # account for missing genotypes 
     
-    total_alleles = length(out) * 2
+    total_alleles = ref_count + alt_count 
     
     if total_alleles == 0 
         return 0.0
@@ -151,8 +156,36 @@ end
 #reads in genotypes 0 1 2 average divided by two allele frequency of alternate allele 
 #dosages for each snp 0-2
 
-function hwepval(g::GeneticData, v::Variant)
-    return 0.0
+function hwepval(data::VCFData, row::VCFRow)
+    copy_gt!(out, row)
+    ref_count = 0
+    alt_count = 0
+
+    for genotype in out
+        alleles = split(genotype, '/')
+        if "0" in alleles
+            ref_count += count(x -> x == "0", alleles)
+        elseif "1" in alleles
+            alt_count += count(x -> x == "1", alleles)
+        else
+            continue  # Skip missing genotypes
+        end
+    end
+    
+    total_samples = ref_count + alt_count
+
+    p_obs = ref_count / (2 * total_samples)
+    q_obs = alt_count / (2 * total_samples)
+
+    p_exp = p_obs^2
+    q_exp = 2 * p_obs * q_obs
+    q_exp2 = q_obs^2
+
+    chi_squared = sum((genotype_counts[geno] - total_samples * expected_frequency)^2 / (total_samples * expected_frequency) for (geno, expected_frequency) in [("0/0", p_exp), ("0/1", q_exp), ("1/1", r_exp)])
+
+    p_value = 1.0 - cdf(Chisq(2), chi_squared)
+
+    return p_value
 end
 
 #inside snparrays hwe
