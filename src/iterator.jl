@@ -7,26 +7,26 @@ mutable struct VCFIterator <: VariantIterator
 end
 
 function VCFIterator(vcffile::AbstractString)
-    vcf = VCF.Reader(openvcf(vcffile, "r"))
-    return VCFIterator(vcffile, vcf)
+    vcf = VCF.Reader(open(vcffile, "r")) 
+    print(typeof(vcf))#just use open function on VCF 
+    return VCFIterator(vcffile, vcf) #then returns an iostream 
 end
 
-mutable struct VCFIndex <: Variant
-    index::Int
-end
-
-mutable struct VCFData <: GeneticData
+mutable struct VCFData <: GeneticData # feed VCFData VCFIterator function output output of openvcf function 
     file_name::AbstractString
-    io::IOStream 
+    io::Union{IOStream, GzipDecompressorStream}
+    #io::TranscodingStreams.TranscodingStream{GzipDecompressor, IOStream}
+   # TranscodingStreams.TranscodingStream{GzipDecompressor, IOStream}
 end
 
 mutable struct VCFRow <: Variant
     CHROM::String
     POS::Int64
-    ID::String
+    ID::Vector{String}
     REF::String
-    ALT::String
+    ALT::Vector{String}
     QUAL::Float64
+    GENOTYPE::Vector{Union{Float64, Missing}}
 end
 
 # return VCFRow item from the iterate function 
@@ -60,25 +60,24 @@ function Base.iterate(itr::VCFIterator, state=1)
             ref = VCF.ref(record)
             alt = VCF.alt(record) # VCF.alt(record)[1]
             qual = VCF.qual(record)
+            out = zeros(Union{Missing, Float64}, nsamples)
+            geno = copy_gt!(out, reader)
+            print("THIS IS THE GENOTYPE: $geno")
             # return a tuple not an array 
-            vcf_row = VCFRow(chr, pos, ids, ref, alt, qual)
+
+            vcf_row = VCFRow(chr, pos, ids, ref, alt, qual, geno)
+
             count += 1
 
             if count == state 
-                break
+                close(reader)
+                return (vcf_row, state + 1)
             end
         end
 
         close(reader)
+        return nothing 
 
-        if isempty(vector)
-            return nothing
-        else
-            if state == count 
-                println("Chromosome: $chr, Position: $pos, IDs: $ids, REF: $ref, ALT: $alt, QUAL: $qual")
-                return (vcf_row, state + 1)
-            end
-        end
     end
 end 
 
@@ -118,32 +117,38 @@ end
 # GeneticData, VCFRow
 
 function maf(data::VCFData, row::VCFRow)
-    copy_gt!(out, row)
+    gt_row = row.GENOTYPE
     ref_count = 0
     alt_count = 0
 
-    for genotype in out
-        alleles = split(genotype, '/')
-        ref_count += count(x -> x == "0", alleles)
-        alt_count += count(x -> x != "0", alleles)
+    s = 0.0 # total of the alternate allele count 
+    count = 0 # count of non missing samples 
+    for i in 1:nsamples
+         if gt_row[i] !== missing
+            s += gt_row[i]
+            count += 1
+        end
     end
+    alt_allele_frequency = s / count
+   
+    if alt_allele_frequency > 0.5
+        return 1 - alt_allele_frequency
+    else
+        return alt_allele_frequency
+    end
+
+    """
+    for genotype in gt_row
+        alleles = split(genotype, '/')
+        if "0" in alleles || "1" in alleles
+            ref_count += count(x -> x == "0", alleles)
+            alt_count += count(x -> x == "1", alleles)
+        end
+    end
+    """
 
     # ./.
     # account for missing genotypes 
-    
-    total_alleles = ref_count + alt_count 
-    
-    if total_alleles == 0 
-        return 0.0
-    end 
-
-    result = min(ref_count, total_alleles - ref_count) / total_alleles
-
-    if result > 0.5
-        return 1 - result
-    else
-        return result
-    end
 
     # each iteration of the iterator gives you VCFRow 
     # for each iteration take the average over the vector
@@ -157,12 +162,12 @@ end
 #dosages for each snp 0-2
 
 function hwepval(data::VCFData, row::VCFRow)
-    copy_gt!(out, row)
     ref_count = 0
     alt_count = 0
 
     for genotype in out
         alleles = split(genotype, '/')
+        alleles = string.(alleles)
         if "0" in alleles
             ref_count += count(x -> x == "0", alleles)
         elseif "1" in alleles
@@ -183,9 +188,13 @@ function hwepval(data::VCFData, row::VCFRow)
 
     chi_squared = sum((genotype_counts[geno] - total_samples * expected_frequency)^2 / (total_samples * expected_frequency) for (geno, expected_frequency) in [("0/0", p_exp), ("0/1", q_exp), ("1/1", r_exp)])
 
+    # Using Distributions.jl 
+
     p_value = 1.0 - cdf(Chisq(2), chi_squared)
 
     return p_value
 end
+
+# filter.jl line 188
 
 #inside snparrays hwe

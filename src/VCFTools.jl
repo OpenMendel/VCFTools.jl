@@ -8,6 +8,7 @@ using DelimitedFiles
 using Dates
 using SpecialFunctions
 using VariantCallFormat
+using GeneticVariantBase
 import VariantCallFormat.findgenokey
 
 export conformgt_by_id, conformgt_by_pos,

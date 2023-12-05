@@ -1,4 +1,5 @@
 using VCFTools
+using TranscodingStreams
 using Test
 using VariantCallFormat
 using CodecZlib
