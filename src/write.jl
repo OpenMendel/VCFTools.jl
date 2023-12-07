@@ -68,9 +68,10 @@ end
 
 """
 Helper function for saving the `i`th record (SNP), tracking phase information.
-Here `X = X1 + X2`.
+Here `X = X1 + X2`. For phased data, X1 and X2 must have entries in {0, 1} (in
+particular, there should be no missing data).
 """
-function write_snp!(pb::IOBuffer, X1::AbstractMatrix, X2::AbstractMatrix, i::Int)
+function write_snp!(pb::IOBuffer, X1::AbstractMatrix{T}, X2::AbstractMatrix{T}, i::Int) where T
     x1 = @view(X1[:, i])
     x2 = @view(X2[:, i])
     n = length(x1)
@@ -122,7 +123,7 @@ function write_vcf(
     ref::AbstractVector{String} = ["A"     for i in 1:size(x, 2)],
     alt::AbstractVector{String} = ["T"     for i in 1:size(x, 2)],
     sampleID::AbstractVector{String} = [string(i) for i in 1:size(x, 1)],
-    SNPids::AbstractVector{String} = ["snp$i" for i in 1:size(x, 2)],
+    SNPids::AbstractVector{String} = ["." for i in 1:size(x, 2)],
     )
     n, p = size(x)
     io = openvcf(outfile, "w")
@@ -163,12 +164,15 @@ Here genotypes will be written as
 0 => 0/0
 1 => 1/0
 2 => 1/1
+missing => ./.
 """
 function write_snp!(pb::IOBuffer, X::AbstractMatrix, i::Int)
     x = @view(X[:, i])
     n = length(x)
     @inbounds for j in 1:n
-        if x[j] == 0
+        if ismissing(x[j])
+            print(pb, "\t./.")
+        elseif x[j] == 0
             print(pb, "\t0/0")
         elseif x[j] == 1
             print(pb, "\t1/0")
