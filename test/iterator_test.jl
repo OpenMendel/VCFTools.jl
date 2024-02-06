@@ -71,17 +71,21 @@ isfile("test.08Jun17.d8b.vcf.gz") || Downloads.download("http://faculty.washingt
 joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz"))
 
 vcf_file = joinpath(dirname(pathof(VCFTools)), "..", "test/test.08Jun17.d8b.vcf.gz")
-vcf = VCFIterator(vcf_file)
-for i in 1:4
-    vcf_row, state = iterate(vcf)
-    print(vcf_row)
+vcf_iterator = VCFIterator(vcf_file)
+
+for i in 1:50
+    vcf_row, _ = iterate(vcf_iterator, i)
+
+    # Print the genotype information for the current record
+    println("Genotypes for record $i: ", vcf_row.GENOTYPE)
 end
 
+row = VCFRow("1", 9001061, [], "T", ["G"], 32.0, [1.0, 1.0])
+
+
+
+"""
+vcf_row = VCFRow("22", 20000086, ["rs138720731"], "T", ["C"], 100.0, Union{Missing, Float64}[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 data = VCFData(vcf_file, vcf)
-reader = VCF.Reader(openvcf(data.file_name, "r"))
-nrows = nrecords(data.file_name)
-nsamples = nsamples(data.file_name)
-out = Matrix{Union{Missing, Real}}(undef, nrows, nsamples)
-copy_gt!(out, reader)
-gt_row = out[1, :]
-print(gt_row)
+@test maf(data, vcf_row) == 0.0
+"""
